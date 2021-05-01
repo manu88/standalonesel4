@@ -1,6 +1,7 @@
 # steps
 
 ```bash
+sh update.sh
 # build kernel
 cp configs/X64_verified_test.cmake kernel/configs/
 mkdir build
