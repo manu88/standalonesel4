@@ -1,5 +1,11 @@
 # steps
+```bash
+make update
+make #Might fail the 1st time, for some capDL err. re-issue command.
+make sim
+```
 
+## Dist: not working
 ```bash
 sh update.sh
 # build kernel
