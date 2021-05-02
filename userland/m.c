@@ -1,10 +1,8 @@
-extern char __executable_start[];
-extern char _end[];
+#include <stdlib.h>
 
-int _start()
+int __sel4_start_c()
 {
-    volatile char *p = __executable_start;
-    volatile char *pp = _end;
+    int a = 1;
     while (1)
     {
     }    
