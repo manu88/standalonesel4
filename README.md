@@ -12,6 +12,9 @@ make update
 make #Might fail the 1st time, for some capDL err. re-issue command.
 make sim
 ```
+## Useful links:
+* [genode seL4 experiment](https://genode.org/documentation/articles/sel4_part_1)
+* [genode seL4 related code](https://github.com/genodelabs/genode/tree/master/repos/base-sel4)
 
 ## Dist: not working
 ```bash
