@@ -53,15 +53,17 @@ else
     echo "grub-install not found, skipping GRUB setup!"
 fi
 
-cp ../build/kernel.elf $DISK_MOUNT/boot/kernel
-cp ../../Sofa/build/images/kernel_task-image-x86_64-pc99 $DISK_MOUNT/boot/kernel_task
+cp kernel $DISK_MOUNT/boot/kernel
+cp ../userland/program.bin $DISK_MOUNT/boot/program
 cp -R ./root/* $DISK_MOUNT
 cat > $DISK_MOUNT/boot/grub/grub.cfg <<EOF
 set timeout=0
 
 menuentry "Sofa" {
+  echo 'Loading seL4 kernel'
   multiboot /boot/kernel
-  module /boot/kernel_task
+  echo 'Loading initial module ...'
+  module /boot/program
 }
 EOF
 

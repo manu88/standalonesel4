@@ -10,6 +10,7 @@ cmake -DCROSS_COMPILER_PREFIX= -DCMAKE_TOOLCHAIN_FILE=../kernel/gcc.cmake -G Nin
 ninja kernel.elf
 # create disk image
 cd ../dist/
+cp ../build/kernel.elf kernel
 sudo sh build.sh sofa.img mntP/
 # start in QEMU
 sh start.sh

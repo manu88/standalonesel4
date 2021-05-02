@@ -20,9 +20,9 @@ set(KernelDangerousCodeInjection OFF CACHE BOOL "")
 set(KernelFastpath ON CACHE BOOL "")
 set(KernelPrinting ON CACHE BOOL "")
 set(KernelNumDomains 16 CACHE STRING "")
-set(KernelMaxNumBootinfoUntypedCap 166 CACHE STRING "")
+
 set(KernelRootCNodeSizeBits 19 CACHE STRING "")
-set(KernelMaxNumBootinfoUntypedCaps 50 CACHE STRING "")
+set(KernelMaxNumBootinfoUntypedCaps 200 CACHE STRING "")
 set(KernelFSGSBase "msr" CACHE STRING "")
 
 set(KernelSupportPCID OFF CACHE BOOL "")
