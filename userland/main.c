@@ -1,9 +1,9 @@
+#include <stdlib.h>
 
-
-void _start()
+int __sel4_start_c()
 {
-    while(1)
+    int a = 1;
+    while (1)
     {
-
-    }
+    }    
 }
