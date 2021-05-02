@@ -1,4 +1,3 @@
-/* Taken from: */
 /*
  * Copyright 2019, Data61
  * Commonwealth Scientific and Industrial Research Organisation (CSIRO)
@@ -10,15 +9,13 @@
  *
  * @TAG(DATA61_BSD)
  */
-
+#include <sel4runtime/gen_config.h>
 
 .section .text
-.global _start
-_start:
+.global _sel4_start
+_sel4_start:
 	leaq __stack_top, %rsp
 	movq %rsp, %rbp
-	movq %rsp, %rdi
-
 	/*
 	 * GCC expects that a C function is always entered via a call
 	 * instruction and that the stack is 16-byte aligned before such an
@@ -31,12 +28,11 @@ _start:
 	 */
 	subq $0x8, %rsp
 	push %rbp
-	call __sel4_start_c
+	call __sel4_start_root
 
 	/* should not return */
 1:
 	jmp  1b
-
 
 .section .bss
 __stack_base:

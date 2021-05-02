@@ -1,7 +1,8 @@
 kernelFolder= ./kernel
-kernelFile = ./userland/kernel
+userland = userland
+kernelFile = ./$(userland)/kernel
 kernelBuildFolder = ./kernel_build
-rootServer = ./userland/program.bin
+rootServer = ./$(userland)/program.bin
 
 all: kernelFile user
 
@@ -17,14 +18,14 @@ kernelFile: kernel_b
 	objcopy -O elf32-i386 kernel_build/kernel.elf $(kernelFile)
 
 user:
-	cd userland && make
+	cd $(userland) && make
 
 update:
 	sh update.sh
 
 clean:
 	rm -rf $(kernelBuildFolder)
-	cd userland && make clean
+	cd $(userland) && make clean
 	rm -f $(kernelFile)
 
 sim:
