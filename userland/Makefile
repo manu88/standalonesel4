@@ -4,7 +4,7 @@ LD = gcc
 PROG=program.bin
 
 CRT_OBJS = crti.S crt0.o
-OBJS = main.o printf.o
+OBJS = main.o printf.o putchar.o
 
 LIBS= -L./libsel4/lib/ -lsel4
 LDFLAGS= -Wl,-m -Wl,elf_x86_64 -m64 -g -static -fno-builtin -nostdlib -fno-stack-protector -fno-pic -fno-pie -Wl,-u_sel4_start -Wl,-e_sel4_start

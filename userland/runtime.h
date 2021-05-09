@@ -4,14 +4,7 @@
 
 #define NULL 0
 
-
-static inline void print(const char* str)
-{
-    char* c = (char*) str;
-    while (*c) seL4_DebugPutChar(*c++);
-}
-
-
+#define printf(fmt, ...) printf_(fmt, ##__VA_ARGS__)
 
 static inline void oops()
 {
