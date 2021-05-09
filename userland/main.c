@@ -36,6 +36,7 @@ void __sel4_start_root(void* bootinfo)
     oopsIfNull(bootinfo);
 
     print("Hello world\n\n");
+    seL4_DebugDumpScheduler();
     while (1)
     {
         /* code */
