@@ -25,5 +25,5 @@ clean:
 
 default: $(PROG)  
 
-$(PROG): $(OBJS) $(CRT_OBJS)  
-	$(LD) $(LDFLAGS) $(CRT_OBJS) /usr/lib/gcc/x86_64-linux-gnu/9/crtbegin.o $(OBJS)  /usr/lib/gcc/x86_64-linux-gnu/9/crtend.o /home/manu/dev/sel4/Sofa/build/lib/crtn.o -lgcc -lgcc_eh  -Wl,-T linker.ld -o $(PROG)
+$(PROG): $(OBJS) $(CRT_OBJS) crtn.o
+	$(LD) $(LDFLAGS) $(CRT_OBJS) /usr/lib/gcc/x86_64-linux-gnu/9/crtbegin.o $(OBJS)  /usr/lib/gcc/x86_64-linux-gnu/9/crtend.o crtn.o -lgcc -lgcc_eh  -Wl,-T linker.ld -o $(PROG)

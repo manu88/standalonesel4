@@ -1,7 +1,7 @@
 ## Sel4 standalone test
 This repo is a test for building a seL4 rootserver without using the toolchain and other librairies offered by seL4.
 
-The why and the outcome of this experiment remains - even to the written -  unknown :).
+The why and the outcome of this experiment remains - even to the writter -  unknown :).
 
 Maybe for science purposes.
 
@@ -9,6 +9,7 @@ Maybe for science purposes.
 # steps
 ```bash
 make update
+make config
 make #Might fail the 1st time, for some capDL err. re-issue command.
 make sim
 ```
