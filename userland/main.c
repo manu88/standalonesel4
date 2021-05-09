@@ -11,7 +11,8 @@ extern "C"
 static int a = 0;
 
 
-static Foo f;
+static Bar f;
+
 __attribute__ ((constructor)) void foo(void)
 {
     a = 10;
@@ -25,7 +26,7 @@ void start_root()
 
     printf("Hello world a=%i\n", a);
     printf("Hello world f.a=%i\n", f.a);
-
+    f.test();
     seL4_DebugDumpScheduler();
 
     unsigned long long total = 0;
