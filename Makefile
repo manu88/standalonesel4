@@ -3,7 +3,7 @@ userland = userland
 kernelFile = ./$(userland)/kernel
 kernelBuildFolder = ./build
 rootServer = ./$(userland)/program.bin
-
+ARCH=x86_64
 all: kernelFile user
 
 $(kernelBuildFolder):
@@ -18,7 +18,17 @@ kernelFile: kernel_b
 	objcopy -O elf32-i386 $(kernelBuildFolder)/kernel/kernel.elf $(kernelFile)
 
 libsel4: kernel_b
-	cp $(kernelBuildFolder)/libsel4/libsel4.a
+	mkdir -p $(userland)/libsel4
+	mkdir -p $(userland)/libsel4/lib/
+	cp $(kernelBuildFolder)/libsel4/libsel4.a $(userland)/libsel4/lib/
+	cp -r $(kernelFolder)/libsel4/include $(userland)/libsel4/
+	cp -r  $(kernelBuildFolder)/libsel4/autoconf/ $(userland)/libsel4/include/
+	mkdir -p $(userland)/libsel4/include/gen_config
+	cp -r $(kernelBuildFolder)/kernel/gen_config/kernel/ $(userland)/libsel4/include/gen_config
+	cp -r $(kernelBuildFolder)/libsel4/gen_config/sel4/ $(userland)/libsel4/include/gen_config
+	cp -r  $(kernelFolder)/libsel4/sel4_arch_include/$(ARCH)/sel4/sel4_arch/ $(userland)/libsel4/include/sel4/arch
+	cd $(userland)/libsel4/include/sel4/ && ln -s arch sel4_arch
+
 
 user:
 	cd $(userland) && make

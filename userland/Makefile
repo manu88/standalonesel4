@@ -6,15 +6,17 @@ PROG=program.bin
 CRT_OBJS = crti.S crt0.o
 OBJS = main.o
 
+LIBS=-lsel4
 LDFLAGS= -Wl,-m -Wl,elf_x86_64 -m64 -g -static -nostdlib  -fno-pic -fno-pie -Wl,-u_sel4_start -Wl,-e_sel4_start
 ASFLAGS= -64
 CCFLAGS= -m64 -static -Wall -Wextra
+C_INCLUDES= -I./libsel4/include/ -I./libsel4/include/autoconf/ -I./libsel4/include/gen_config/
 
 .S.o:
 	$(AS) $(ASFLAGS) $< -o $@
 
 .c.o:
-	$(CC) -c $(CCFLAGS) $< -o $@
+	$(CC) $(C_INCLUDES)  -c  $(CCFLAGS) $<  -o $@ -v
 
 default: $(PROG)
 
@@ -25,4 +27,4 @@ clean:
 default: $(PROG)  
 
 $(PROG): $(OBJS) $(CRT_OBJS) crtn.o
-	$(LD) $(LDFLAGS) $(CRT_OBJS) /usr/lib/gcc/x86_64-linux-gnu/9/crtbegin.o $(OBJS)  /usr/lib/gcc/x86_64-linux-gnu/9/crtend.o crtn.o -lgcc -L./ -lgcc_eh -lsel4 -Wl,-T linker.ld -o $(PROG)
+	$(LD) $(LDFLAGS) $(CRT_OBJS) /usr/lib/gcc/x86_64-linux-gnu/9/crtbegin.o $(OBJS)  /usr/lib/gcc/x86_64-linux-gnu/9/crtend.o crtn.o -lgcc -L./ -lgcc_eh $(LIBS) -Wl,-T linker.ld -o $(PROG)
