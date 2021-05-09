@@ -10,9 +10,10 @@
  * @TAG(DATA61_BSD)
  */
 .section .init
-	leave
+/* gcc will nicely put the contents of crtend.o's .init section here. */
+	popq %rbp
 	ret
-
 .section .fini
-	leave
+/* gcc will nicely put the contents of crtend.o's .fini section here. */
+	popq %rbp
 	ret

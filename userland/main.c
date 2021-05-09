@@ -3,15 +3,23 @@
 #include "sel4/bootinfo.h"
 #define NULL 0
 
+static int a = 0;
+
+__attribute__ ((constructor)) void foo(void)
+{
+    a = 10;
+}
+
+
+
 void __sel4_start_root(void* bootinfoPtr)
 {
     assert(bootinfoPtr, "no bootinfo pointer for __sel4_start_root");
     
     seL4_BootInfo* bootInfo = bootinfoPtr; 
 
-    printf("Hello world\n");
+    printf("Hello world a=%i\n", a);
 
-    printf("untypeds are from %zi to %zi\n", bootInfo->untyped.start , bootInfo->untyped.end);
     seL4_DebugDumpScheduler();
 
     unsigned long long total = 0;
@@ -26,7 +34,7 @@ void __sel4_start_root(void* bootinfoPtr)
             }
         }
     }
-    printf("Total mem %zi m\n", total/1024);
+    printf("Total mem %zi M\n", total/1024);
     while (1)
     {
         /* code */

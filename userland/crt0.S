@@ -16,6 +16,8 @@
 _sel4_start:
 	leaq __stack_top, %rsp
 	movq %rsp, %rbp
+
+	call __exec_ctors
 	/*
 	 * GCC expects that a C function is always entered via a call
 	 * instruction and that the stack is 16-byte aligned before such an
