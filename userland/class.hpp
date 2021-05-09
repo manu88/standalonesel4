@@ -1,6 +1,7 @@
 #pragma once
 
-class Foo
+struct Foo
 {
+    int a = 11;
 
 };

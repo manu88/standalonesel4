@@ -10,6 +10,8 @@ extern "C"
 #include "sel4/bootinfo.h"
 static int a = 0;
 
+
+static Foo f;
 __attribute__ ((constructor)) void foo(void)
 {
     a = 10;
@@ -22,6 +24,7 @@ void start_root()
     const seL4_BootInfo* bootInfo = (const seL4_BootInfo*) seL4_GetBootInfo(); 
 
     printf("Hello world a=%i\n", a);
+    printf("Hello world f.a=%i\n", f.a);
 
     seL4_DebugDumpScheduler();
 
