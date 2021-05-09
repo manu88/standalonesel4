@@ -1,22 +1,15 @@
-#include "sel4/sel4_arch/syscalls.h"
+
+#include "runtime.h"
+#include "sel4/bootinfo.h"
 #define NULL 0
+
+void _putchar(char c)
+{
+    seL4_DebugPutChar(c);
+}
+
 static int a = 0;
 
-
-
-static void oops()
-{
-    float *f = NULL;
-    *f = 42.f;
-}
-
-static void oopsIfNull(void* p)
-{
-    if(!p)
-    {
-        oops();
-    }
-}
 
 __attribute__ ((constructor)) void foo(void)
 {
@@ -25,17 +18,15 @@ __attribute__ ((constructor)) void foo(void)
 }
 
 
-void print(const char* str)
-{
-    char* c = str;
-    while (*c) seL4_DebugPutChar(*c++);
-}
 
-void __sel4_start_root(void* bootinfo)
-{
-    oopsIfNull(bootinfo);
 
-    print("Hello world\n\n");
+void __sel4_start_root(void* bootinfoPtr)
+{
+    assert(bootinfoPtr, "no bootinfo pointer for __sel4_start_root");
+    
+    seL4_BootInfo* bootInfo = bootinfoPtr; 
+
+    printf_("Hello world\n\n");
     seL4_DebugDumpScheduler();
     while (1)
     {

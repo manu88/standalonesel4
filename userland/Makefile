@@ -4,12 +4,12 @@ LD = gcc
 PROG=program.bin
 
 CRT_OBJS = crti.S crt0.o
-OBJS = main.o
+OBJS = main.o printf.o
 
 LIBS= -L./libsel4/lib/ -lsel4
-LDFLAGS= -Wl,-m -Wl,elf_x86_64 -m64 -g -static -nostdlib -fno-stack-protector -fno-pic -fno-pie -Wl,-u_sel4_start -Wl,-e_sel4_start
+LDFLAGS= -Wl,-m -Wl,elf_x86_64 -m64 -g -static -fno-builtin -nostdlib -fno-stack-protector -fno-pic -fno-pie -Wl,-u_sel4_start -Wl,-e_sel4_start
 ASFLAGS= -64
-CCFLAGS= -m64 -static -Wall -Wextra -nostdlib -fno-stack-protector
+CCFLAGS= -m64 -static -Wall -Wextra -nostdlib -fno-stack-protector -fno-builtin 
 C_INCLUDES= -I./libsel4/include/ -I./libsel4/include/autoconf/ -I./libsel4/include/gen_config/
 
 .S.o:
