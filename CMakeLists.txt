@@ -15,4 +15,6 @@ enable_language(ASM)
 find_file(KERNEL_PATH kernel PATHS ${CMAKE_SOURCE_DIR} NO_CMAKE_FIND_ROOT_PATH)
 
 add_subdirectory("${KERNEL_PATH}" kernel)
+
+set(Debug "1" CACHE STRING "")
 add_subdirectory("${KERNEL_PATH}/libsel4" libsel4)

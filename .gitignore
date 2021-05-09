@@ -5,3 +5,4 @@ build/
 *.o
 *.bin
 libsel4.a
+userland/libsel4/

@@ -10,9 +10,9 @@ $(kernelBuildFolder):
 	mkdir -p $(kernelBuildFolder)
 
 kernel_b: $(kernelBuildFolder) $(kernel)
-	
 	cd $(kernelBuildFolder) && cmake -DCROSS_COMPILER_PREFIX= -DCMAKE_TOOLCHAIN_FILE=../kernel/gcc.cmake -G Ninja -C ../kernel/configs/X64_verified_test.cmake ..
 	cd $(kernelBuildFolder) && ninja kernel.elf
+	cd $(kernelBuildFolder) && ninja libsel4.a
 
 kernelFile: kernel_b
 	objcopy -O elf32-i386 $(kernelBuildFolder)/kernel/kernel.elf $(kernelFile)
@@ -26,11 +26,16 @@ libsel4: kernel_b
 	mkdir -p $(userland)/libsel4/include/gen_config
 	cp -r $(kernelBuildFolder)/kernel/gen_config/kernel/ $(userland)/libsel4/include/gen_config
 	cp -r $(kernelBuildFolder)/libsel4/gen_config/sel4/ $(userland)/libsel4/include/gen_config
-	cp -r  $(kernelFolder)/libsel4/sel4_arch_include/$(ARCH)/sel4/sel4_arch/ $(userland)/libsel4/include/sel4/arch
-	cd $(userland)/libsel4/include/sel4/ && ln -s arch sel4_arch
 
+	cp $(kernelBuildFolder)/libsel4/include/sel4/* $(userland)/libsel4/include/sel4/
+	cp -r $(kernelFolder)/libsel4/sel4_arch_include/$(ARCH)/sel4/sel4_arch/ $(userland)/libsel4/include/sel4/
+	cp $(kernelBuildFolder)/libsel4/sel4_arch_include/$(ARCH)/sel4/sel4_arch/* $(userland)/libsel4/include/sel4/sel4_arch/
 
-user:
+	cp -r $(kernelFolder)/libsel4/arch_include/x86/sel4/arch/ $(userland)/libsel4/include/sel4/
+
+	cp -r kernel/libsel4/mode_include/64/sel4/mode $(userland)/libsel4/include/sel4/
+
+user: libsel4
 	cd $(userland) && make
 
 config:
@@ -41,6 +46,7 @@ update:
 
 clean:
 	rm -rf $(kernelBuildFolder)
+	rm -r $(userland)/libsel4/ 
 	cd $(userland) && make clean
 	rm -f $(kernelFile)
 

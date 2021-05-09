@@ -1,7 +1,8 @@
-#include "sel4/syscalls.h"
-
+#include "sel4/sel4_arch/syscalls.h"
 #define NULL 0
 static int a = 0;
+
+
 
 static void oops()
 {
@@ -26,16 +27,15 @@ __attribute__ ((constructor)) void foo(void)
 
 void print(const char* str)
 {
-    while (str++)
-    {
-        seL4_DebugPutChar(str);
-    }
-    
+    char* c = str;
+    while (*c) seL4_DebugPutChar(*c++);
 }
+
 void __sel4_start_root(void* bootinfo)
 {
     oopsIfNull(bootinfo);
-    
+
+    print("Hello world\n\n");
     while (1)
     {
         /* code */

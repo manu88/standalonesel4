@@ -19,6 +19,7 @@ set(KernelBenchmarks "none" CACHE STRING "")
 set(KernelDangerousCodeInjection OFF CACHE BOOL "")
 set(KernelFastpath ON CACHE BOOL "")
 set(KernelPrinting ON CACHE BOOL "")
+set(KernelDebug ON CACHE STRING "")
 set(KernelNumDomains 16 CACHE STRING "")
 
 set(KernelRootCNodeSizeBits 19 CACHE STRING "")
