@@ -7,9 +7,10 @@ CRT_OBJS = crti.o crt0.o
 OBJS = main.o printf.o putchar.o init.o class.o
 
 LIBS= -L./libsel4/lib/ -lsel4
-LDFLAGS= -Wl,-m -Wl,elf_x86_64 -m64 -g -static -fno-rtti -fno-builtin -nostdlib -fno-stack-protector -fno-pic -fno-pie -Wl,-u_sel4_start -Wl,-e_sel4_start
+CPP_FLAGS=-fno-rtti -fno-exceptions -std=c++2a
+LDFLAGS= -Wl,-m -Wl,elf_x86_64 -m64 -g -static $(CPP_FLAGS) -fno-builtin -nostdlib -fno-stack-protector -fno-pic -fno-pie -Wl,-u_sel4_start -Wl,-e_sel4_start
 ASFLAGS= -64
-CCFLAGS= -m64 -static -Wall -Wextra -nostdlib -fno-stack-protector -fno-builtin -fno-rtti
+CCFLAGS= -m64 -static -Wall -Wextra -nostdlib -fno-stack-protector -fno-builtin $(CPP_FLAGS) 
 C_INCLUDES= -I./libsel4/include/ -I./libsel4/include/autoconf/ -I./libsel4/include/gen_config/
 
 .S.o:

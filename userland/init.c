@@ -12,9 +12,8 @@ extern routine __preinit_array_end[];
 extern routine __init_array_start[];
 extern routine __init_array_end[];
 
-void __exec_ctors(void* ptr)
+void __exec_ctors()
 {
-    //seL4_InitBootInfo((seL4_BootInfo*)ptr);
     int preinitSize = &__preinit_array_end[0] - &__preinit_array_start[0];
 
     for (int f = 0; f < preinitSize; f++) {

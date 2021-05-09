@@ -5,9 +5,9 @@ extern "C"
 #include "printf.h"
 #include "sel4/sel4_arch/syscalls.h"
 
-#define NULL 0
-
+#ifndef printf
 #define printf(fmt, ...) printf_(fmt, ##__VA_ARGS__)
+#endif 
 
 static inline void oops()
 {
