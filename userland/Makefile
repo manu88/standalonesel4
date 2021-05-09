@@ -6,7 +6,6 @@ PROG=program.bin
 CRT_OBJS = crti.S crt0.o
 OBJS = main.o
 
-
 LDFLAGS= -Wl,-m -Wl,elf_x86_64 -m64 -g -static -nostdlib  -fno-pic -fno-pie -Wl,-u_sel4_start -Wl,-e_sel4_start
 ASFLAGS= -64
 CCFLAGS= -m64 -static -Wall -Wextra
@@ -26,4 +25,4 @@ clean:
 default: $(PROG)  
 
 $(PROG): $(OBJS) $(CRT_OBJS) crtn.o
-	$(LD) $(LDFLAGS) $(CRT_OBJS) /usr/lib/gcc/x86_64-linux-gnu/9/crtbegin.o $(OBJS)  /usr/lib/gcc/x86_64-linux-gnu/9/crtend.o crtn.o -lgcc -lgcc_eh  -Wl,-T linker.ld -o $(PROG)
+	$(LD) $(LDFLAGS) $(CRT_OBJS) /usr/lib/gcc/x86_64-linux-gnu/9/crtbegin.o $(OBJS)  /usr/lib/gcc/x86_64-linux-gnu/9/crtend.o crtn.o -lgcc -L./ -lgcc_eh -lsel4 -Wl,-T linker.ld -o $(PROG)
