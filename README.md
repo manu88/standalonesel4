@@ -17,6 +17,7 @@ make sim
 * [printf implementation](https://github.com/mpaland/printf)
 * [genode seL4 experiment](https://genode.org/documentation/articles/sel4_part_1)
 * [genode seL4 related code](https://github.com/genodelabs/genode/tree/master/repos/base-sel4)
+* [a calculator system program running on sel4](https://github.com/t-weber/os-seminar/blob/main/sel4/sel4-main.c)
 
 ## Dist: not working
 ```bash

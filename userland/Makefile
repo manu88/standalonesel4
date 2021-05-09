@@ -4,7 +4,7 @@ LD = g++
 PROG=program.bin
 
 CRT_OBJS = crti.o crt0.o
-OBJS = main.o printf.o putchar.o init.o class.o
+OBJS = main.o printf.o putchar.o init.o MemoryManager.o
 
 LIBS= -L./libsel4/lib/ -lsel4
 CPP_FLAGS=-fno-rtti -fno-exceptions -std=c++2a
@@ -17,6 +17,9 @@ C_INCLUDES= -I./libsel4/include/ -I./libsel4/include/autoconf/ -I./libsel4/inclu
 	$(AS) $(ASFLAGS) $< -o $@
 
 .c.o:
+	$(CC) $(C_INCLUDES)  -c  $(CCFLAGS) $<  -o $@
+
+.cpp.o:
 	$(CC) $(C_INCLUDES)  -c  $(CCFLAGS) $<  -o $@
 
 default: $(PROG)

@@ -3,7 +3,7 @@
 extern "C"
 {
 #include "printf.h"
-#include "sel4/sel4_arch/syscalls.h"
+//
 
 #ifndef printf
 #define printf(fmt, ...) printf_(fmt, ##__VA_ARGS__)
