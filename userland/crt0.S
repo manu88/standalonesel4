@@ -30,7 +30,7 @@ _sel4_start:
 	 */
 	subq $0x8, %rsp
 	push %rbp
-	call __sel4_start_root
+	call start_root
 
 	/* should not return */
 1:

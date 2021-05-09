@@ -10,11 +10,9 @@ __attribute__ ((constructor)) void foo(void)
     a = 10;
 }
 
-
-
-void __sel4_start_root(void* bootinfoPtr)
+void start_root(void* bootinfoPtr)
 {
-    assert(bootinfoPtr, "no bootinfo pointer for __sel4_start_root");
+    assert(bootinfoPtr, "no bootinfo pointer for _start_root");
     
     seL4_BootInfo* bootInfo = bootinfoPtr; 
 
