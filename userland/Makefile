@@ -1,6 +1,6 @@
 AS = as
-CC = gcc
-LD = gcc
+CC = g++
+LD = g++
 PROG=program.bin
 
 CRT_OBJS = crti.o crt0.o

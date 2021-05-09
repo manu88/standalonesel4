@@ -1,8 +1,13 @@
 
-#include "runtime.h"
-#include "sel4/bootinfo.h"
+
+#include "class.hpp"
 #define NULL 0
 
+extern "C"
+{
+
+#include "runtime.h"
+#include "sel4/bootinfo.h"
 static int a = 0;
 
 __attribute__ ((constructor)) void foo(void)
@@ -10,11 +15,11 @@ __attribute__ ((constructor)) void foo(void)
     a = 10;
 }
 
-void start_root(void* bootinfoPtr)
+void start_root()
 {
-    assert(bootinfoPtr, "no bootinfo pointer for _start_root");
+    assert(seL4_GetBootInfo() != nullptr, "no bootinfo pointer for _start_root");
     
-    seL4_BootInfo* bootInfo = bootinfoPtr; 
+    const seL4_BootInfo* bootInfo = (const seL4_BootInfo*) seL4_GetBootInfo(); 
 
     printf("Hello world a=%i\n", a);
 
@@ -37,4 +42,5 @@ void start_root(void* bootinfoPtr)
     {
         /* code */
     }
+}
 }
