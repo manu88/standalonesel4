@@ -1,9 +1,7 @@
 #include "MemoryManager.hpp"
+#include "UntypedRange.hpp"
 #include "runtime.h"
-extern "C"
-{ 
-#include "sel4/bootinfo.h"
-}
+#include "sel4.hpp"
 
 MemoryManager::MemoryManager()
 {
@@ -12,6 +10,9 @@ MemoryManager::MemoryManager()
     const seL4_BootInfo* bootInfo = (const seL4_BootInfo*) seL4_GetBootInfo(); 
     assert(bootInfo != nullptr, "no bootinfo pointer for _start_root");
     
+    _untypeds.forEachRange([](const UntypedRange&range){
+
+    });
     size_t total = 0;
     for (int i=0;i <CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS;i++)
     {
