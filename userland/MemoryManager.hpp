@@ -1,6 +1,6 @@
 #pragma once
 #include <cstddef>
-#include "UntypedRange.hpp"
+#include "InitialUntypedPool.hpp"
 
 class MemoryManager
 {

@@ -4,7 +4,7 @@ LD = g++
 PROG=program.bin
 
 CRT_OBJS = crti.o crt0.o
-OBJS = main.o printf.o putchar.o init.o MemoryManager.o UntypedRange.o stdcpp_stubs.o
+OBJS = main.o printf.o putchar.o init.o MemoryManager.o InitialUntypedPool.o stdcpp_stubs.o
 
 LIBS= -L./libsel4/lib/ -lsel4
 CPP_FLAGS=-fno-rtti -fno-exceptions -std=c++2a
