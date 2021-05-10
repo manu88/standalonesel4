@@ -32,8 +32,12 @@ libsel4: kernel_b
 	cp $(kernelBuildFolder)/libsel4/sel4_arch_include/$(ARCH)/sel4/sel4_arch/* $(userland)/libsel4/include/sel4/sel4_arch/
 
 	cp -r $(kernelFolder)/libsel4/arch_include/x86/sel4/arch/ $(userland)/libsel4/include/sel4/
-
+	cp -r $(kernelBuildFolder)/libsel4/arch_include/x86/sel4/arch/* $(userland)/libsel4/include/sel4/arch
 	cp -r kernel/libsel4/mode_include/64/sel4/mode $(userland)/libsel4/include/sel4/
+
+	cp -r $(kernelBuildFolder)/libsel4/include/interfaces $(userland)/libsel4/include/
+
+	cp -r $(kernelFolder)/libsel4/sel4_plat_include/pc99/sel4/plat/ $(userland)/libsel4/include/sel4/
 
 user: libsel4
 	cd $(userland) && make
