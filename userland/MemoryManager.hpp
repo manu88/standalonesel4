@@ -10,5 +10,5 @@ public:
 private:
     size_t _availableNonDeviceUntypedMem {0};
 
-    InitialUntypedPool _untypeds;
+    
 };

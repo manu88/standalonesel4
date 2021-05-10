@@ -9,3 +9,16 @@ namespace std
         while(1);
     }; 
 }
+
+extern "C"
+{
+    // TODO: actual implementation :)
+    int __cxa_guard_acquire(int *)
+    {
+        return 0;
+    }
+    void __cxa_guard_release(int*)
+    {
+
+    }
+}

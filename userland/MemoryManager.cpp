@@ -10,10 +10,15 @@ MemoryManager::MemoryManager()
     assert(bootInfo != nullptr, "no bootinfo pointer for _start_root");
     size_t total = 0;
     
-    _untypeds.forEachNonDeviceRange([&](const auto range){
+    InitialUntypedPool::instance().forEachNonDeviceRange([&](const auto range){
         total += range.size;
     });
 
     _availableNonDeviceUntypedMem = total;
     printf("Total non-device untypeds memory %zi Mib\n", total/(1024*1024));
+
+    printf("Test alloc \n");
+
+    unsigned sel = InitialUntypedPool::instance().alloc(13);
+    printf("allocated page sel is %u\n", sel);
 }

@@ -24,4 +24,5 @@ static inline void assert(int pred, const char* message)
     }
 }
 
+
 }
