@@ -21,4 +21,10 @@ extern "C"
     {
 
     }
+
+    void __assert_fail(const char * assertion, const char * file, unsigned int line, const char * function)
+    {
+        printf("assertion failed %s file line %d in function %s %s\n", assertion, file, line, function);
+        oops();
+    }
 }
