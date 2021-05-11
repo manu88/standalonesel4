@@ -47,14 +47,14 @@ public:
         size_t sel;
         
         /* index into 'untypedSizeBitsList' */
-        size_t index = sel - seL4_GetBootInfo()->untyped.start; 
-        bool isDevice = seL4_GetBootInfo()->untypedList[sel].isDevice;
+        size_t index = sel - GetBootInfo()->untyped.start; 
+        bool isDevice = GetBootInfo()->untypedList[sel].isDevice;
 
         /* original size of untyped memory range */
-        size_t size = 1UL << seL4_GetBootInfo()->untypedList[sel].sizeBits;
+        size_t size = 1UL << GetBootInfo()->untypedList[sel].sizeBits;
                 
         /* physical address of the begin of the untyped memory range */
-        addr_t physAddress = seL4_GetBootInfo()->untypedList[sel].paddr;
+        addr_t physAddress = GetBootInfo()->untypedList[sel].paddr;
 
         /* offset to the unused part of the untyped memory range */
         addr_t &freeOffset;

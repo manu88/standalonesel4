@@ -29,4 +29,5 @@ set(KernelFSGSBase "msr" CACHE STRING "")
 set(KernelSupportPCID OFF CACHE BOOL "")
 set(KernelFPU "FXSAVE" CACHE STRING "")
 
+set(KernelInvocationReportErrorIPC ON CACHE STRING "")
 include(${CMAKE_CURRENT_LIST_DIR}/seL4Config.cmake)

@@ -20,24 +20,23 @@ kernelFile: kernel_b
 libsel4: kernel_b
 	mkdir -p $(userland)/libsel4
 	mkdir -p $(userland)/libsel4/lib/
+	mkdir -p $(userland)/libsel4/include/
 	cp $(kernelBuildFolder)/libsel4/libsel4.a $(userland)/libsel4/lib/
-	cp -r $(kernelFolder)/libsel4/include $(userland)/libsel4/
-	cp -r  $(kernelBuildFolder)/libsel4/autoconf/ $(userland)/libsel4/include/
-	mkdir -p $(userland)/libsel4/include/gen_config
-	cp -r $(kernelBuildFolder)/kernel/gen_config/kernel/ $(userland)/libsel4/include/gen_config
-	cp -r $(kernelBuildFolder)/libsel4/gen_config/sel4/ $(userland)/libsel4/include/gen_config
 
-	cp $(kernelBuildFolder)/libsel4/include/sel4/* $(userland)/libsel4/include/sel4/
-	cp -r $(kernelFolder)/libsel4/sel4_arch_include/$(ARCH)/sel4/sel4_arch/ $(userland)/libsel4/include/sel4/
-	cp $(kernelBuildFolder)/libsel4/sel4_arch_include/$(ARCH)/sel4/sel4_arch/* $(userland)/libsel4/include/sel4/sel4_arch/
-
-	cp -r $(kernelFolder)/libsel4/arch_include/x86/sel4/arch/ $(userland)/libsel4/include/sel4/
-	cp -r $(kernelBuildFolder)/libsel4/arch_include/x86/sel4/arch/* $(userland)/libsel4/include/sel4/arch
-	cp -r kernel/libsel4/mode_include/64/sel4/mode $(userland)/libsel4/include/sel4/
-
-	cp -r $(kernelBuildFolder)/libsel4/include/interfaces $(userland)/libsel4/include/
-
-	cp -r $(kernelFolder)/libsel4/sel4_plat_include/pc99/sel4/plat/ $(userland)/libsel4/include/sel4/
+	mkdir userland/libsel4/include/sel4/
+	cp -r  kernel/libsel4/include/sel4/ userland/libsel4/include/
+	cp build/libsel4/include/sel4/* userland/libsel4/include/sel4/
+	cp -r  build/libsel4/arch_include/x86/sel4/arch/ userland/libsel4/include/sel4/
+	cp kernel/libsel4/arch_include/x86/sel4/arch/* userland/libsel4/include/sel4/arch/
+	cp -r  kernel/libsel4/sel4_arch_include/x86_64/sel4/sel4_arch/ userland/libsel4/include/sel4/
+	cp  build/libsel4/sel4_arch_include/x86_64/sel4/sel4_arch/* userland/libsel4/include/sel4/sel4_arch/
+	cp -r  kernel/libsel4/mode_include/64/sel4/mode/ userland/libsel4/include/sel4/
+	cp -r  kernel/libsel4/sel4_plat_include/pc99/sel4/plat/ userland/libsel4/include/sel4/
+	cp -r build/libsel4/autoconf/ userland/libsel4/include/
+	mkdir userland/libsel4/include/gen_config
+	cp -r  build/kernel/gen_config/kernel/ userland/libsel4/include/gen_config/
+	cp -r build/libsel4/gen_config/sel4/ userland/libsel4/include/gen_config/
+	cp -r build/libsel4/include/interfaces/ userland/libsel4/include/
 
 user: libsel4
 	cd $(userland) && make

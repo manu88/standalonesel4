@@ -23,8 +23,8 @@ void InitialUntypedPool::forEachNonDeviceRange(const InitialUntypedPool::Untyped
 
 void InitialUntypedPool::forEachRange(const InitialUntypedPool::UntypedRangeVisitor &func)
 {
-    assert(seL4_GetBootInfo() != nullptr, "InitialUntypedPool::forEachRange: null bootinfo");
-	for (unsigned sel = seL4_GetBootInfo()->untyped.start; sel < seL4_GetBootInfo()->untyped.end; sel++) 
+    assert(GetBootInfo() != nullptr, "InitialUntypedPool::forEachRange: null bootinfo");
+	for (unsigned sel = GetBootInfo()->untyped.start; sel < GetBootInfo()->untyped.end; sel++) 
     {
         UntypedRange r(*this, sel);
 

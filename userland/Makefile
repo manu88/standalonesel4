@@ -1,14 +1,14 @@
-AS = as
-CC = g++
-LD = g++
+AS=as
+CC=g++
+LD=g++
 PROG=program.bin
 
 CRT_OBJS = crti.o crt0.o
-OBJS = main.o printf.o putchar.o init.o MemoryManager.o InitialUntypedPool.o stdcpp_stubs.o WorstAlloc.o
+OBJS = main.o printf.o putchar.o init.o cstubs.o  MemoryManager.o InitialUntypedPool.o stdcpp_stubs.o WorstAlloc.o
 
 LIBS= -L./libsel4/lib/ -lsel4
 CPP_FLAGS=-fno-rtti -fno-exceptions -std=c++2a
-LDFLAGS= -Wl,-m -Wl,elf_x86_64 -m64 -g -static $(CPP_FLAGS) -fno-builtin -nostdlib -fno-stack-protector -fno-pic -fno-pie -Wl,-u_sel4_start -Wl,-e_sel4_start
+LDFLAGS= -Wl,-m -Wl,elf_x86_64 -g -static $(CPP_FLAGS) -fno-builtin -nostdlib -fno-stack-protector -fno-pic -fno-pie -Wl,-u_sel4_start -Wl,-e_sel4_start
 ASFLAGS= -64
 CCFLAGS= -m64 -static -Wall -Wextra -nostdlib -fno-stack-protector -fno-builtin $(CPP_FLAGS) 
 
@@ -32,4 +32,4 @@ clean:
 default: $(PROG)  
 
 $(PROG): $(OBJS) $(CRT_OBJS) crtn.o
-	$(LD) $(LDFLAGS) crti.o crt0.o /usr/lib/gcc/x86_64-linux-gnu/9/crtbegin.o $(OBJS)  /usr/lib/gcc/x86_64-linux-gnu/9/crtend.o crtn.o -lgcc -L./ -lgcc_eh $(LIBS) -Wl,-T linker.ld -o $(PROG)
+	$(LD) $(LDFLAGS)  crti.o crt0.o /usr/lib/gcc/x86_64-linux-gnu/9/crtbegin.o $(OBJS)  /usr/lib/gcc/x86_64-linux-gnu/9/crtend.o crtn.o -lgcc -L./ -lgcc_eh $(LIBS) -Wl,-T linker.ld -o $(PROG)
