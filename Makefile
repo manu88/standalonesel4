@@ -56,4 +56,4 @@ clean:
 
 sim:
 	qemu-system-x86_64  -cpu Nehalem,-vme,+pdpe1gb,-xsave,-xsaveopt,-xsavec,-fsgsbase,-invpcid,enforce \
-	-nographic -m 256 -serial mon:stdio -kernel $(kernelFile) -initrd $(rootServer)
+	-nographic -m 512 -serial mon:stdio -kernel $(kernelFile) -initrd $(rootServer)

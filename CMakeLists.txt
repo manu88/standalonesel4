@@ -17,5 +17,8 @@ find_file(KERNEL_PATH kernel PATHS ${CMAKE_SOURCE_DIR} NO_CMAKE_FIND_ROOT_PATH)
 add_subdirectory("${KERNEL_PATH}" kernel)
 
 set(Debug "1" CACHE STRING "")
-set(LibSel4FunctionAttributes "public" CACHE STRING "")
+
+# XXX Set this make the total amount of untyped memory to drop to 3MiB for 256Mib in qemu...  
+# This is a bug smell in this current config/build system as inlining or not libsel4 methods should NOT change anything...
+#set(LibSel4FunctionAttributes "public" CACHE STRING "")
 add_subdirectory("${KERNEL_PATH}/libsel4" libsel4)

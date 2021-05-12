@@ -1,8 +1,9 @@
 #include "sel4.hpp"
-#include "runtime.h"
+#include "MemoryManager.hpp"
+
 extern "C"
 {
-
+#include "runtime.h"
 
 void init_tls(void);
 
@@ -42,6 +43,8 @@ void start_root()
     printf("__sel4_print_error is  %u\n", (void*) __sel4_print_error);     
     seL4_DebugNameThread(seL4_CapInitThreadTCB, "foo");
     seL4_DebugDumpScheduler();
+
+    MemoryManager memManager;
     while (1)
     {}
 }
