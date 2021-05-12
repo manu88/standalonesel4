@@ -3,31 +3,10 @@
 extern "C"
 {
 
-static int a = 0;
 
-
-__attribute__ ((constructor)) void foo(void)
-{
-    a = 10;
-}
-
-extern "C" char *strcpy(char *dest,  char const*src)
-{
-    char *save = dest;
-    while((*dest++ = *src++));
-    return save;
-}
-extern "C" void __assert_fail( char const* assertion,  char const* file, int line,  char const* function)
-{
-}
-
-extern "C" void __stack_chk_fail(void)
-{
-    
-}
 void init_tls(void);
 
-void printSel4Config()
+void printSel4Config(void)
 {
     printf("---- Sel4 kernel configuration: ----\n");
     printf("CONFIG_FSGSBASE_INST : ");
@@ -50,7 +29,6 @@ void printSel4Config()
 
 void start_root()
 {
-    
     printf("Hello world :)\n");
     printSel4Config();
 
