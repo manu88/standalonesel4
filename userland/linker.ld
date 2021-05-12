@@ -18,5 +18,10 @@ SECTIONS
         *(.tbss .tbss.* .gnu.linkonce.tb.*) *(.tcommon)
         _tbss_end = . ;
     }
+    .bss BLOCK(4K) : ALIGN(4K)
+	{
+		*(COMMON)
+		*(.bss)
+	}
 }
 INSERT AFTER .rodata;

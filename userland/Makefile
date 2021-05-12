@@ -4,7 +4,7 @@ LD=g++
 PROG=program.bin
 
 CRT_OBJS = crti.o crt0.o
-OBJS = main.o printf.o putchar.o init.o cstubs.o  MemoryManager.o InitialUntypedPool.o stdcpp_stubs.o WorstAlloc.o
+OBJS = main.o init.o putchar_impl.o printf.o
 
 LIBS= -L./libsel4/lib/ -lsel4
 CPP_FLAGS=-fno-rtti -fno-exceptions -std=c++2a
@@ -18,10 +18,10 @@ C_INCLUDES= -I./libsel4/include/ -I./libsel4/include/autoconf/ -I./libsel4/inclu
 	$(AS) $(ASFLAGS) $< -o $@
 
 .c.o:
-	$(CC) $(C_INCLUDES)  -c  $(CCFLAGS) $<  -o $@
+	$(CC) $(C_INCLUDES) -c $(CCFLAGS)  $<  -o $@
 
 .cpp.o:
-	$(CC) $(C_INCLUDES)  -c  $(CCFLAGS) $<  -o $@
+	$(CC) $(C_INCLUDES) -c  $(CCFLAGS)  $<  -o $@
 
 default: $(PROG)
 
@@ -32,4 +32,4 @@ clean:
 default: $(PROG)  
 
 $(PROG): $(OBJS) $(CRT_OBJS) crtn.o
-	$(LD) $(LDFLAGS)  crti.o crt0.o /usr/lib/gcc/x86_64-linux-gnu/9/crtbegin.o $(OBJS)  /usr/lib/gcc/x86_64-linux-gnu/9/crtend.o crtn.o -lgcc -L./ -lgcc_eh $(LIBS) -Wl,-T linker.ld -o $(PROG)
+	$(LD) -Wl,-T linker.ld $(LDFLAGS)  crti.o crt0.o /usr/lib/gcc/x86_64-linux-gnu/9/crtbegin.o $(OBJS)  /usr/lib/gcc/x86_64-linux-gnu/9/crtend.o crtn.o -lgcc -L./ -lgcc_eh $(LIBS) -o $(PROG)

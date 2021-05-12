@@ -18,6 +18,7 @@ kernelFile: kernel_b
 	objcopy -O elf32-i386 $(kernelBuildFolder)/kernel/kernel.elf $(kernelFile)
 
 libsel4: kernel_b
+	rm -rf $(userland)/libsel4
 	mkdir -p $(userland)/libsel4
 	mkdir -p $(userland)/libsel4/lib/
 	mkdir -p $(userland)/libsel4/include/
