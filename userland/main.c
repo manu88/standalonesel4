@@ -25,7 +25,7 @@ extern "C" void __stack_chk_fail(void)
 {
     
 }
-
+void init_tls(void);
 
 void printSel4Config()
 {
@@ -51,9 +51,15 @@ void start_root()
 {
     printf("Hello world :)\n");
     printSel4Config();
-//  printf("__sel4_ipc_buffer is at %p\n", (void*) __sel4_ipc_buffer);
-//  seL4_DebugNameThread(seL4_CapInitThreadTCB, "foo");
-//  seL4_DebugDumpScheduler();
+
+    init_tls();
+    printf("__sel4_ipc_buffer is at %p\n", (void*) __sel4_ipc_buffer);
+
+    printf("__sel4_print_error is  %u\n", (void*) __sel4_print_error); 
+    __sel4_print_error = 1;
+    printf("__sel4_print_error is  %u\n", (void*) __sel4_print_error);     
+    seL4_DebugNameThread(seL4_CapInitThreadTCB, "foo");
+    seL4_DebugDumpScheduler();
     while (1)
     {}
 }
