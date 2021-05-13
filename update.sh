@@ -5,5 +5,3 @@ if [ -d "kernel" ]; then
 else 
 	git clone https://github.com/seL4/seL4.git kernel
 fi
-
-cp configs/X64_verified_test.cmake kernel/configs/X64_verified_test.cmake

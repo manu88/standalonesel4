@@ -8,6 +8,15 @@ Maybe for science purposes.
 
 # steps
 ```bash
+mkdir build
+cd build
+cmake -DCROSS_COMPILER_PREFIX= -DCMAKE_TOOLCHAIN_FILE=../kernel/gcc.cmake -G Ninja -C ../kernel/configs/X64_verified_test.cmake ..
+ninja kernel.elf
+ninja libsel4.a
+```
+
+
+```bash
 make update
 make #Might fail the 1st time, for some capDL err. re-issue command.
 make sim

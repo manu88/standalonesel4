@@ -9,26 +9,13 @@
  *
  * @TAG(DATA61_BSD)
  */
-#include <sel4runtime/gen_config.h>
 
 .section .text
 .global _sel4_start
 _sel4_start:
 	leaq __stack_top, %rsp
-	movq %rsp, %rbp
-	/*
-	 * GCC expects that a C function is always entered via a call
-	 * instruction and that the stack is 16-byte aligned before such an
-	 * instruction (leaving it 16-byte aligned + 1 word from the
-	 * implicit push when the function is entered).
-	 *
-	 * If additional items are pushed onto the stack, the stack must be
-	 * manually re-aligned before the call instruction to
-	 * __sel4_start_c.
-	 */
-	subq $0x8, %rsp
-	push %rbp
-	call __sel4_start_root
+    movq    %rbx, %rdi
+    call    __sel4_start_root
 
 	/* should not return */
 1:

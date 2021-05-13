@@ -1,3 +1,6 @@
+
+#include <sel4/sel4.h>
+
 #define NULL 0
 static int a = 0;
 
@@ -18,13 +21,13 @@ static void oopsIfNull(void* p)
 __attribute__ ((constructor)) void foo(void)
 {
     a = 1;
-    oops();
+    //oops();
 }
 
 
-void __sel4_start_root(void* bootinfo)
+void __sel4_start_root()
 {
-    oopsIfNull(bootinfo);
+    seL4_GetBootInfo();
     while (1)
     {
         /* code */
