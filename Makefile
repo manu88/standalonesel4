@@ -50,7 +50,7 @@ update:
 
 clean:
 	rm -rf $(kernelBuildFolder)
-	rm -r $(userland)/libsel4/ 
+	rm -rf $(userland)/libsel4/ 
 	cd $(userland) && make clean
 	rm -f $(kernelFile)
 
