@@ -42,11 +42,13 @@ void start_root()
     printf("__sel4_print_error is  %u\n", (void*) __sel4_print_error); 
     __sel4_print_error = 1;
     printf("__sel4_print_error is  %u\n", (void*) __sel4_print_error);     
-    seL4_DebugNameThread(seL4_CapInitThreadTCB, "foo");
-    seL4_DebugDumpScheduler();
+    
+    
 
     MemoryManager memManager;
     Hypervisor hyp(memManager);
+
+    hyp.dumpScheduler();
     hyp.eventLoop();
 
 }
