@@ -1,5 +1,6 @@
 #include "sel4.hpp"
 #include "MemoryManager.hpp"
+#include "Hypervisor.hpp"
 
 extern "C"
 {
@@ -45,7 +46,8 @@ void start_root()
     seL4_DebugDumpScheduler();
 
     MemoryManager memManager;
-    while (1)
-    {}
+    Hypervisor hyp(memManager);
+    hyp.eventLoop();
+
 }
 }

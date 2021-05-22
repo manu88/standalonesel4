@@ -58,9 +58,9 @@ unsigned InitialUntypedPool::alloc(size_t size_log2)
     forEachNonDeviceRange([&] (UntypedRange &range)
     {
         /* calculate free index after allocation */
-        addr_t const new_free_offset = _align_offset(range, size_log2);
+        addr_t const newFreeOffset = _align_offset(range, size_log2);
         /* check if allocation fits within current untyped memory range */
-        if (new_free_offset > range.size)
+        if (newFreeOffset > range.size)
             return;
 
         if (sel == UNKNOWN) {
@@ -69,13 +69,13 @@ unsigned InitialUntypedPool::alloc(size_t size_log2)
         }
 
         /* check which range is smaller - take that */
-        addr_t const rest = range.size - new_free_offset;
+        addr_t const rest = range.size - newFreeOffset;
 
-        UntypedRange best_fit(*this, sel);
-        addr_t const new_free_offset_best = _align_offset(best_fit, size_log2);
-        addr_t const rest_best = best_fit.size - new_free_offset_best;
+        UntypedRange bestFit(*this, sel);
+        addr_t const newFreeOffsetBest = _align_offset(bestFit, size_log2);
+        addr_t const restBest = bestFit.size - newFreeOffsetBest;
 
-        if (rest_best >= rest)
+        if (restBest >= rest)
             /* current range fits better then best range */
             sel = range.sel;
     });
@@ -87,16 +87,16 @@ unsigned InitialUntypedPool::alloc(size_t size_log2)
         return 0;
     }
 
-    UntypedRange best_fit(*this, sel);
-    addr_t const new_free_offset = _align_offset(best_fit, size_log2);
-    assert(new_free_offset <= best_fit.size, "new_free_offset <= best_fit.size");
+    UntypedRange bestFit(*this, sel);
+    addr_t const newFreeOffset = _align_offset(bestFit, size_log2);
+    assert(newFreeOffset <= bestFit.size, "newFreeOffset <= best_fit.size");
 
     /*
     * We found a matching range, consume 'size' and report the
     * selector. The returned selector is used by the caller
     * of 'alloc' to perform the actual kernel-object creation.
     */
-    best_fit.freeOffset = new_free_offset;
+    bestFit.freeOffset = newFreeOffset;
 
-    return best_fit.sel;
+    return bestFit.sel;
 }

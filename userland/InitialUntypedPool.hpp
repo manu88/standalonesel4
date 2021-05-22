@@ -75,8 +75,7 @@ public:
      * from the initial pool of untyped memory ranges as reported by the
      * kernel.
      *
-     * \throw Initial_untyped_pool_exhausted
-     */
+s     */
     unsigned alloc(size_t size_log2);
 
 

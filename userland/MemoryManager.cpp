@@ -4,6 +4,7 @@
 
 MemoryManager::MemoryManager()
 {
+#if 0
     printf("Init MemoryManager\n");
 
     const seL4_BootInfo* bootInfo = (const seL4_BootInfo*) seL4_GetBootInfo(); 
@@ -16,7 +17,7 @@ MemoryManager::MemoryManager()
     _availableNonDeviceUntypedMem = total;
     printf("Total non-device untypeds memory %zi Mib\n", total/(1024*1024));
 
-    return;
+
     printf("Test alloc \n");
     size_t numAlloc = 0;
     seL4_SlotPos cnodeIndex = seL4_GetBootInfo()->empty.start;
@@ -33,7 +34,7 @@ MemoryManager::MemoryManager()
 
 		int          const node_index  = 0;
 		int          const node_depth  = 0;
-		int          const node_offset = cnodeIndex;
+		int          const node_offset = cnodeIndex + numAlloc;
 		int          const num_objects = 1;
 
 		int const ret = seL4_Untyped_Retype(sel,
@@ -44,9 +45,9 @@ MemoryManager::MemoryManager()
 		                                    node_depth,
 		                                    node_offset,
 		                                    num_objects);
-    
-        numAlloc++;
+        if (ret == 0)
+            numAlloc++;
     }
     
-
+#endif
 }
