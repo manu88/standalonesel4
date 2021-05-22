@@ -48,8 +48,9 @@ void start_root()
     MemoryManager memManager;
     Hypervisor hyp(memManager);
 
+    hyp.createThread();
     hyp.dumpScheduler();
     hyp.eventLoop();
 
 }
-}
+} // end extern "C"

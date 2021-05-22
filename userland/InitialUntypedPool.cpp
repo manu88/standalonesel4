@@ -57,6 +57,7 @@ unsigned InitialUntypedPool::alloc(size_t size_log2)
     */
     forEachNonDeviceRange([&] (UntypedRange &range)
     {
+        assert(range.isDevice == false, "untyped should not be device!");
         /* calculate free index after allocation */
         addr_t const newFreeOffset = _align_offset(range, size_log2);
         /* check if allocation fits within current untyped memory range */
@@ -97,6 +98,56 @@ unsigned InitialUntypedPool::alloc(size_t size_log2)
     * of 'alloc' to perform the actual kernel-object creation.
     */
     bestFit.freeOffset = newFreeOffset;
+    printf("Alloc sel is at %u\n", bestFit.sel);
+    assert(bestFit.isDevice == false, "alloc: returned untyped should NOT be a device");
 
     return bestFit.sel;
+}
+
+
+/**
+ * find a free untyped slot
+ */
+seL4_SlotPos find_untyped(seL4_SlotPos untyped_start, seL4_SlotPos untyped_end,
+	const seL4_UntypedDesc* untyped_list, seL4_Word needed_size)
+{
+	for(seL4_SlotPos cur_slot=untyped_start; cur_slot<untyped_end; ++cur_slot)
+	{
+		const seL4_UntypedDesc *cur_descr = untyped_list + (cur_slot-untyped_start);
+
+		if(cur_descr->isDevice)
+			continue;
+
+		seL4_Word cur_size = (1<< cur_descr->sizeBits);
+
+		//printf("Untyped slot 0x%lx: size=%ld, physical address=0x%lx.\n",
+		//	cur_slot, cur_size, cur_descr->paddr);
+		if(cur_size < needed_size)
+			continue;
+		return cur_slot;
+	}
+
+	return 0;
+}
+
+seL4_SlotPos get_slot(seL4_Word obj, seL4_Word obj_size,
+	seL4_SlotPos untyped_start, seL4_SlotPos untyped_end, const seL4_UntypedDesc* untyped_list,
+	seL4_SlotPos* cur_slot, seL4_SlotPos cnode)
+{
+	seL4_SlotPos slot = find_untyped(untyped_start, untyped_end, untyped_list, obj_size);
+	printf("Found untyped at %zi\n", slot);
+    seL4_SlotPos offs = (*cur_slot)++;
+	seL4_Error err =  seL4_Untyped_Retype(slot, obj, 0, cnode, 0, 0, offs, 1);
+    if(err != seL4_NoError)
+    {
+        return err;
+    }
+
+	return offs;
+}
+
+seL4_SlotPos InitialUntypedPool::getSlot(seL4_Word obj, seL4_Word size)
+{
+    auto bi = seL4_GetBootInfo();
+    return get_slot(obj, 1 << size, bi->untyped.start, bi->untyped.end, bi->untypedList, &currentSlot, seL4_CapInitThreadCNode);
 }

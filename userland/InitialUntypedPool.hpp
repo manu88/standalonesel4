@@ -42,7 +42,27 @@ public:
     struct UntypedRange
     {
         UntypedRange(InitialUntypedPool&, size_t sel);
+#if 0
+        UntypedRange(const UntypedRange &other):
+        sel(other.sel),
+        index(other.index),
+        isDevice(other.isDevice),
+        size(other.size),
+        physAddress(other.physAddress),
+        freeOffset(other.freeOffset)
+        {}
 
+        UntypedRange& operator=(const UntypedRange &rhs)
+        {
+            sel = rhs.sel;
+            index = rhs.index;
+            isDevice = rhs.isDevice;
+            size = rhs.size;
+            physAddress = rhs.physAddress;
+            freeOffset = rhs.freeOffset;
+            return *this;
+        }
+#endif
         /* core-local cap selector */
         size_t sel;
         
@@ -78,6 +98,7 @@ public:
 s     */
     unsigned alloc(size_t size_log2);
 
+    seL4_SlotPos getSlot(seL4_Word obj, seL4_Word size);
 
     bool isExhausted() const {
         return _isExhausted;
@@ -85,6 +106,8 @@ s     */
 
 private:
     InitialUntypedPool(){}
+
+    seL4_SlotPos currentSlot = seL4_GetBootInfo()->empty.start;
 
     enum { MAX_UNTYPED = (size_t)CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS };
 

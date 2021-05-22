@@ -12,6 +12,8 @@ public:
 
     void dumpScheduler();
 
+    int createThread(const char* name = "thread");
+
 private:
     /* data */
     MemoryManager &_memManager;
