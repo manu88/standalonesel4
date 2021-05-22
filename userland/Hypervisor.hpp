@@ -1,18 +1,23 @@
 #pragma once
+#include "Thread.hpp"
 
 
 class MemoryManager;
+
 
 class Hypervisor
 {
 public:
 
     Hypervisor(MemoryManager & mManager);
+
+    void init();
     void eventLoop();
 
     void dumpScheduler();
 
-    int createThread(const char* name = "thread");
+    int createThread(Thread& thread);
+
 
 private:
     /* data */

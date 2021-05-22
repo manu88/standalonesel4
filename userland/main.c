@@ -48,8 +48,8 @@ void start_root()
     MemoryManager memManager;
     Hypervisor hyp(memManager);
 
-    hyp.createThread();
-    hyp.dumpScheduler();
+    hyp.init();
+
     hyp.eventLoop();
 
 }
