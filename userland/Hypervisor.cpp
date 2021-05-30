@@ -1,6 +1,7 @@
 #include "Hypervisor.hpp"
 #include "sel4.hpp"
 #include "InitialUntypedPool.hpp"
+#include "MemoryManager.hpp"
 #include "Thread.hpp"
 #include "runtime.h"
 
@@ -15,6 +16,23 @@ _memManager(mManager)
 void Hypervisor::init()
 {
     printf("Hypervisor: init\n");
+
+    seL4_Word vaddr = MemoryManager::VirtualAddressLayout::AddressTables;
+    for(int i=0;i<500;i++)
+    {
+        printf("Test mapping at %i %x\n",i, vaddr);
+        seL4_Error error = _memManager.mapPage(vaddr, seL4_CanWrite);
+        printf("MemoryManager: Page table mapped\n");
+        if (error == seL4_FailedLookup) {
+            printf("Missing intermediate paging structure at level %lu\n", seL4_MappingFailedLookupLevel());
+        }
+        printf("Test mapping error = %i\n", error);
+
+//        float* test = reinterpret_cast<float*>(vaddr);
+//        *test = i;
+        vaddr += 4096;
+    }
+    
 /*
     Thread th;
     if(createThread(th) == 0)
@@ -44,7 +62,7 @@ int Hypervisor::createThread(Thread& thread)
 {
     printf("Test create thread\n");
 
-    seL4_SlotPos tcbObject = InitialUntypedPool::instance().getSlot(seL4_TCBObject, seL4_TCBBits);
+    seL4_SlotPos tcbObject = InitialUntypedPool::instance().allocObject(seL4_TCBObject);
     if((int) tcbObject < 0)
     {
         printf("Hypervisor::createThread: unable to create TCB object\n");
