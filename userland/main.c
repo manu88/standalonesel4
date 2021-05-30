@@ -35,15 +35,9 @@ void start_root()
     printSel4Config();
 
     init_tls();
-    printf("__sel4_ipc_buffer is at %p\n", (void*) __sel4_ipc_buffer);
     seL4_BootInfo *bi = GetBootInfo();
     __sel4_ipc_buffer = bi->ipcBuffer;
-    printf("__sel4_ipc_buffer is at %p\n", (void*) __sel4_ipc_buffer);
-    printf("__sel4_print_error is  %u\n", (void*) __sel4_print_error); 
     __sel4_print_error = 1;
-    printf("__sel4_print_error is  %u\n", (void*) __sel4_print_error);     
-    
-    
 
     MemoryManager memManager;
 
