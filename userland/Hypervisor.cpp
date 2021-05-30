@@ -15,7 +15,7 @@ _memManager(mManager)
 void Hypervisor::init()
 {
     printf("Hypervisor: init\n");
-
+/*
     Thread th;
     if(createThread(th) == 0)
     {
@@ -23,8 +23,8 @@ void Hypervisor::init()
         th.setName("testThread");
         th.resume();
     }
+*/
     dumpScheduler();
-
 }
 
 void Hypervisor::eventLoop()

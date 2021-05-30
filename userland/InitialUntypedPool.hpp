@@ -3,6 +3,8 @@
 #include <cstddef>
 #include "sel4.hpp"
 
+#define PAGE_TYPE        seL4_X86_4K
+#define PAGE_SIZE        4096
 
 /*
 Heavily inspired from Genode:
@@ -67,17 +69,17 @@ public:
         size_t sel;
         
         /* index into 'untypedSizeBitsList' */
-        size_t index = sel - seL4_GetBootInfo()->untyped.start; 
-        bool isDevice = seL4_GetBootInfo()->untypedList[sel].isDevice;
+        size_t index = sel - GetBootInfo()->untyped.start; 
+        bool isDevice = GetBootInfo()->untypedList[sel].isDevice;
 
         /* original size of untyped memory range */
-        size_t size = 1UL << seL4_GetBootInfo()->untypedList[sel].sizeBits;
+        size_t size = 1UL << GetBootInfo()->untypedList[sel].sizeBits;
                 
         /* physical address of the begin of the untyped memory range */
-        addr_t physAddress = seL4_GetBootInfo()->untypedList[sel].paddr;
+        seL4_Word physAddress = GetBootInfo()->untypedList[sel].paddr;
 
         /* offset to the unused part of the untyped memory range */
-        addr_t &freeOffset;
+        seL4_Word &freeOffset;
     };
 
     using UntypedRangeVisitor = std::function<void(UntypedRange&)>;
@@ -99,6 +101,7 @@ s     */
     unsigned alloc(size_t size_log2);
 
     seL4_SlotPos getSlot(seL4_Word obj, seL4_Word size);
+    void mapPageTables(seL4_Word virtualAddress);
 
     bool isExhausted() const {
         return _isExhausted;
@@ -107,18 +110,18 @@ s     */
 private:
     InitialUntypedPool(){}
 
-    seL4_SlotPos currentSlot = seL4_GetBootInfo()->empty.start;
+    seL4_SlotPos currentSlot = GetBootInfo()->empty.start;
 
     enum { MAX_UNTYPED = (size_t)CONFIG_MAX_NUM_BOOTINFO_UNTYPED_CAPS };
 
-    struct Free_offset { addr_t value = 0; };
+    struct Free_offset { seL4_Word value = 0; };
 
     Free_offset _free_offset[MAX_UNTYPED];
 
     /**
      * Calculate free index after allocation
      */
-    addr_t _align_offset(UntypedRange &range, size_t size_log2);
+    seL4_Word _align_offset(UntypedRange &range, size_t size_log2);
 
 
     bool _isExhausted = false;

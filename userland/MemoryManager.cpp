@@ -2,12 +2,13 @@
 #include "runtime.h"
 #include "sel4.hpp"
 
+
 MemoryManager::MemoryManager()
 {
 #if 0
-    printf("Init MemoryManager\n");
+   
 
-    const seL4_BootInfo* bootInfo = (const seL4_BootInfo*) seL4_GetBootInfo(); 
+    const seL4_BootInfo* bootInfo = (const seL4_BootInfo*) GetBootInfo(); 
     assert(bootInfo != nullptr, "no bootinfo pointer for _start_root");
     size_t total = 0;
     
@@ -20,7 +21,7 @@ MemoryManager::MemoryManager()
 
     printf("Test alloc \n");
     size_t numAlloc = 0;
-    seL4_SlotPos cnodeIndex = seL4_GetBootInfo()->empty.start;
+    seL4_SlotPos cnodeIndex = GetBootInfo()->empty.start;
     while (true)
     {
         unsigned sel = InitialUntypedPool::instance().alloc(seL4_PageBits);
@@ -51,3 +52,12 @@ MemoryManager::MemoryManager()
     
 #endif
 }
+
+void MemoryManager::init()
+{
+    printf("MemoryManager: init\n");
+    InitialUntypedPool::instance().mapPageTables(MemoryManager::VirtualAddressLayout::AddressTables);
+    printf("MemoryManager: Page table mapped\n");
+}
+
+

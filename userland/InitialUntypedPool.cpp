@@ -22,8 +22,8 @@ void InitialUntypedPool::forEachNonDeviceRange(const InitialUntypedPool::Untyped
 
 void InitialUntypedPool::forEachRange(const InitialUntypedPool::UntypedRangeVisitor &func)
 {
-    assert(seL4_GetBootInfo() != nullptr, "InitialUntypedPool::forEachRange: null bootinfo");
-	for (unsigned sel = seL4_GetBootInfo()->untyped.start; sel < seL4_GetBootInfo()->untyped.end; sel++) 
+    assert(GetBootInfo() != nullptr, "InitialUntypedPool::forEachRange: null bootinfo");
+	for (unsigned sel = GetBootInfo()->untyped.start; sel < GetBootInfo()->untyped.end; sel++) 
     {
         UntypedRange r(*this, sel);
 
@@ -32,14 +32,14 @@ void InitialUntypedPool::forEachRange(const InitialUntypedPool::UntypedRangeVisi
 
 }
 
-addr_t InitialUntypedPool::_align_offset(UntypedRange &range, size_t size_log2)
+seL4_Word InitialUntypedPool::_align_offset(UntypedRange &range, size_t size_log2)
 {
     /*
         * The seL4 kernel naturally aligns allocations within untuped
         * memory ranges. So we have to apply the same policy to our
         * shadow version of the kernel's 'FreeIndex'.
         */
-    addr_t const aligned_free_offset = align_addr(range.freeOffset,
+    seL4_Word const aligned_free_offset = align_addr(range.freeOffset,
                                                     size_log2);
 
     return aligned_free_offset + (1 << size_log2);
@@ -59,7 +59,7 @@ unsigned InitialUntypedPool::alloc(size_t size_log2)
     {
         assert(range.isDevice == false, "untyped should not be device!");
         /* calculate free index after allocation */
-        addr_t const newFreeOffset = _align_offset(range, size_log2);
+        seL4_Word const newFreeOffset = _align_offset(range, size_log2);
         /* check if allocation fits within current untyped memory range */
         if (newFreeOffset > range.size)
             return;
@@ -70,11 +70,11 @@ unsigned InitialUntypedPool::alloc(size_t size_log2)
         }
 
         /* check which range is smaller - take that */
-        addr_t const rest = range.size - newFreeOffset;
+        seL4_Word const rest = range.size - newFreeOffset;
 
         UntypedRange bestFit(*this, sel);
-        addr_t const newFreeOffsetBest = _align_offset(bestFit, size_log2);
-        addr_t const restBest = bestFit.size - newFreeOffsetBest;
+        seL4_Word const newFreeOffsetBest = _align_offset(bestFit, size_log2);
+        seL4_Word const restBest = bestFit.size - newFreeOffsetBest;
 
         if (restBest >= rest)
             /* current range fits better then best range */
@@ -89,7 +89,7 @@ unsigned InitialUntypedPool::alloc(size_t size_log2)
     }
 
     UntypedRange bestFit(*this, sel);
-    addr_t const newFreeOffset = _align_offset(bestFit, size_log2);
+    seL4_Word const newFreeOffset = _align_offset(bestFit, size_log2);
     assert(newFreeOffset <= bestFit.size, "newFreeOffset <= best_fit.size");
 
     /*
@@ -148,6 +148,61 @@ seL4_SlotPos get_slot(seL4_Word obj, seL4_Word obj_size,
 
 seL4_SlotPos InitialUntypedPool::getSlot(seL4_Word obj, seL4_Word size)
 {
-    auto bi = seL4_GetBootInfo();
+    auto bi = GetBootInfo();
     return get_slot(obj, 1 << size, bi->untyped.start, bi->untyped.end, bi->untypedList, &currentSlot, seL4_CapInitThreadCNode);
+}
+
+void map_pagetables(seL4_SlotPos untyped_start, seL4_SlotPos untyped_end, const seL4_UntypedDesc* untyped_list, seL4_SlotPos* cur_slot, seL4_Word virt_addr)
+{
+	const seL4_SlotPos cnode = seL4_CapInitThreadCNode;
+	const seL4_SlotPos vspace = seL4_CapInitThreadVSpace;
+	seL4_X86_VMAttributes vmattr = seL4_X86_Default_VMAttributes;
+
+	seL4_SlotPos table_slot = find_untyped(untyped_start, untyped_end, untyped_list, PAGE_SIZE*1024);
+	if(table_slot < untyped_start)
+    {
+		printf("Error: No large enough untyped slot found!\n");
+    }
+	printf("Loading tables into untyped slot 0x%lx.\n", table_slot);
+
+	// load three levels of page tables
+	const seL4_Word pagetable_objs[] =
+	{
+		seL4_X86_PDPTObject,
+		seL4_X86_PageDirectoryObject,
+		seL4_X86_PageTableObject
+	};
+
+	seL4_Error (*pagetable_map[])(seL4_Word, seL4_CPtr, seL4_Word, seL4_X86_VMAttributes) =
+	{
+		&seL4_X86_PDPT_Map,
+		&seL4_X86_PageDirectory_Map,
+		&seL4_X86_PageTable_Map
+	};
+
+	seL4_SlotPos pagetable_slots[] = { 0, 0, 0 };
+
+	for(size_t level=0; level<sizeof(pagetable_objs)/sizeof(pagetable_objs[0]); ++level)
+	{
+		pagetable_slots[level] = (*cur_slot)++;
+        seL4_Error err = seL4_Untyped_Retype(table_slot, pagetable_objs[level], 0, cnode, 0, 0, pagetable_slots[level], 1);
+        if(err != seL4_NoError)
+		{
+			printf("seL4_Untyped_Retype Error mapping page table level %d!: %i\n", level, err);
+			break;
+		}
+
+        err = (*pagetable_map[level])(pagetable_slots[level], vspace, virt_addr, vmattr); 
+		if(err != seL4_NoError)
+		{
+			printf("Error mapping page table level %d!: %i\n", level, err);
+			break;
+		}
+	}
+}
+
+void InitialUntypedPool::mapPageTables(seL4_Word virtualAddress)
+{
+    auto bi = GetBootInfo();
+    map_pagetables(bi->untyped.start, bi->untyped.end, bi->untypedList, &currentSlot, virtualAddress);
 }

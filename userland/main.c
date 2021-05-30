@@ -36,7 +36,7 @@ void start_root()
 
     init_tls();
     printf("__sel4_ipc_buffer is at %p\n", (void*) __sel4_ipc_buffer);
-    seL4_BootInfo *bi = seL4_GetBootInfo();
+    seL4_BootInfo *bi = GetBootInfo();
     __sel4_ipc_buffer = bi->ipcBuffer;
     printf("__sel4_ipc_buffer is at %p\n", (void*) __sel4_ipc_buffer);
     printf("__sel4_print_error is  %u\n", (void*) __sel4_print_error); 
@@ -46,6 +46,8 @@ void start_root()
     
 
     MemoryManager memManager;
+
+    memManager.init();
     Hypervisor hyp(memManager);
 
     hyp.init();
