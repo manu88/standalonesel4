@@ -7,7 +7,9 @@ extern "C"
 
 #ifndef printf
 #define printf(fmt, ...) printf_(fmt, ##__VA_ARGS__)
-#endif 
+#endif
+
+
 
 static inline void oops()
 {
@@ -24,5 +26,8 @@ static inline void assert(int pred, const char* message)
     }
 }
 
+#ifndef NOT_REACHED
+#define NOT_REACHED() assert(false, "This should NOT be reached")
+#endif
 
 }

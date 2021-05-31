@@ -18,19 +18,26 @@ void Hypervisor::init()
     printf("Hypervisor: init\n");
 
     seL4_Word vaddr = MemoryManager::VirtualAddressLayout::AddressTables;
-    for(int i=0;i<500;i++)
+
+    size_t sizeToTest = 256 * 512;
+    for(size_t i=0;i<sizeToTest;i++)
     {
-        printf("Test mapping at %i %x\n",i, vaddr);
-        seL4_Error error = _memManager.mapPage(vaddr, seL4_CanWrite);
-        printf("MemoryManager: Page table mapped\n");
+        seL4_Error error = _memManager.mapPage(vaddr, seL4_ReadWrite);
         if (error == seL4_FailedLookup) {
             printf("Missing intermediate paging structure at level %lu\n", seL4_MappingFailedLookupLevel());
         }
-        printf("Test mapping error = %i\n", error);
-
-//        float* test = reinterpret_cast<float*>(vaddr);
-//        *test = i;
+        else if (error != seL4_NoError)
+        {
+            printf("Test mapping error = %i at %i\n", error, i);
+        }
+        auto test = reinterpret_cast<size_t*>(vaddr);
+        *test = i;
+        assert(*test == i, "");
         vaddr += 4096;
+        if(i%100 == 0)
+        {
+            printf("Page %zi/%zi ok\n", i, sizeToTest);
+        }
     }
     
 /*
