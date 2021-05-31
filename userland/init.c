@@ -23,7 +23,7 @@ void __exec_ctors()
     _init();
 
     int initSize = &__init_array_end[0] - &__init_array_start[0];
-    for (int f = 0; f < initSize; f++) {
+    for(int f = 0; f < initSize; f++) {
         __init_array_start[f]();
     }
 }

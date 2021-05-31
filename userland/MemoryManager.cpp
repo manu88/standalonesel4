@@ -2,8 +2,6 @@
 #include "runtime.h"
 #include "sel4.hpp"
 
-
-
 seL4_Error MemoryManager::mapPage(seL4_Word vaddr, seL4_CapRights_t rights)
 {
     auto getLevel = [](seL4_Word lookupLevel) -> int{
@@ -78,7 +76,4 @@ void MemoryManager::init()
 
     error = seL4_X86_PageTable_Map(pt, seL4_CapInitThreadVSpace, vaddr, seL4_X86_Default_VMAttributes);
     assert(error == seL4_NoError, "seL4_X86_PageTable_Map");
-
 }
-
-

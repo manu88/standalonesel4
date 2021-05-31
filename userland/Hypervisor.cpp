@@ -5,13 +5,11 @@
 #include "Thread.hpp"
 #include "runtime.h"
 
-
 Hypervisor::Hypervisor(MemoryManager & mManager):
 _memManager(mManager)
 {
     seL4_DebugNameThread(seL4_CapInitThreadTCB, "hypervisor");
 }
-
 
 void Hypervisor::init()
 {

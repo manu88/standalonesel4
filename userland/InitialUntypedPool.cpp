@@ -2,7 +2,6 @@
 #include "runtime.h"
 #include "sel4.hpp"
 
-
 static seL4_CPtr allocSlot(seL4_BootInfo *info)
 {
     if(info->empty.start == info->empty.end)
@@ -13,8 +12,6 @@ static seL4_CPtr allocSlot(seL4_BootInfo *info)
     seL4_CPtr next_free_slot = info->empty.start++;
     return next_free_slot;
 }
-
-
 
 /* a very simple allocation function that iterates through the untypeds in boot info until
    a retype succeeds */

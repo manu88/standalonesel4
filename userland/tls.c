@@ -1,6 +1,7 @@
 #include <cstdint>
 #include "runtime.h"
 #include "sel4.hpp"
+
 // Minimum alignment across all platforms.
 #define MIN_ALIGN_BYTES 16
 #define MIN_ALIGNED __attribute__((aligned (MIN_ALIGN_BYTES)))
@@ -12,4 +13,3 @@ extern "C" void init_tls()
 {
     seL4_SetTLSBase((seL4_Word)static_tls);
 }   
-

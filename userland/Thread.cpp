@@ -1,6 +1,5 @@
 #include "Thread.hpp"
 
-
 Thread::Thread():
 _invalid(true),
 _tcbObject(0)

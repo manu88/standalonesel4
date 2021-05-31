@@ -9,4 +9,3 @@ namespace seL4
 {
 seL4_BootInfo* GetBootInfo(void);
 }
-

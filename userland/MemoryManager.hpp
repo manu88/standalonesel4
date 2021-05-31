@@ -25,5 +25,4 @@ private:
     seL4_CPtr pdpt = 0;
     seL4_CPtr pd = 0;
     seL4_CPtr pt = 0;
-    
 };

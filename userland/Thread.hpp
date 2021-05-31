@@ -4,7 +4,6 @@
 class Thread
 {
     public:
-
         Thread();
         Thread(seL4_SlotPos tcbObject);
 
