@@ -3,7 +3,7 @@
 #include "sel4.hpp"
 
 
-seL4_CPtr alloc_slot(seL4_BootInfo *info)
+static seL4_CPtr allocSlot(seL4_BootInfo *info)
 {
     if(info->empty.start == info->empty.end)
     {
@@ -18,9 +18,10 @@ seL4_CPtr alloc_slot(seL4_BootInfo *info)
 
 /* a very simple allocation function that iterates through the untypeds in boot info until
    a retype succeeds */
-seL4_CPtr alloc_object(seL4_BootInfo *info, seL4_Word type)
+seL4_CPtr InitialUntypedPool::allocObject(seL4_Word type)
 {
-    seL4_CPtr cslot = alloc_slot(info);
+    auto info = GetBootInfo();
+    seL4_CPtr cslot = allocSlot(info);
 
     /* keep trying to retype until we succeed */
     seL4_Error error = seL4_NotEnoughMemory;
@@ -44,10 +45,5 @@ seL4_CPtr alloc_object(seL4_BootInfo *info, seL4_Word type)
         printf("Out of untyped memory\n");
     }
     return cslot;
-}
-
-seL4_CPtr InitialUntypedPool::allocObject(seL4_Word type)
-{
-    return alloc_object(GetBootInfo(), type);
 }
 
