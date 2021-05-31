@@ -35,7 +35,7 @@ void start_root()
     printSel4Config();
 
     init_tls();
-    seL4_BootInfo *bi = GetBootInfo();
+    seL4_BootInfo *bi = seL4::GetBootInfo();
     __sel4_ipc_buffer = bi->ipcBuffer;
     __sel4_print_error = 1;
 

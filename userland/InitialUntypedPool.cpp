@@ -20,7 +20,7 @@ static seL4_CPtr allocSlot(seL4_BootInfo *info)
    a retype succeeds */
 seL4_CPtr InitialUntypedPool::allocObject(seL4_Word type)
 {
-    auto info = GetBootInfo();
+    auto info = seL4::GetBootInfo();
     seL4_CPtr cslot = allocSlot(info);
 
     /* keep trying to retype until we succeed */
