@@ -41,6 +41,10 @@ seL4_Error MemoryManager::mapPage(seL4_Word vaddr, seL4_CapRights_t rights)
             printf("Mapped a new page err =%i\n", error);
             return error;
         }
+        else
+        {
+            assert(false, "Implement me :)");
+        }
     }
 
     return error;
