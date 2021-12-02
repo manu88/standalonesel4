@@ -10,14 +10,13 @@ RootServer::RootServer()
   _pt.init(VirtualAddressLayout::AddressTables);
 }
 
-void threadMain(Thread &t, void *ptr) {
+void *threadMain(Thread &t, void *) {
   printf("Hello from THREAD %X\n", t.badge);
   auto info = seL4_MessageInfo_new(0, 0, 0, 0);
   seL4_Call(t.endpoint, info);
   printf("THREAD %X: call returned\n", t.badge);
-  while (1) {
-    /* code */
-  }
+
+  return nullptr;
 }
 
 void RootServer::run() {

@@ -74,7 +74,8 @@ ObjectFactory::createThread(seL4_Word badge, Thread::EntryPoint entryPoint,
     return unexpected<Thread, seL4_Error>(err);
   }
 
-  err = seL4_TCB_SetPriority(thread._tcb, seL4_CapInitThreadTCB, seL4_MaxPrio);
+  seL4_Word prio = seL4_MaxPrio;
+  err = thread.setPriority(prio);
   if (err != seL4_NoError) {
     _untypedPool.releaseObject(tcbOrErr.value);
     _pt.unmapPage(tcbStackOrErr.value);
@@ -82,7 +83,7 @@ ObjectFactory::createThread(seL4_Word badge, Thread::EntryPoint entryPoint,
     _pt.unmapPage(tcbIPCOrErr.value);
     return unexpected<Thread, seL4_Error>(err);
   }
-
+  assert(thread.getPriority() == prio);
   auto tcbEndpointSlotOrErr = _untypedPool.getFreeSlot();
   assert(tcbEndpointSlotOrErr);
   if (!tcbEndpointSlotOrErr) {
@@ -110,4 +111,8 @@ ObjectFactory::createThread(seL4_Word badge, Thread::EntryPoint entryPoint,
 
 ObjectFactory::ObjectOrError ObjectFactory::createEndpoint() {
   return _untypedPool.allocObject(seL4_EndpointObject);
+}
+
+ObjectFactory::ObjectOrError ObjectFactory::createNotification() {
+  return _untypedPool.allocObject(seL4_NotificationObject);
 }

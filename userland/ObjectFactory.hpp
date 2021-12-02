@@ -14,6 +14,7 @@ public:
                                             seL4_CPtr apiEndpoint);
 
   ObjectOrError createEndpoint();
+  ObjectOrError createNotification();
   seL4_Word currentVirtualAddress = 0;
 
 private:

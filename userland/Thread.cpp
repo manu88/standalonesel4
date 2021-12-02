@@ -1,5 +1,6 @@
 #include "Thread.hpp"
 #include "Platform.hpp"
+#include "runtime.h"
 #include <cstddef>
 
 Thread::Thread(seL4_CPtr tcb, EntryPoint entryPoint)
@@ -7,7 +8,17 @@ Thread::Thread(seL4_CPtr tcb, EntryPoint entryPoint)
 
 static void _threadMain(seL4_Word p2) {
   Thread *self = reinterpret_cast<Thread *>(p2);
-  self->entryPoint(*self, nullptr);
+  self->retValue = self->entryPoint(*self, nullptr);
+  printf("Thread %i returned, suspend it\n", self->badge);
+  seL4_TCB_Suspend(self->_tcb);
+}
+
+seL4_Error Thread::setPriority(seL4_Word prio) {
+  seL4_Error err = seL4_TCB_SetPriority(_tcb, seL4_CapInitThreadTCB, prio);
+  if (err == seL4_NoError) {
+    priority = prio;
+  }
+  return err;
 }
 
 seL4_Error Thread::resume() {

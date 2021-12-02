@@ -4,7 +4,7 @@
 
 class Thread {
 public:
-  using EntryPoint = std::function<void(Thread &, void *)>;
+  using EntryPoint = std::function<void *(Thread &, void *)>;
 
   Thread(seL4_CPtr tcb = 0, EntryPoint entryPoint = 0);
 
@@ -24,11 +24,17 @@ public:
 
   seL4_Error resume();
 
+  seL4_Word getPriority() const noexcept { return priority; }
+  seL4_Error setPriority(seL4_Word prio);
+
   seL4_CPtr _tcb = 0;
   EntryPoint entryPoint = 0;
   seL4_Word tcbStackAddr = 0;
   seL4_Word endpoint = 0;
   seL4_Word badge = 0;
+  seL4_Word priority = 0;
+
+  void *retValue = nullptr;
 
 private:
 };
