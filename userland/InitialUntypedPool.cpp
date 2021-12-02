@@ -2,19 +2,11 @@
 #include "runtime.h"
 #include "sel4.hpp"
 
+static bool once = false;
 InitialUntypedPool::InitialUntypedPool()
 {
-}
-
-static seL4_CPtr allocSlot(seL4_BootInfo *info)
-{
-    if(info->empty.start == info->empty.end)
-    {
-        printf("No CSlots left!\n");
-        return 0;
-    }
-    seL4_CPtr next_free_slot = info->empty.start++;
-    return next_free_slot;
+    assert(once == false);
+    once = true;
 }
 
 /* a very simple allocation function that iterates through the untypeds in boot info until
@@ -22,7 +14,12 @@ static seL4_CPtr allocSlot(seL4_BootInfo *info)
 InitialUntypedPool::ObjectOrError InitialUntypedPool::allocObject(seL4_Word type)
 {
     auto info = seL4::GetBootInfo();
-    seL4_CPtr cslot = allocSlot(info);
+    auto slotOrErr = getFreeSlot();
+    if(!slotOrErr)
+    {
+        return unexpected<seL4_CPtr, seL4_Error>(slotOrErr.error);
+    }
+    seL4_CPtr cslot = slotOrErr.value;
 
     /* keep trying to retype until we succeed */
     seL4_Error error = seL4_NotEnoughMemory;
@@ -44,10 +41,11 @@ InitialUntypedPool::ObjectOrError InitialUntypedPool::allocObject(seL4_Word type
     return success<seL4_CPtr, seL4_Error>(cslot);
 }
 
-InitialUntypedPool::SlotOrError InitialUntypedPool::getSlot()
+InitialUntypedPool::SlotOrError InitialUntypedPool::getFreeSlot()
 {
     if(emptySlotPos == 0)
     {
+        printf("---> Reset emptySlotPos\n");
         emptySlotPos = getEmptySlotRegion().start;
     }
     else if(emptySlotPos > getEmptySlotRegion().end)
@@ -55,6 +53,12 @@ InitialUntypedPool::SlotOrError InitialUntypedPool::getSlot()
         return unexpected<seL4_SlotPos, seL4_Error>(seL4_NotEnoughMemory);
     }
     seL4_SlotPos ret = emptySlotPos;
+    printf("---->Start %x slot %X end %x\n", getEmptySlotRegion().start, ret, getEmptySlotRegion().end);
     emptySlotPos++;
     return success<seL4_SlotPos, seL4_Error>(ret);
+}
+
+void InitialUntypedPool::releaseSlot(seL4_SlotPos pos)
+{
+
 }

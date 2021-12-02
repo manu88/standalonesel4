@@ -19,9 +19,10 @@ private:
 
     void reservePages();
     void testPt();
-    void testThread();
+    Thread createThread(seL4_Word tcbBadge, seL4_Word entryPoint);
     PageTable _pt;
     seL4_CPtr _apiEndpoint = 0;
 
-    Thread _threadTest;
+    
+    Thread _threadTest2;
 };
