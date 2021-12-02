@@ -1,4 +1,5 @@
 #include "RootServer.hpp"
+#include "InitialUntypedPool.hpp"
 #include "runtime.h"
 #include <sel4/arch/mapping.h> // seL4_MappingFailedLookupLevel
 
@@ -8,6 +9,76 @@ RootServer::RootServer()
     _pt.init(VirtualAddressLayout::AddressTables);
 }
 
+void threadMain(seL4_Word p0, seL4_Word p1, seL4_Word p2)
+{
+    printf("Hello from THREAD\n");
+    while (1)
+    {
+        /* code */
+    }
+    
+}
+
+void RootServer::testThread()
+{
+    auto tcbOrErr = InitialUntypedPool::instance().allocObject(seL4_TCBObject);
+    assert(tcbOrErr);
+    _threadTest = Thread(tcbOrErr.value);
+
+    seL4_Word faultEP = 0;
+    seL4_Word cspaceRootData = 0;
+    seL4_Word vspaceRootData = 0;
+    seL4_Error err = seL4_TCB_SetSpace(_threadTest._tcb, faultEP, seL4_CapInitThreadCNode, cspaceRootData, seL4_CapInitThreadVSpace, vspaceRootData);
+    assert(err == seL4_NoError);
+
+    seL4_Word tcbStackAddr = currentVirtualAddress;
+    auto tcbStackOrErr = _pt.mapPage(currentVirtualAddress, seL4_ReadWrite);
+    assert(tcbStackOrErr);
+    currentVirtualAddress += PAGE_SIZE;
+
+    seL4_Word tlsAddr = currentVirtualAddress;
+    auto tcbTlsOrErr = _pt.mapPage(currentVirtualAddress, seL4_ReadWrite);
+    assert(tcbTlsOrErr);
+    currentVirtualAddress += PAGE_SIZE;
+
+    seL4_Word tcbIPC = currentVirtualAddress;
+    auto tcbIPCOrErr = _pt.mapPage(currentVirtualAddress, seL4_ReadWrite);
+    assert(tcbIPCOrErr);
+    currentVirtualAddress += PAGE_SIZE;
+    printf("tlsAddr %X  tcbIPC %X\n",tlsAddr, tcbIPC);
+
+    err = seL4_TCB_SetTLSBase(_threadTest._tcb, tlsAddr);
+    assert(err == seL4_NoError);
+
+    err = seL4_TCB_SetIPCBuffer(_threadTest._tcb, tcbIPC, tcbIPCOrErr.value);
+    assert(err == seL4_NoError);
+
+    err = seL4_TCB_SetPriority(_threadTest._tcb, seL4_CapInitThreadTCB, seL4_MaxPrio);
+    assert(err == seL4_NoError);
+
+	seL4_UserContext tcb_context;
+	size_t num_regs = sizeof(tcb_context)/sizeof(tcb_context.rax);
+	seL4_TCB_ReadRegisters(_threadTest._tcb, 0, 0, num_regs, &tcb_context);
+
+	// pass instruction pointer, stack pointer and arguments in registers
+	// according to sysv calling convention
+	tcb_context.rip = (seL4_Word)threadMain;  // entry point
+	tcb_context.rsp = (seL4_Word)(tcbStackAddr + PAGE_SIZE);  // stack
+	tcb_context.rbp = (seL4_Word)(tcbStackAddr + PAGE_SIZE);  // stack
+	tcb_context.rdi = (seL4_Word)0; // arg 1: start notification
+	tcb_context.rsi = (seL4_Word)0;   // arg 2: vga ram
+	tcb_context.rdx = (seL4_Word)0;     // arg 3: ipc endpoint
+
+	printf("rip = 0x%lx, rsp = 0x%lx, rflags = 0x%lx, rdi = 0x%lx, rsi = 0x%lx, rdx = 0x%lx.\n",
+		tcb_context.rip, tcb_context.rsp, tcb_context.rflags,
+		tcb_context.rdi, tcb_context.rsi, tcb_context.rdx);
+
+	// write registers and start thread
+	if(seL4_TCB_WriteRegisters(_threadTest._tcb, 1, 0, num_regs, &tcb_context) != seL4_NoError)
+		printf("Error writing TCB registers!\n");
+
+}
+
 void RootServer::run()
 {
     printf("RootServer: reserve %zi pages\n", ReservedPages);
@@ -15,7 +86,9 @@ void RootServer::run()
     printf("RootServer: Test paging\n");
     //testPt();
 
-    
+    printf("Test thread\n");
+    testThread();
+
     while (1)
     {
         /* code */

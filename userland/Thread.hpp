@@ -2,22 +2,22 @@
 #include "sel4.hpp"
 
 
-class TCB
+class Thread
 {
 public:
-    TCB(seL4_CPtr tcb = 0);
+    Thread(seL4_CPtr tcb = 0);
 
 
-    TCB(const TCB& other):
+    Thread(const Thread& other):
     _tcb(other._tcb)
     {}
 
-    TCB& operator=(const TCB& rhs)
+    Thread& operator=(const Thread& rhs)
     {
         _tcb = rhs._tcb;
         return *this;
     }
 
-private:
     seL4_CPtr _tcb;
+private:
 };
