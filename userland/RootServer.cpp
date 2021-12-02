@@ -9,14 +9,16 @@ RootServer::RootServer()
     _pt.init(VirtualAddressLayout::AddressTables);
 }
 
-void threadMain(seL4_Word p0, seL4_Word p1, seL4_Word p2)
+void threadMain(seL4_Word tcbEndpointSlot, seL4_Word p1, seL4_Word p2)
 {
     printf("Hello from THREAD\n");
+    auto info = seL4_MessageInfo_new(0, 0, 0, 0);
+    seL4_Call(tcbEndpointSlot, info);
+    printf("THREAD: call returned\n");
     while (1)
     {
         /* code */
     }
-    
 }
 
 void RootServer::testThread()
@@ -46,6 +48,7 @@ void RootServer::testThread()
     assert(tcbIPCOrErr);
     currentVirtualAddress += PAGE_SIZE;
     printf("tlsAddr %X  tcbIPC %X\n",tlsAddr, tcbIPC);
+    
 
     err = seL4_TCB_SetTLSBase(_threadTest._tcb, tlsAddr);
     assert(err == seL4_NoError);
@@ -54,6 +57,22 @@ void RootServer::testThread()
     assert(err == seL4_NoError);
 
     err = seL4_TCB_SetPriority(_threadTest._tcb, seL4_CapInitThreadTCB, seL4_MaxPrio);
+    assert(err == seL4_NoError);
+
+    auto reg = InitialUntypedPool::instance().getEmptySlotRegion();
+    printf("Empty slot Start %X End %X \n", reg.start, reg.end);
+    auto tcbEndpointSlotOrErr = InitialUntypedPool::instance().getSlot();
+    assert(tcbEndpointSlotOrErr);
+    seL4_SlotPos tcbEndpointSlot = tcbEndpointSlotOrErr.value;
+    seL4_Word tcbBadge = 42;
+    err = seL4_CNode_Mint(seL4_CapInitThreadCNode,
+                          tcbEndpointSlot,
+                          seL4_WordBits,
+                          seL4_CapInitThreadCNode,
+                          _apiEndpoint,
+                          seL4_WordBits,
+                          seL4_AllRights,
+                          tcbBadge);
     assert(err == seL4_NoError);
 
 	seL4_UserContext tcb_context;
@@ -65,7 +84,7 @@ void RootServer::testThread()
 	tcb_context.rip = (seL4_Word)threadMain;  // entry point
 	tcb_context.rsp = (seL4_Word)(tcbStackAddr + PAGE_SIZE);  // stack
 	tcb_context.rbp = (seL4_Word)(tcbStackAddr + PAGE_SIZE);  // stack
-	tcb_context.rdi = (seL4_Word)0; // arg 1: start notification
+	tcb_context.rdi = (seL4_Word)tcbEndpointSlot; // arg 1: start notification
 	tcb_context.rsi = (seL4_Word)0;   // arg 2: vga ram
 	tcb_context.rdx = (seL4_Word)0;     // arg 3: ipc endpoint
 
@@ -83,15 +102,20 @@ void RootServer::run()
 {
     printf("RootServer: reserve %zi pages\n", ReservedPages);
     reservePages();
-    printf("RootServer: Test paging\n");
+    //printf("RootServer: Test paging\n");
     //testPt();
-
+    auto apiEpOrErr = InitialUntypedPool::instance().allocObject(seL4_EndpointObject);
+    assert(apiEpOrErr);
+    _apiEndpoint = apiEpOrErr.value;
     printf("Test thread\n");
     testThread();
 
     while (1)
     {
-        /* code */
+        seL4_Word sender = 0;
+        seL4_MessageInfo_t msgInfo = seL4_Recv(_apiEndpoint, &sender);
+        printf("RootTask: Received msg from %X\n", sender);
+        seL4_Reply(msgInfo);
     }   
 }
 

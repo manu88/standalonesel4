@@ -2,6 +2,10 @@
 #include "runtime.h"
 #include "sel4.hpp"
 
+InitialUntypedPool::InitialUntypedPool()
+{
+}
+
 static seL4_CPtr allocSlot(seL4_BootInfo *info)
 {
     if(info->empty.start == info->empty.end)
@@ -30,8 +34,7 @@ InitialUntypedPool::ObjectOrError InitialUntypedPool::allocObject(seL4_Word type
             if (error == seL4_NoError) 
             {
                 return success<seL4_CPtr, seL4_Error>(cslot);
-            } 
-
+            }
         }
     }
     if(error != seL4_NoError)
@@ -39,4 +42,19 @@ InitialUntypedPool::ObjectOrError InitialUntypedPool::allocObject(seL4_Word type
         return unexpected<seL4_CPtr, seL4_Error>(error);
     }
     return success<seL4_CPtr, seL4_Error>(cslot);
+}
+
+InitialUntypedPool::SlotOrError InitialUntypedPool::getSlot()
+{
+    if(emptySlotPos == 0)
+    {
+        emptySlotPos = getEmptySlotRegion().start;
+    }
+    else if(emptySlotPos > getEmptySlotRegion().end)
+    {
+        return unexpected<seL4_SlotPos, seL4_Error>(seL4_NotEnoughMemory);
+    }
+    seL4_SlotPos ret = emptySlotPos;
+    emptySlotPos++;
+    return success<seL4_SlotPos, seL4_Error>(ret);
 }

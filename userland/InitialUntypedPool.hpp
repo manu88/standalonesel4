@@ -11,6 +11,7 @@ class InitialUntypedPool
 {
 public:
     using ObjectOrError = Expected<seL4_CPtr, seL4_Error>;
+    using SlotOrError = Expected<seL4_SlotPos, seL4_Error>;
 
     static auto& instance()
     {
@@ -20,6 +21,14 @@ public:
 
     ObjectOrError allocObject(seL4_Word type);
 
+    seL4_SlotRegion getEmptySlotRegion() const noexcept
+    {
+        return seL4::GetBootInfo()->empty;
+    }
+
+    SlotOrError getSlot();
+
 private:
-    InitialUntypedPool(){}
+    InitialUntypedPool();
+    seL4_SlotPos emptySlotPos = 0;
 };

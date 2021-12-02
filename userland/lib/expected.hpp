@@ -7,34 +7,34 @@ Loosely inspired by http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2021/p032
 template<typename ValueType, typename ErrorType>
 struct Expected
 {
-    Expected(ValueType value, ErrorType error, int valid):
+    Expected(ValueType value, ErrorType error, bool valid):
     value(value),
     error(error),
-    valid(valid)
+    isValid(valid)
     {}
 
     Expected(const Expected& other):
     value(other.value),
     error(other.value),
-    valid(other._valid)
+    isValid(other.isValid)
     {}
 
     Expected& operator=(const Expected& rhs)
     {
         value = rhs.value;
         error = rhs.error;
-        valid = rhs._valid;
+        isValid = rhs.isValid;
         return *this;
     }
 
     operator bool() const noexcept
     {
-        return valid;
+        return isValid;
     }
 
     ValueType value;
     ErrorType error;
-    bool valid = false;
+    bool isValid = false;
 };
 
 template<typename ValueType, typename ErrorType>
