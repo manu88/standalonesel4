@@ -1,7 +1,7 @@
 #include "PageTable.hpp"
-#include <sel4/arch/mapping.h> // seL4_MappingFailedLookupLevel
 #include "runtime.h"
 #include "sel4.hpp"
+#include <sel4/arch/mapping.h> // seL4_MappingFailedLookupLevel
 
 PageTable::PageCapOrError PageTable::mapPage(seL4_Word vaddr, seL4_CapRights_t rights)
 {

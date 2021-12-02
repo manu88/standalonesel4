@@ -5,8 +5,6 @@
 #include "lib/expected.hpp"
 #include "Platform.hpp"
 
-
-
 class InitialUntypedPool
 {
 public:
