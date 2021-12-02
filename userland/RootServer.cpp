@@ -10,15 +10,6 @@ RootServer::RootServer()
   _pt.init(VirtualAddressLayout::AddressTables);
 }
 
-void *threadMain(Thread &t, void *) {
-  printf("Hello from THREAD %X\n", t.badge);
-  auto info = seL4_MessageInfo_new(0, 0, 0, 0);
-  seL4_Call(t.endpoint, info);
-  printf("THREAD %X: call returned\n", t.badge);
-
-  return nullptr;
-}
-
 void RootServer::run() {
   printf("RootServer: reserve %zi pages\n", ReservedPages);
   reservePages();
@@ -30,7 +21,17 @@ void RootServer::run() {
 
   Thread threads[10] = {};
   for (int i = 0; i < 10; i++) {
-    auto threadOrErr = _factory.createThread(i, threadMain, _apiEndpoint);
+    auto threadOrErr = _factory.createThread(
+        i,
+        [](Thread &t, void *) {
+          printf("Hello from THREAD %X\n", t.badge);
+          auto info = seL4_MessageInfo_new(0, 0, 0, 0);
+          seL4_Call(t.endpoint, info);
+          printf("THREAD %X: call returned\n", t.badge);
+
+          return nullptr;
+        },
+        _apiEndpoint);
     if (threadOrErr) {
       threads[i] = threadOrErr.value;
       threads[i].resume();
