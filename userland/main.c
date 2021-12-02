@@ -1,6 +1,4 @@
 #include "sel4.hpp"
-#include "MemoryManager.hpp"
-#include "Hypervisor.hpp"
 
 extern "C"
 {
@@ -29,6 +27,16 @@ void printSel4Config(void)
     printf("------------------------------------\n");
 }
 
+
+static void runLoop()
+{
+    printf("Start Run Loop\n");
+    while (1)
+    {
+        /* code */
+    }
+    
+}
 void start_root()
 {
     printf("Hello world :)\n");
@@ -39,14 +47,7 @@ void start_root()
     __sel4_ipc_buffer = bi->ipcBuffer;
     __sel4_print_error = 1;
 
-    MemoryManager memManager;
-
-    memManager.init();
-    Hypervisor hyp(memManager);
-
-    hyp.init();
-
-    hyp.eventLoop();
+    runLoop();
 
 }
 } // end extern "C"
