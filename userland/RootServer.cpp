@@ -3,7 +3,8 @@
 #include "runtime.h"
 #include <sel4/arch/mapping.h> // seL4_MappingFailedLookupLevel
 
-RootServer::RootServer()
+RootServer::RootServer():
+_pt(_untypedPool)
 {
     printf("Initialize Page Table\n");
     _pt.init(VirtualAddressLayout::AddressTables);
@@ -24,7 +25,7 @@ void threadMain(seL4_Word tcbEndpointSlot, seL4_Word badge, seL4_Word p2)
 Thread RootServer::createThread(seL4_Word badge, seL4_Word entryPoint)
 {
     printf("1\n");
-    auto tcbOrErr = InitialUntypedPool::instance().allocObject(seL4_TCBObject);
+    auto tcbOrErr = _untypedPool.allocObject(seL4_TCBObject);
     if(!tcbOrErr)
     {
         printf("1 Error %s\n", seL4::errorStr(tcbOrErr.error));
@@ -66,9 +67,7 @@ Thread RootServer::createThread(seL4_Word badge, seL4_Word entryPoint)
     err = seL4_TCB_SetPriority(thread._tcb, seL4_CapInitThreadTCB, seL4_MaxPrio);
     assert(err == seL4_NoError);
 
-    auto reg = InitialUntypedPool::instance().getEmptySlotRegion();
-    printf("Empty slot Start %X End %X \n", reg.start, reg.end);
-    auto tcbEndpointSlotOrErr = InitialUntypedPool::instance().getFreeSlot();
+    auto tcbEndpointSlotOrErr = _untypedPool.getFreeSlot();
     assert(tcbEndpointSlotOrErr);
     seL4_SlotPos tcbEndpointSlot = tcbEndpointSlotOrErr.value;
     err = seL4_CNode_Mint(seL4_CapInitThreadCNode,
@@ -90,7 +89,7 @@ void RootServer::run()
     reservePages();
     //printf("RootServer: Test paging\n");
     //testPt();
-    auto apiEpOrErr = InitialUntypedPool::instance().allocObject(seL4_EndpointObject);
+    auto apiEpOrErr = _untypedPool.allocObject(seL4_EndpointObject);
     assert(apiEpOrErr);
     _apiEndpoint = apiEpOrErr.value;
     printf("Test thread1\n");

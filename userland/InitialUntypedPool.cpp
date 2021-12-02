@@ -2,13 +2,6 @@
 #include "runtime.h"
 #include "sel4.hpp"
 
-static bool once = false;
-InitialUntypedPool::InitialUntypedPool()
-{
-    assert(once == false);
-    once = true;
-}
-
 /* a very simple allocation function that iterates through the untypeds in boot info until
    a retype succeeds */
 InitialUntypedPool::ObjectOrError InitialUntypedPool::allocObject(seL4_Word type)
@@ -43,17 +36,18 @@ InitialUntypedPool::ObjectOrError InitialUntypedPool::allocObject(seL4_Word type
 
 InitialUntypedPool::SlotOrError InitialUntypedPool::getFreeSlot()
 {
+    auto empty = seL4::GetBootInfo()->empty;
     if(emptySlotPos == 0)
     {
         printf("---> Reset emptySlotPos\n");
-        emptySlotPos = getEmptySlotRegion().start;
+        emptySlotPos = empty.start;
     }
-    else if(emptySlotPos > getEmptySlotRegion().end)
+    else if(emptySlotPos > empty.end)
     {
         return unexpected<seL4_SlotPos, seL4_Error>(seL4_NotEnoughMemory);
     }
     seL4_SlotPos ret = emptySlotPos;
-    printf("---->Start %x slot %X end %x\n", getEmptySlotRegion().start, ret, getEmptySlotRegion().end);
+    printf("---->Start %x slot %X end %x\n", empty.start, ret, empty.end);
     emptySlotPos++;
     return success<seL4_SlotPos, seL4_Error>(ret);
 }

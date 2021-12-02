@@ -23,7 +23,7 @@ PageTable::PageCapOrError PageTable::mapPage(seL4_Word vaddr, seL4_CapRights_t r
         return -1;
     };
 
-    auto frameOrErr = InitialUntypedPool::instance().allocObject(seL4_X86_4K);
+    auto frameOrErr = untypedPool.allocObject(seL4_X86_4K);
     assert(frameOrErr);
     seL4_CPtr frame = frameOrErr.value;
     auto error = seL4_X86_Page_Map(frame, seL4_CapInitThreadVSpace, vaddr, rights, seL4_X86_Default_VMAttributes);
@@ -33,8 +33,7 @@ PageTable::PageCapOrError PageTable::mapPage(seL4_Word vaddr, seL4_CapRights_t r
         printf("Paging level error %i\n", level);
         if(level == 0)
         {
-            auto memPool = InitialUntypedPool::instance();
-            auto newPageTable = memPool.allocObject(seL4_X86_PageTableObject);
+            auto newPageTable = untypedPool.allocObject(seL4_X86_PageTableObject);
             printf("Alloc'ed a new page table cap\n");
             error = seL4_X86_PageTable_Map(newPageTable, seL4_CapInitThreadVSpace, vaddr, seL4_X86_Default_VMAttributes);
             printf("Mapped a new page table err =%i\n", error);
@@ -61,12 +60,11 @@ seL4_Error PageTable::unmapPage(seL4_CPtr pageCap)
 void PageTable::init(seL4_Word vaddr)
 {
     printf("PageTable: init\n");
-    auto memPool = InitialUntypedPool::instance();
-    auto pdptOrErr = memPool.allocObject(seL4_X86_PDPTObject);
+    auto pdptOrErr = untypedPool.allocObject(seL4_X86_PDPTObject);
     pdpt = pdptOrErr.value;
-    auto pdOrErr = memPool.allocObject(seL4_X86_PageDirectoryObject);
+    auto pdOrErr = untypedPool.allocObject(seL4_X86_PageDirectoryObject);
     pd = pdOrErr.value;
-    auto ptOrErr = memPool.allocObject(seL4_X86_PageTableObject);
+    auto ptOrErr = untypedPool.allocObject(seL4_X86_PageTableObject);
     pt = ptOrErr.value;
 
     printf("pdpt is at %x\n", pdpt);

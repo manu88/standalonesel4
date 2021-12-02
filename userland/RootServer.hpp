@@ -1,6 +1,7 @@
 #pragma once
 #include "PageTable.hpp"
 #include "Thread.hpp"
+#include "InitialUntypedPool.hpp"
 
 class RootServer
 {
@@ -20,6 +21,7 @@ private:
     void reservePages();
     void testPt();
     Thread createThread(seL4_Word tcbBadge, seL4_Word entryPoint);
+    InitialUntypedPool _untypedPool;
     PageTable _pt;
     seL4_CPtr _apiEndpoint = 0;
 
