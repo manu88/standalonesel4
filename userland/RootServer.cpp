@@ -3,7 +3,9 @@
 #include "runtime.h"
 #include <sel4/arch/mapping.h> // seL4_MappingFailedLookupLevel
 
-RootServer::RootServer() : _pt(_untypedPool) {
+RootServer::RootServer()
+    : _pt(_untypedPool),
+      _factory(_untypedPool, _pt, ReservedVaddr + (ReservedPages * PAGE_SIZE)) {
   printf("Initialize Page Table\n");
   _pt.init(VirtualAddressLayout::AddressTables);
 }
@@ -18,71 +20,18 @@ void threadMain(Thread &t, void *ptr) {
   }
 }
 
-Expected<Thread, seL4_Error>
-RootServer::createThread(seL4_Word badge, Thread::EntryPoint entryPoint) {
-  auto tcbOrErr = _untypedPool.allocObject(seL4_TCBObject);
-  if (!tcbOrErr) {
-    printf("1 Error %s\n", seL4::errorStr(tcbOrErr.error));
-    return unexpected<Thread, seL4_Error>(tcbOrErr.error);
-  }
-  assert(tcbOrErr);
-  auto thread = Thread(tcbOrErr.value, entryPoint);
-  thread.badge = badge;
-  seL4_Word faultEP = 0;
-  seL4_Word cspaceRootData = 0;
-  seL4_Word vspaceRootData = 0;
-  seL4_Error err = seL4_TCB_SetSpace(thread._tcb, faultEP,
-                                     seL4_CapInitThreadCNode, cspaceRootData,
-                                     seL4_CapInitThreadVSpace, vspaceRootData);
-  assert(err == seL4_NoError);
-
-  thread.tcbStackAddr = currentVirtualAddress;
-  auto tcbStackOrErr = _pt.mapPage(currentVirtualAddress, seL4_ReadWrite);
-  assert(tcbStackOrErr);
-  currentVirtualAddress += PAGE_SIZE;
-
-  seL4_Word tlsAddr = currentVirtualAddress;
-  auto tcbTlsOrErr = _pt.mapPage(currentVirtualAddress, seL4_ReadWrite);
-  assert(tcbTlsOrErr);
-  currentVirtualAddress += PAGE_SIZE;
-
-  seL4_Word tcbIPC = currentVirtualAddress;
-  auto tcbIPCOrErr = _pt.mapPage(currentVirtualAddress, seL4_ReadWrite);
-  assert(tcbIPCOrErr);
-  currentVirtualAddress += PAGE_SIZE;
-
-  err = seL4_TCB_SetTLSBase(thread._tcb, tlsAddr);
-  assert(err == seL4_NoError);
-
-  err = seL4_TCB_SetIPCBuffer(thread._tcb, tcbIPC, tcbIPCOrErr.value);
-  assert(err == seL4_NoError);
-
-  err = seL4_TCB_SetPriority(thread._tcb, seL4_CapInitThreadTCB, seL4_MaxPrio);
-  assert(err == seL4_NoError);
-
-  auto tcbEndpointSlotOrErr = _untypedPool.getFreeSlot();
-  assert(tcbEndpointSlotOrErr);
-  seL4_SlotPos tcbEndpointSlot = tcbEndpointSlotOrErr.value;
-  err = seL4_CNode_Mint(seL4_CapInitThreadCNode, tcbEndpointSlot, seL4_WordBits,
-                        seL4_CapInitThreadCNode, _apiEndpoint, seL4_WordBits,
-                        seL4_AllRights, thread.badge);
-  assert(err == seL4_NoError);
-  thread.endpoint = tcbEndpointSlot;
-  return success<Thread, seL4_Error>(thread);
-}
-
 void RootServer::run() {
   printf("RootServer: reserve %zi pages\n", ReservedPages);
   reservePages();
   // printf("RootServer: Test paging\n");
   // testPt();
-  auto apiEpOrErr = _untypedPool.allocObject(seL4_EndpointObject);
+  auto apiEpOrErr = _factory.createEndpoint();
   assert(apiEpOrErr);
   _apiEndpoint = apiEpOrErr.value;
 
   Thread threads[10] = {};
   for (int i = 0; i < 10; i++) {
-    auto threadOrErr = createThread(i, threadMain);
+    auto threadOrErr = _factory.createThread(i, threadMain, _apiEndpoint);
     if (threadOrErr) {
       threads[i] = threadOrErr.value;
       threads[i].resume();

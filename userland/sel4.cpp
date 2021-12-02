@@ -2,7 +2,10 @@
 #include "runtime.h"
 
 // FIXME: use seL4's new way of getting boot info
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 seL4_BootInfo *seL4::GetBootInfo(void) { return seL4_GetBootInfo(); }
+#pragma GCC diagnostic pop
 
 const char *seL4::errorStr(seL4_Error err) {
   switch (err) {

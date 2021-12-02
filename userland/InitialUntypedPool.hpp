@@ -12,6 +12,7 @@ public:
     using SlotOrError = Expected<seL4_SlotPos, seL4_Error>;
 
     ObjectOrError allocObject(seL4_Word type);
+    void releaseObject(seL4_CPtr obj);
 
     SlotOrError getFreeSlot();
     void releaseSlot(seL4_SlotPos pos);

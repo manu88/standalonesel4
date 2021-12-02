@@ -32,6 +32,10 @@ InitialUntypedPool::allocObject(seL4_Word type) {
   return success<seL4_CPtr, seL4_Error>(cslot);
 }
 
+void InitialUntypedPool::releaseObject(seL4_CPtr obj) {
+  printf("InitialUntypedPool::releaseObject does nothing right now :)\n");
+}
+
 InitialUntypedPool::SlotOrError InitialUntypedPool::getFreeSlot() {
   auto empty = seL4::GetBootInfo()->empty;
   if (emptySlotPos == 0) {
@@ -46,4 +50,6 @@ InitialUntypedPool::SlotOrError InitialUntypedPool::getFreeSlot() {
   return success<seL4_SlotPos, seL4_Error>(ret);
 }
 
-void InitialUntypedPool::releaseSlot(seL4_SlotPos pos) {}
+void InitialUntypedPool::releaseSlot(seL4_SlotPos pos) {
+  printf("InitialUntypedPool::releaseSlot does nothing right now :)\n");
+}
