@@ -1,4 +1,5 @@
 #include "sel4.hpp"
+#include "RootServer.hpp"
 
 extern "C"
 {
@@ -28,15 +29,6 @@ void printSel4Config(void)
 }
 
 
-static void runLoop()
-{
-    printf("Start Run Loop\n");
-    while (1)
-    {
-        /* code */
-    }
-    
-}
 void start_root()
 {
     printf("Hello world :)\n");
@@ -47,7 +39,9 @@ void start_root()
     __sel4_ipc_buffer = bi->ipcBuffer;
     __sel4_print_error = 1;
 
-    runLoop();
+    printf("Start Root server\n");
+    RootServer srv;
+    srv.run();
 
 }
 } // end extern "C"
