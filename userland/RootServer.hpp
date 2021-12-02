@@ -9,7 +9,7 @@ public:
     void run();
 private:
 
-    enum VirtualAddressLayout
+    enum VirtualAddressLayout // Layout of root server, not other processes!!
     {
         AddressTables = 0x8000000000,
         ReservedVaddr = 0x8000001000, // size is ReservedPages pages

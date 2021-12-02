@@ -25,10 +25,27 @@ void RootServer::reservePages()
     seL4_Word vaddr = VirtualAddressLayout::ReservedVaddr;
     for(int i=0;i<ReservedPages;i++)
     {
-        seL4_Error error = _pt.mapPage(vaddr, seL4_ReadWrite);
-        assert(error == seL4_NoError, "Reservation error");
+        auto capOrError = _pt.mapPage(vaddr, seL4_ReadWrite);
+        assert(capOrError, "Reservation error");
         vaddr += PAGE_SIZE;
     }
+
+    printf("Test reserved pages\n");
+    vaddr = VirtualAddressLayout::ReservedVaddr;
+    for(int i=0;i<ReservedPages;i++)
+    {
+        memset((void*) vaddr, 0, PAGE_SIZE);
+        vaddr += PAGE_SIZE;
+    }
+    vaddr = VirtualAddressLayout::ReservedVaddr;
+    for(int i=0;i<ReservedPages;i++)
+    {
+        for(int j=0;j<PAGE_SIZE;j++)
+        {
+            assert(reinterpret_cast<char*>(vaddr)[j] == 0, "");
+            (reinterpret_cast<char*>(vaddr))[j] = 0;
+        }
+    }    
 }
 
 void RootServer::testPt()
@@ -38,13 +55,13 @@ void RootServer::testPt()
     size_t sizeToTest = 1024;
     for(size_t i=0;i<sizeToTest;i++)
     {
-        seL4_Error error = _pt.mapPage(vaddr, seL4_ReadWrite);
-        if (error == seL4_FailedLookup) {
+        auto capOrError = _pt.mapPage(vaddr, seL4_ReadWrite);
+        if (capOrError.error == seL4_FailedLookup) {
             printf("Missing intermediate paging structure at level %lu\n", seL4_MappingFailedLookupLevel());
         }
-        else if (error != seL4_NoError)
+        else if (capOrError.error != seL4_NoError)
         {
-            printf("Test mapping error = %i at %i\n", error, i);
+            printf("Test mapping error = %i at %i\n", capOrError.error, i);
         }
         auto test = reinterpret_cast<size_t*>(vaddr);
         *test = i;

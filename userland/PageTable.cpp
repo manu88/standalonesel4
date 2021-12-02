@@ -3,7 +3,7 @@
 #include "runtime.h"
 #include "sel4.hpp"
 
-seL4_Error PageTable::mapPage(seL4_Word vaddr, seL4_CapRights_t rights)
+PageTable::PageCapOrError PageTable::mapPage(seL4_Word vaddr, seL4_CapRights_t rights)
 {
     auto getLevel = [](seL4_Word lookupLevel) -> int{
         switch (lookupLevel)
@@ -21,6 +21,7 @@ seL4_Error PageTable::mapPage(seL4_Word vaddr, seL4_CapRights_t rights)
         NOT_REACHED();
         return -1;
     };
+
     seL4_CPtr frame = InitialUntypedPool::instance().allocObject(seL4_X86_4K);
     auto error = seL4_X86_Page_Map(frame, seL4_CapInitThreadVSpace, vaddr, rights, seL4_X86_Default_VMAttributes);
     if (error == seL4_FailedLookup)
@@ -38,21 +39,19 @@ seL4_Error PageTable::mapPage(seL4_Word vaddr, seL4_CapRights_t rights)
             printf("Try the page mapping again:\n");
             error = seL4_X86_Page_Map(frame, seL4_CapInitThreadVSpace, vaddr, rights, seL4_X86_Default_VMAttributes);
             printf("Mapped a new page err =%i\n", error);
-            return error;
+            return success<seL4_CPtr, seL4_Error>(frame);
         }
         else
         {
             assert(false, "Implement me :)");
         }
     }
-
-    return error;
+    return success<seL4_CPtr, seL4_Error>(frame);
 }
 
-seL4_Error PageTable::unmapPage()
+seL4_Error PageTable::unmapPage(seL4_CPtr pageCap)
 {
-    seL4_CPtr frame = 0;
-    return seL4_X86_Page_Unmap(frame);
+    return seL4_X86_Page_Unmap(pageCap);
 }
 
 void PageTable::init(seL4_Word vaddr)
@@ -75,10 +74,4 @@ void PageTable::init(seL4_Word vaddr)
 
     error = seL4_X86_PageTable_Map(pt, seL4_CapInitThreadVSpace, vaddr, seL4_X86_Default_VMAttributes);
     assert(error == seL4_NoError, "seL4_X86_PageTable_Map");
-}
-
-
-PageTable::PageCapOrError PageTable::test()
-{
-    return success<seL4_CPtr, seL4_Error>(1);
 }
