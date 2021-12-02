@@ -15,11 +15,10 @@ static inline void oops()
     *f = 42.f;
 }
 
-static inline void assert(int pred, const char* message)
+static inline void assert(int pred)
 {
     if(!pred)
     {
-        printf_("%s\n", message);
         oops();
     }
 }
@@ -35,6 +34,6 @@ static inline void *memset(void *s, int c, size_t len)
 }
 
 #ifndef NOT_REACHED
-#define NOT_REACHED() assert(false, "This should NOT be reached")
+#define NOT_REACHED() assert(false)
 #endif
 }

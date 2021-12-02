@@ -13,7 +13,9 @@ void RootServer::run()
     printf("RootServer: reserve %zi pages\n", ReservedPages);
     reservePages();
     printf("RootServer: Test paging\n");
-    testPt();
+    //testPt();
+
+    
     while (1)
     {
         /* code */
@@ -26,7 +28,7 @@ void RootServer::reservePages()
     for(int i=0;i<ReservedPages;i++)
     {
         auto capOrError = _pt.mapPage(vaddr, seL4_ReadWrite);
-        assert(capOrError, "Reservation error");
+        assert(capOrError);
         vaddr += PAGE_SIZE;
     }
 
@@ -42,7 +44,7 @@ void RootServer::reservePages()
     {
         for(int j=0;j<PAGE_SIZE;j++)
         {
-            assert(reinterpret_cast<char*>(vaddr)[j] == 0, "");
+            assert(reinterpret_cast<char*>(vaddr)[j] == 0);
             (reinterpret_cast<char*>(vaddr))[j] = 0;
         }
     }    
@@ -65,7 +67,7 @@ void RootServer::testPt()
         }
         auto test = reinterpret_cast<size_t*>(vaddr);
         *test = i;
-        assert(*test == i, "");
+        assert(*test == i);
         vaddr += 4096;
         if(i%100 == 0)
         {
@@ -79,7 +81,7 @@ void RootServer::testPt()
     {
         auto test = reinterpret_cast<size_t*>(vaddr);
 //        *test = i;
-        assert(*test == i, "");
+        assert(*test == i);
         vaddr += 4096;
     }
     printf("After test OK \n");

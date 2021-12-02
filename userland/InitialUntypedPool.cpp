@@ -15,7 +15,7 @@ static seL4_CPtr allocSlot(seL4_BootInfo *info)
 
 /* a very simple allocation function that iterates through the untypeds in boot info until
    a retype succeeds */
-seL4_CPtr InitialUntypedPool::allocObject(seL4_Word type)
+InitialUntypedPool::ObjectOrError InitialUntypedPool::allocObject(seL4_Word type)
 {
     auto info = seL4::GetBootInfo();
     seL4_CPtr cslot = allocSlot(info);
@@ -29,17 +29,14 @@ seL4_CPtr InitialUntypedPool::allocObject(seL4_Word type)
             seL4_Error error = seL4_Untyped_Retype(untyped, type, 0, seL4_CapInitThreadCNode, 0, 0, cslot, 1);
             if (error == seL4_NoError) 
             {
-                return cslot;
+                return success<seL4_CPtr, seL4_Error>(cslot);
             } 
-            else if (error != seL4_NotEnoughMemory) 
-            {
-                printf("Failed to allocate untyped\n");
-            }
+
         }
     }
-    if(error == seL4_NotEnoughMemory)
+    if(error != seL4_NoError)
     {
-        printf("Out of untyped memory\n");
+        return unexpected<seL4_CPtr, seL4_Error>(error);
     }
-    return cslot;
+    return success<seL4_CPtr, seL4_Error>(cslot);
 }

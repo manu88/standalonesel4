@@ -15,14 +15,17 @@ PageTable::PageCapOrError PageTable::mapPage(seL4_Word vaddr, seL4_CapRights_t r
             case SEL4_MAPPING_LOOKUP_NO_PDPT:
                 return 2;
             default:
-                assert(false, "Unknown failed lookup level!");
+                printf("Unknown failed lookup level %i!", lookupLevel);
+                assert(false);
                 break;
         }
         NOT_REACHED();
         return -1;
     };
 
-    seL4_CPtr frame = InitialUntypedPool::instance().allocObject(seL4_X86_4K);
+    auto frameOrErr = InitialUntypedPool::instance().allocObject(seL4_X86_4K);
+    assert(frameOrErr);
+    seL4_CPtr frame = frameOrErr.value;
     auto error = seL4_X86_Page_Map(frame, seL4_CapInitThreadVSpace, vaddr, rights, seL4_X86_Default_VMAttributes);
     if (error == seL4_FailedLookup)
     {
@@ -35,7 +38,7 @@ PageTable::PageCapOrError PageTable::mapPage(seL4_Word vaddr, seL4_CapRights_t r
             printf("Alloc'ed a new page table cap\n");
             error = seL4_X86_PageTable_Map(newPageTable, seL4_CapInitThreadVSpace, vaddr, seL4_X86_Default_VMAttributes);
             printf("Mapped a new page table err =%i\n", error);
-            assert(error == seL4_NoError, "Handle error here :)");
+            assert(error == seL4_NoError);
             printf("Try the page mapping again:\n");
             error = seL4_X86_Page_Map(frame, seL4_CapInitThreadVSpace, vaddr, rights, seL4_X86_Default_VMAttributes);
             printf("Mapped a new page err =%i\n", error);
@@ -43,7 +46,8 @@ PageTable::PageCapOrError PageTable::mapPage(seL4_Word vaddr, seL4_CapRights_t r
         }
         else
         {
-            assert(false, "Implement me :)");
+            printf("Implement me :)\n");
+            assert(false);
         }
     }
     return success<seL4_CPtr, seL4_Error>(frame);
@@ -58,9 +62,12 @@ void PageTable::init(seL4_Word vaddr)
 {
     printf("PageTable: init\n");
     auto memPool = InitialUntypedPool::instance();
-    pdpt = memPool.allocObject(seL4_X86_PDPTObject);
-    pd = memPool.allocObject(seL4_X86_PageDirectoryObject);
-    pt = memPool.allocObject(seL4_X86_PageTableObject);
+    auto pdptOrErr = memPool.allocObject(seL4_X86_PDPTObject);
+    pdpt = pdptOrErr.value;
+    auto pdOrErr = memPool.allocObject(seL4_X86_PageDirectoryObject);
+    pd = pdOrErr.value;
+    auto ptOrErr = memPool.allocObject(seL4_X86_PageTableObject);
+    pt = ptOrErr.value;
 
     printf("pdpt is at %x\n", pdpt);
     printf("pd is at %x\n", pd);
@@ -70,8 +77,8 @@ void PageTable::init(seL4_Word vaddr)
     seL4_Error error = seL4_X86_PDPT_Map(pdpt, seL4_CapInitThreadVSpace, vaddr, seL4_X86_Default_VMAttributes);
 
     error = seL4_X86_PageDirectory_Map(pd, seL4_CapInitThreadVSpace, vaddr, seL4_X86_Default_VMAttributes);
-    assert(error == seL4_NoError, "seL4_X86_PageDirectory_Map");
+    assert(error == seL4_NoError);
 
     error = seL4_X86_PageTable_Map(pt, seL4_CapInitThreadVSpace, vaddr, seL4_X86_Default_VMAttributes);
-    assert(error == seL4_NoError, "seL4_X86_PageTable_Map");
+    assert(error == seL4_NoError);
 }

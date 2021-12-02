@@ -1,6 +1,6 @@
 #pragma once
 #include "PageTable.hpp"
-
+#include "TCB.hpp"
 
 class RootServer
 {
@@ -19,4 +19,6 @@ private:
     void reservePages();
     void testPt();
     PageTable _pt;
+
+    TCB _threadTest;
 };
