@@ -24,7 +24,6 @@ void threadMain(seL4_Word tcbEndpointSlot, seL4_Word badge, seL4_Word p2)
 
 Thread RootServer::createThread(seL4_Word badge, seL4_Word entryPoint)
 {
-    printf("1\n");
     auto tcbOrErr = _untypedPool.allocObject(seL4_TCBObject);
     if(!tcbOrErr)
     {
@@ -39,24 +38,20 @@ Thread RootServer::createThread(seL4_Word badge, seL4_Word entryPoint)
     seL4_Error err = seL4_TCB_SetSpace(thread._tcb, faultEP, seL4_CapInitThreadCNode, cspaceRootData, seL4_CapInitThreadVSpace, vspaceRootData);
     assert(err == seL4_NoError);
 
-    printf("2\n");
     thread.tcbStackAddr = currentVirtualAddress;
     auto tcbStackOrErr = _pt.mapPage(currentVirtualAddress, seL4_ReadWrite);
     assert(tcbStackOrErr);
     currentVirtualAddress += PAGE_SIZE;
 
-    printf("3\n");
     seL4_Word tlsAddr = currentVirtualAddress;
     auto tcbTlsOrErr = _pt.mapPage(currentVirtualAddress, seL4_ReadWrite);
     assert(tcbTlsOrErr);
     currentVirtualAddress += PAGE_SIZE;
 
-    printf("4\n");
     seL4_Word tcbIPC = currentVirtualAddress;
     auto tcbIPCOrErr = _pt.mapPage(currentVirtualAddress, seL4_ReadWrite);
     assert(tcbIPCOrErr);
     currentVirtualAddress += PAGE_SIZE;
-    printf("tlsAddr %X  tcbIPC %X\n",tlsAddr, tcbIPC);
 
     err = seL4_TCB_SetTLSBase(thread._tcb, tlsAddr);
     assert(err == seL4_NoError);
@@ -92,14 +87,13 @@ void RootServer::run()
     auto apiEpOrErr = _untypedPool.allocObject(seL4_EndpointObject);
     assert(apiEpOrErr);
     _apiEndpoint = apiEpOrErr.value;
-    printf("Test thread1\n");
-    auto t1 = createThread(42, (seL4_Word)threadMain);
-    printf("Test thread2\n");
-    auto t2 = createThread(43, (seL4_Word)threadMain);
-    printf("Start thread1\n");
-    t1.resume();
-    printf("Start thread2\n");
-    t2.resume();
+
+    Thread threads[10] = {};
+    for(int i=0;i<10;i++)
+    {
+        threads[i] = createThread(i, (seL4_Word)threadMain);
+        threads[i].resume();
+    }
 
     while (1)
     {
