@@ -1,5 +1,6 @@
 #include "RootServer.hpp"
 #include "InitialUntypedPool.hpp"
+#include "kmalloc.hpp"
 #include "runtime.h"
 #include <sel4/arch/mapping.h> // seL4_MappingFailedLookupLevel
 
@@ -13,8 +14,13 @@ RootServer::RootServer()
 void RootServer::run() {
   printf("RootServer: reserve %zi pages\n", ReservedPages);
   reservePages();
-  // printf("RootServer: Test paging\n");
-  // testPt();
+  setMemoryPool((void *)VirtualAddressLayout::ReservedVaddr,
+                ReservedPages * PAGE_SIZE);
+
+  void *dat = kmalloc(1024);
+  assert(dat != nullptr);
+  kfree(dat);
+
   auto apiEpOrErr = _factory.createEndpoint();
   assert(apiEpOrErr);
   _apiEndpoint = apiEpOrErr.value;
