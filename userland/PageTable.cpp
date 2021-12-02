@@ -76,3 +76,9 @@ void PageTable::init(seL4_Word vaddr)
     error = seL4_X86_PageTable_Map(pt, seL4_CapInitThreadVSpace, vaddr, seL4_X86_Default_VMAttributes);
     assert(error == seL4_NoError, "seL4_X86_PageTable_Map");
 }
+
+
+PageTable::PageCapOrError PageTable::test()
+{
+    return success<seL4_CPtr, seL4_Error>(1);
+}

@@ -10,8 +10,9 @@ RootServer::RootServer()
 
 void RootServer::run()
 {
-    printf("RootServer::run\n");
-
+    printf("RootServer: reserve %zi pages\n", ReservedPages);
+    reservePages();
+    printf("RootServer: Test paging\n");
     testPt();
     while (1)
     {
@@ -19,9 +20,20 @@ void RootServer::run()
     }   
 }
 
+void RootServer::reservePages()
+{
+    seL4_Word vaddr = VirtualAddressLayout::ReservedVaddr;
+    for(int i=0;i<ReservedPages;i++)
+    {
+        seL4_Error error = _pt.mapPage(vaddr, seL4_ReadWrite);
+        assert(error == seL4_NoError, "Reservation error");
+        vaddr += PAGE_SIZE;
+    }
+}
+
 void RootServer::testPt()
 {
-seL4_Word vaddr = VirtualAddressLayout::ReservedVaddr;
+    seL4_Word vaddr = VirtualAddressLayout::ReservedVaddr + (ReservedPages*PAGE_SIZE);
 
     size_t sizeToTest = 1024;
     for(size_t i=0;i<sizeToTest;i++)
@@ -43,4 +55,15 @@ seL4_Word vaddr = VirtualAddressLayout::ReservedVaddr;
             printf("Page %zi/%zi ok\n", i, sizeToTest);
         }
     }
+
+    printf("After test, vaddr is at %X\n", vaddr);
+    vaddr = VirtualAddressLayout::ReservedVaddr + (ReservedPages*PAGE_SIZE);
+    for(size_t i=0;i<sizeToTest;i++)
+    {
+        auto test = reinterpret_cast<size_t*>(vaddr);
+//        *test = i;
+        assert(*test == i, "");
+        vaddr += 4096;
+    }
+    printf("After test OK \n");
 }
