@@ -4,7 +4,7 @@ LD=g++
 PROG=program.bin
 
 CRT_OBJS = crti.o crt0.o
-OBJS = main.o printf.o putchar_impl.o init.o stdcpp_stubs.o tls.o cstubs.o WorstAlloc.o sel4.o
+OBJS = main.o printf.o putchar_impl.o init.o stdcpp_stubs.o tls.o cstubs.o sel4.o
 
 LIBS= -L./libsel4/lib/ -lsel4
 CPP_FLAGS=-fno-rtti -fno-exceptions -std=c++2a
