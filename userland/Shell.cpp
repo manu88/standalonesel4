@@ -16,18 +16,22 @@ void Shell::init() {
   assert(buffer != nullptr);
   memset(buffer, 0, BufferSize);
 }
-
-void Shell::start() { printf(":>"); }
+void Shell::showPrompt() { printf(":>"); }
+void Shell::start() {
+  printf("RootServer shell. type 'help' for ... well ... help\n");
+  showPrompt();
+}
 void Shell::onChar(char c) {
   if (c == 0XD) {
     buffer[bufferIndex] = 0;
-    if (strlen(buffer) > 0) {
-      printf("\nEcho '%s'", buffer);
-    }
     printf("\n");
+    if (strlen(buffer) > 0) {
+      auto str = string(buffer, bufferIndex);
+      newCommand(str);
+    }
     bufferIndex = 0;
     memset(buffer, 0, BufferSize);
-    start();
+    showPrompt();
   } else if (c == 0X7F) { // backspace
     if (bufferIndex > 0) {
       bufferIndex--;
@@ -46,4 +50,13 @@ void Shell::onChar(char c) {
       printf("Other char %X\n", c);
     }
     */
+}
+
+int Shell::newCommand(const string &cmd) {
+  if (cmd == "hello") {
+    printf("Command is Hello\n");
+    return 0;
+  }
+  printf("Command '%s' does not exist\n", cmd.c_str());
+  return -1;
 }
