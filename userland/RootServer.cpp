@@ -11,20 +11,17 @@ RootServer::RootServer()
   _pt.init(VirtualAddressLayout::AddressTables);
 }
 
-void RootServer::run() {
+void RootServer::init() {
   printf("RootServer: reserve %zi pages\n", ReservedPages);
   reservePages();
   setMemoryPool((void *)VirtualAddressLayout::ReservedVaddr,
                 ReservedPages * PAGE_SIZE);
-
-  void *dat = kmalloc(1024);
-  assert(dat != nullptr);
-  kfree(dat);
-
   auto apiEpOrErr = _factory.createEndpoint();
   assert(apiEpOrErr);
   _apiEndpoint = apiEpOrErr.value;
+}
 
+void RootServer::run() {
   Thread threads[10] = {};
   for (int i = 0; i < 10; i++) {
     auto threadOrErr = _factory.createThread(

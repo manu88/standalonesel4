@@ -31,7 +31,6 @@ void printSel4Config(void)
 
 void start_root()
 {
-    printf("Hello world :)\n");
     printSel4Config();
 
     init_tls();
@@ -41,6 +40,7 @@ void start_root()
 
     printf("Start Root server\n");
     RootServer srv;
+    srv.init();
     srv.run();
 
 }
