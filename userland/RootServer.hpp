@@ -2,13 +2,20 @@
 #include "InitialUntypedPool.hpp"
 #include "ObjectFactory.hpp"
 #include "PageTable.hpp"
+#include "Shell.hpp"
 #include "Thread.hpp"
 #include "lib/expected.hpp"
+
+struct Com1 {
+  seL4_CPtr irq;
+  seL4_CPtr port;
+};
 
 class RootServer {
 public:
   RootServer();
-  void init(); // kmalloc/kfree/new/delete are setup here!
+  void earlyInit(); // kmalloc/kfree/new/delete are setup here!
+  void lateInit();
   void run();
 
 private:
@@ -20,6 +27,9 @@ private:
 
   void reservePages();
   void testPt();
+
+  Shell _shell;
+  seL4_CPtr _com1port;
 
   InitialUntypedPool _untypedPool;
   PageTable _pt;

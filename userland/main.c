@@ -40,7 +40,8 @@ void start_root()
 
     printf("Start Root server\n");
     RootServer srv;
-    srv.init();
+    srv.earlyInit();
+    srv.lateInit();
     srv.run();
 
 }

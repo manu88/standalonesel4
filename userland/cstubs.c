@@ -1,6 +1,7 @@
 #include "runtime.h"
 #include "sel4.hpp"
 
+int __errno_location = 0;
 // TODO: actual implementation :)
 extern "C" int __cxa_guard_acquire(int *)
 {
