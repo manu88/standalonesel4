@@ -22,9 +22,39 @@ void RootServer::lateInit() {
   auto apiEpOrErr = _factory.createEndpoint();
   assert(apiEpOrErr);
   _apiEndpoint = apiEpOrErr.value;
+
+  printf("Test getting COM1\n");
+  auto com1SlotOrErr = _untypedPool.getFreeSlot();
+  assert(com1SlotOrErr);
+  seL4_Error err = seL4_X86_IOPortControl_Issue(
+      seL4_CapIOPortControl, 0x3F8, 0x3F8 + 7, seL4_CapInitThreadCNode,
+      com1SlotOrErr.value, seL4_WordBits);
+  assert(err == seL4_NoError);
+
+  auto com1IRQSlotOrErr = _untypedPool.getFreeSlot();
+  assert(com1IRQSlotOrErr);
+#if 0
+  seL4_Word ioapic = 0;
+  seL4_Word com1pin = 4; // com1
+  seL4_Word vector = 4;
+  err = seL4_IRQControl_GetIOAPIC(seL4_CapIRQControl, seL4_CapInitThreadCNode,
+                                  com1IRQSlotOrErr.value, seL4_WordBits, ioapic,
+                                  com1pin, 0, 1, vector);
+  assert(err == seL4_NoError);
+
+  auto irqNotifOrErr = _factory.createNotification();
+  assert(irqNotifOrErr);
+  err = seL4_IRQHandler_SetNotification(com1IRQSlotOrErr.value,
+                                        irqNotifOrErr.value);
+  assert(err == seL4_NoError);
+  _com1.irq = irqNotifOrErr.value;
+#endif
+  _com1port = com1SlotOrErr.value;
+  _shell.init();
 }
 
 void RootServer::run() {
+#if 0
   Thread threads[10] = {};
   for (int i = 0; i < 10; i++) {
     auto threadOrErr = _factory.createThread(
@@ -43,8 +73,26 @@ void RootServer::run() {
       threads[i].resume();
     }
   }
+#endif
 
+  auto _comThOrErr = _factory.createThread(
+      10,
+      [this](Thread &, void *) {
+        _shell.start();
+        while (1) {
+          seL4_X86_IOPort_In8_t d = seL4_X86_IOPort_In8(_com1port, 0x3F8);
+          if (d.result) {
+            _shell.onChar((char)d.result);
+          }
+        }
+        return nullptr;
+      },
+      _apiEndpoint);
+  if (_comThOrErr) {
+    _comThOrErr.value.resume();
+  }
   while (1) {
+
     seL4_Word sender = 0;
     seL4_MessageInfo_t msgInfo = seL4_Recv(_apiEndpoint, &sender);
     printf("RootTask: Received msg from %i\n", sender);

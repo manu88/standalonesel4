@@ -39,13 +39,12 @@ void InitialUntypedPool::releaseObject(seL4_CPtr) {
 InitialUntypedPool::SlotOrError InitialUntypedPool::getFreeSlot() {
   auto empty = seL4::GetBootInfo()->empty;
   if (emptySlotPos == 0) {
-    printf("---> Reset emptySlotPos\n");
     emptySlotPos = empty.start;
   } else if (emptySlotPos > empty.end) {
     return unexpected<seL4_SlotPos, seL4_Error>(seL4_NotEnoughMemory);
   }
   seL4_SlotPos ret = emptySlotPos;
-  printf("---->Start %x slot %X end %x\n", empty.start, ret, empty.end);
+  //  printf("---->Start %x slot %X end %x\n", empty.start, ret, empty.end);
   emptySlotPos++;
   return success<seL4_SlotPos, seL4_Error>(ret);
 }
