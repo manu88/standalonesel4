@@ -1,5 +1,6 @@
 #include "RootServer.hpp"
 #include "InitialUntypedPool.hpp"
+#include "Syscall.hpp"
 #include "kmalloc.hpp"
 #include "runtime.h"
 #include <sel4/arch/mapping.h> // seL4_MappingFailedLookupLevel
@@ -77,8 +78,8 @@ void RootServer::run() {
 
   auto _comThOrErr = _factory.createThread(
       10,
-      [this](Thread &, void *) {
-        _shell.start();
+      [this](Thread &t, void *) {
+        _shell.start(t.endpoint);
         while (1) {
           seL4_X86_IOPort_In8_t d = seL4_X86_IOPort_In8(_com1port, 0x3F8);
           if (d.result) {
@@ -92,11 +93,19 @@ void RootServer::run() {
     _comThOrErr.value.resume();
   }
   while (1) {
-
     seL4_Word sender = 0;
     seL4_MessageInfo_t msgInfo = seL4_Recv(_apiEndpoint, &sender);
-    printf("RootTask: Received msg from %i\n", sender);
-    seL4_Reply(msgInfo);
+    printf("RootTask: Received msg from %i %X\n", sender, seL4_GetMR(0));
+    assert(seL4_MessageInfo_get_length(msgInfo) > 0);
+    switch ((Syscall::Id)seL4_GetMR(0)) {
+    case Syscall::Id::VMStats:
+      printf("VMStats\n");
+      printf("Num mapped pages %zi\n", _pt.getMappedPagesCount());
+      break;
+    default:
+      break;
+    }
+    // seL4_Reply(msgInfo);
   }
 }
 

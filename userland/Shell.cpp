@@ -1,4 +1,5 @@
 #include "Shell.hpp"
+#include "Syscall.hpp"
 #include "kmalloc.hpp"
 #include "lib/cstring.h"
 #include "runtime.h"
@@ -11,7 +12,8 @@ void Shell::init() {
   memset(buffer, 0, BufferSize);
 }
 void Shell::showPrompt() { printf(":>"); }
-void Shell::start() {
+void Shell::start(seL4_Word endpoint) {
+  _endpoint = endpoint;
   printf("RootServer shell. type 'help' for ... well ... help\n");
   showPrompt();
 }
@@ -81,6 +83,7 @@ int Shell::newCommand(const string &cmd) {
     }
     return -1;
   } else if (cmd == "vm") {
+    Syscall::perform(Syscall::Id::VMStats, _endpoint);
     return 0;
   }
   printf("Command '%s' does not exist\n", cmd.c_str());
