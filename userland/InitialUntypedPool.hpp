@@ -2,23 +2,21 @@
 #include <functional>
 #include <cstddef>
 #include "sel4.hpp"
-
-#define PAGE_TYPE        seL4_X86_4K
-#define PAGE_SIZE        4096
+#include "lib/expected.hpp"
+#include "Platform.hpp"
 
 class InitialUntypedPool
 {
 public:
-    static auto& instance()
-    {
-        static InitialUntypedPool _instance;
-        return _instance;
-    }
+    using ObjectOrError = Expected<seL4_CPtr, seL4_Error>;
+    using SlotOrError = Expected<seL4_SlotPos, seL4_Error>;
 
-    seL4_SlotPos getSlot(seL4_Word obj, seL4_Word size);
+    ObjectOrError allocObject(seL4_Word type);
+    void releaseObject(seL4_CPtr obj);
 
-    seL4_CPtr allocObject(seL4_Word type);
+    SlotOrError getFreeSlot();
+    void releaseSlot(seL4_SlotPos pos);
 
 private:
-    InitialUntypedPool(){}
+    seL4_SlotPos emptySlotPos = 0;
 };

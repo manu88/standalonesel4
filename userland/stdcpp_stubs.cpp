@@ -1,10 +1,10 @@
 #include "runtime.h"
 
-namespace std
-{
-    void __throw_bad_function_call()
-    {
-        assert(0,"std::__throw_bad_function_call was called");
-        while(1);
-    }; 
-}
+namespace std {
+void __throw_bad_function_call() {
+  printf("std::__throw_bad_function_call was called\n");
+  assert(0);
+  while (1)
+    ;
+};
+} // namespace std

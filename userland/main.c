@@ -1,6 +1,5 @@
 #include "sel4.hpp"
-#include "MemoryManager.hpp"
-#include "Hypervisor.hpp"
+#include "RootServer.hpp"
 
 extern "C"
 {
@@ -29,9 +28,9 @@ void printSel4Config(void)
     printf("------------------------------------\n");
 }
 
+
 void start_root()
 {
-    printf("Hello world :)\n");
     printSel4Config();
 
     init_tls();
@@ -39,14 +38,10 @@ void start_root()
     __sel4_ipc_buffer = bi->ipcBuffer;
     __sel4_print_error = 1;
 
-    MemoryManager memManager;
-
-    memManager.init();
-    Hypervisor hyp(memManager);
-
-    hyp.init();
-
-    hyp.eventLoop();
+    printf("Start Root server\n");
+    RootServer srv;
+    srv.init();
+    srv.run();
 
 }
 } // end extern "C"
