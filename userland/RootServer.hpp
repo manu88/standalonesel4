@@ -2,6 +2,7 @@
 #include "InitialUntypedPool.hpp"
 #include "ObjectFactory.hpp"
 #include "PageTable.hpp"
+#include "Shell.hpp"
 #include "Thread.hpp"
 #include "lib/expected.hpp"
 
@@ -20,6 +21,8 @@ private:
 
   void reservePages();
   void testPt();
+
+  Shell _shell;
 
   InitialUntypedPool _untypedPool;
   PageTable _pt;
