@@ -11,11 +11,14 @@ RootServer::RootServer()
   _pt.init(VirtualAddressLayout::AddressTables);
 }
 
-void RootServer::init() {
+void RootServer::earlyInit() {
   printf("RootServer: reserve %zi pages\n", ReservedPages);
   reservePages();
   setMemoryPool((void *)VirtualAddressLayout::ReservedVaddr,
                 ReservedPages * PAGE_SIZE);
+}
+
+void RootServer::lateInit() {
   auto apiEpOrErr = _factory.createEndpoint();
   assert(apiEpOrErr);
   _apiEndpoint = apiEpOrErr.value;

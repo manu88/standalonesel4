@@ -9,7 +9,8 @@
 class RootServer {
 public:
   RootServer();
-  void init(); // kmalloc/kfree/new/delete are setup here!
+  void earlyInit(); // kmalloc/kfree/new/delete are setup here!
+  void lateInit();
   void run();
 
 private:
