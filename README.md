@@ -21,7 +21,7 @@ make sim
 * [sel4runtime](https://github.com/seL4/sel4runtime/)
 
 
-## Dist: not working
+## Dist
 ```bash
 sh update.sh
 # build kernel
