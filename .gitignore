@@ -6,3 +6,4 @@ build/
 *.bin
 libsel4.a
 userland/libsel4/
+userland/unittests/unittests
