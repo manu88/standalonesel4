@@ -4,6 +4,23 @@
 #include <cstddef>
 extern "C" {
 
+extern void *kmalloc(size_t size);
+
+static inline void *memcpy(void *dest, const void *src, size_t n) {
+  for (size_t i = 0; i < n; i++) {
+    ((char *)dest)[i] = ((char *)src)[i];
+  }
+  return dest;
+}
+
+static inline void *memset(void *s, int c, size_t len) {
+  unsigned char *p = (unsigned char *)s;
+  while (len--) {
+    *p++ = (unsigned char)c;
+  }
+  return s;
+}
+
 inline size_t strlen(const char *s) {
   size_t len = 0;
   for (len = 0; s[len]; (len)++)
@@ -120,4 +137,37 @@ inline long int strtol(const char *__restrict nPtr, char **__restrict endPtr,
     *endPtr = (char *)pos;
   return sum;
 }
+
+inline char *strdup(const char *s) {
+  size_t len = strlen(s) + 1;
+  void *newS = kmalloc(len);
+  if (newS == NULL)
+    return NULL;
+  return (char *)memcpy(newS, s, len);
+}
+
+inline char *strncpy(char *destination, const char *source, size_t num) {
+  // return if no memory is allocated to the destination
+  if (destination == NULL) {
+    return NULL;
+  }
+
+  // take a pointer pointing to the beginning of the destination string
+  char *ptr = destination;
+
+  // copy first `num` characters of C-string pointed by source
+  // into the array pointed by destination
+  while (*source && num--) {
+    *destination = *source;
+    destination++;
+    source++;
+  }
+
+  // null terminate destination string
+  *destination = '\0';
+
+  // the destination is returned by standard `strncpy()`
+  return ptr;
+}
+
 } // extern "C"

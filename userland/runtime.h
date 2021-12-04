@@ -23,15 +23,7 @@ static inline void assert(int pred)
     }
 }
 
-static inline void *memset(void *s, int c, size_t len)
-{
-    unsigned char* p= (unsigned char*) s;
-    while(len--)
-    {
-        *p++ = (unsigned char)c;
-    }
-    return s;
-}
+
 
 #ifndef NOT_REACHED
 #define NOT_REACHED() assert(false)
