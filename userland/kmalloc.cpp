@@ -1,3 +1,4 @@
+#include "kmalloc.hpp"
 #include "runtime.h"
 #include <stddef.h>
 
@@ -6,6 +7,7 @@ union chunk;
 struct info {
   union chunk *prev;
   union chunk *next;
+  size_t count;
   size_t size;
 };
 
@@ -24,13 +26,17 @@ enum { CHUNK_MAX = 1024 };
 static size_t initialized = 0;
 static size_t chunk_max = 0;
 static union chunk *pool = NULL; //[CHUNK_MAX];
-static union chunk head = {.node = {{NULL, NULL, 0}, 0}};
-static union chunk tail = {.node = {{NULL, NULL, 0}, 0}};
+static union chunk head = {.node = {{NULL, NULL, 0, 0}, 0}};
+static union chunk tail = {.node = {{NULL, NULL, 0, 0}, 0}};
+static size_t _totalAllocated = 0;
 
 void setMemoryPool(void *start, size_t size) {
   pool = reinterpret_cast<union chunk *>(start);
   chunk_max = size / sizeof(union chunk);
 }
+
+size_t getTotalKMallocated() { return _totalAllocated; }
+
 static void init() {
   head.node.info.next = pool;
   union chunk *prev = &head;
@@ -38,7 +44,7 @@ static void init() {
   for (size_t i = 0; i < chunk_max; i++) {
     curr->node.info.prev = prev;
     curr->node.info.next = curr + 1;
-    curr->node.info.size = 0;
+    curr->node.info.count = 0;
     curr->node.used = 0;
     prev = curr++;
   }
@@ -57,19 +63,21 @@ static size_t chunk_count(size_t size) {
   return chunks;
 }
 
-static void *unlink(union chunk *top, size_t count) {
+static void *unlink(union chunk *top, size_t count, size_t size) {
   union chunk *prev = top->node.info.prev;
   union chunk *next = top[count - 1].node.info.next;
   prev->node.info.next = next;
   next->node.info.prev = prev;
-  top->node.info.size = count;
+  top->node.info.count = count;
+  top->node.info.size = size;
+  _totalAllocated += size;
   return top->data + sizeof(struct info);
 }
 
 static void relink(union chunk *top) {
   if (top < pool || pool + chunk_max - 1 < top)
     return;
-
+  _totalAllocated -= top->node.info.size;
   union chunk *prev = &head;
   while (prev->node.info.next != &tail && prev->node.info.next < top) {
     prev = prev->node.info.next;
@@ -79,16 +87,28 @@ static void relink(union chunk *top) {
   union chunk *next = prev->node.info.next;
   union chunk *curr = top;
   prev->node.info.next = curr;
-  size_t count = top->node.info.size;
+  size_t count = top->node.info.count;
   for (size_t i = 0; i < count; i++) {
     curr->node.info.prev = prev;
     curr->node.info.next = curr + 1;
-    curr->node.info.size = 0;
+    curr->node.info.count = 0;
     curr->node.used = 0;
     prev = curr++;
   }
   prev->node.info.next = next;
   next->node.info.prev = prev;
+}
+
+void *krealloc(void *ptr, size_t size) {
+  if (!ptr) {
+    return kmalloc(size);
+  }
+  void *newPtr = kmalloc(size);
+  if (!newPtr) {
+    return nullptr;
+  }
+
+  return nullptr;
 }
 
 void *kmalloc(size_t size) {
@@ -100,7 +120,7 @@ void *kmalloc(size_t size) {
   for (union chunk *curr = top; curr != &tail; curr = curr->node.info.next) {
     keep++;
     if (keep == chunks)
-      return unlink(top, chunks);
+      return unlink(top, chunks, size);
     if (curr->node.info.next == curr + 1)
       continue;
     keep = 0;
