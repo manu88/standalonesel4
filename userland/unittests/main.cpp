@@ -3,5 +3,6 @@
 
 extern "C" int main() {
   testVector();
+  testString();
   return 0;
 }

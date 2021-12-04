@@ -1,5 +1,9 @@
 #pragma once
+#ifndef UNIT_TESTS
 #include "cstring.h"
+#else
+#include <cstring>
+#endif
 #include <stddef.h>
 
 template <class CharT> class basic_string {
@@ -7,6 +11,8 @@ public:
   static const size_t npos = -1;
 
   typedef const CharT &const_reference;
+  basic_string(const CharT *data)
+      : basic_string(const_cast<CharT *>(data), strlen(data)) {}
   basic_string(CharT *data, size_t size) : _data(data), _size(size) {}
   constexpr const CharT *c_str() const noexcept { return _data; }
 
