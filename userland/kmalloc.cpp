@@ -1,4 +1,5 @@
 #include "kmalloc.hpp"
+#include "lib/cstring.h"
 #include "runtime.h"
 #include <stddef.h>
 
@@ -13,7 +14,6 @@ struct info {
 
 struct node {
   struct info info;
-  size_t used;
 };
 
 union chunk {
@@ -26,8 +26,8 @@ enum { CHUNK_MAX = 1024 };
 static size_t initialized = 0;
 static size_t chunk_max = 0;
 static union chunk *pool = NULL; //[CHUNK_MAX];
-static union chunk head = {.node = {{NULL, NULL, 0, 0}, 0}};
-static union chunk tail = {.node = {{NULL, NULL, 0, 0}, 0}};
+static union chunk head = {.node = {{NULL, NULL, 0, 0}}};
+static union chunk tail = {.node = {{NULL, NULL, 0, 0}}};
 static size_t _totalAllocated = 0;
 
 void setMemoryPool(void *start, size_t size) {
@@ -45,7 +45,7 @@ static void init() {
     curr->node.info.prev = prev;
     curr->node.info.next = curr + 1;
     curr->node.info.count = 0;
-    curr->node.used = 0;
+    //    curr->node.used = 0;
     prev = curr++;
   }
   prev->node.info.next = &tail;
@@ -92,7 +92,6 @@ static void relink(union chunk *top) {
     curr->node.info.prev = prev;
     curr->node.info.next = curr + 1;
     curr->node.info.count = 0;
-    curr->node.used = 0;
     prev = curr++;
   }
   prev->node.info.next = next;
@@ -103,12 +102,22 @@ void *krealloc(void *ptr, size_t size) {
   if (!ptr) {
     return kmalloc(size);
   }
+  char *bptr = (char *)ptr;
+  ptr = bptr - sizeof(struct info);
+  union chunk *chunk = (union chunk *)ptr;
+  size_t prevSize = chunk->node.info.size;
+  if (size < prevSize) {
+    return nullptr;
+  }
+
   void *newPtr = kmalloc(size);
   if (!newPtr) {
     return nullptr;
   }
-
-  return nullptr;
+  memcpy(newPtr, ptr, prevSize);
+  memset(((char *)newPtr) + prevSize, 0, size - prevSize);
+  kfree(ptr);
+  return newPtr;
 }
 
 void *kmalloc(size_t size) {
