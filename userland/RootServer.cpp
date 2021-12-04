@@ -14,6 +14,9 @@ RootServer::RootServer()
 
 void RootServer::earlyInit() {
   printf("RootServer: reserve %zi pages\n", ReservedPages);
+  seL4_SetUserData((seL4_Word)&Thread::main);
+
+  assert(Thread::calledFromMain());
   reservePages();
   setMemoryPool((void *)VirtualAddressLayout::ReservedVaddr,
                 ReservedPages * PAGE_SIZE);
