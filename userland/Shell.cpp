@@ -72,8 +72,11 @@ int Shell::processNewCommand(const string &cmd) {
     //    printf("Got kmalloc command args are '%s' size %zi\n", args.c_str(),
     //    size);
     if (size) {
-      void *ret = kmalloc(size);
-      printf("kmalloced at address %lu\n", ret);
+      auto info = Syscall::perform(Syscall::KMalloc(size), _endpoint);
+      auto responseOrErr = Syscall::KMalloc::decodeResponse(info);
+      if (responseOrErr) {
+        printf("kmalloced at address %lu\n", responseOrErr.value);
+      }
       return 0;
     }
     return -1;
@@ -91,7 +94,7 @@ int Shell::processNewCommand(const string &cmd) {
     }
     return -1;
   } else if (cmd == "vm") {
-    Syscall::perform(Syscall::Id::VMStats, _endpoint);
+    Syscall::perform(Syscall::VMStats(), _endpoint);
     return 0;
   } else if (cmd == "history") {
     for (const auto &cmd : _history) {
