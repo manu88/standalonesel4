@@ -101,6 +101,8 @@ void RootServer::run() {
     case Syscall::Id::VMStats:
       printf("VMStats\n");
       printf("Num mapped pages %zi\n", _pt.getMappedPagesCount());
+      printf("kmalloc'ed %zi/%zi bytes\n", getTotalKMallocated(),
+             ReservedPages * PAGE_SIZE);
       break;
     default:
       break;
