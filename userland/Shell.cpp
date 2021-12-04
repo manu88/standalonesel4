@@ -49,6 +49,14 @@ void Shell::onChar(char c) {
 }
 
 int Shell::newCommand(const string &cmd) {
+  int r = processNewCommand(cmd);
+  if (!_history.empty() && _history.back() == cmd) {
+    return r;
+  }
+  _history.push_back(cmd.c_str());
+  return r;
+}
+int Shell::processNewCommand(const string &cmd) {
   if (cmd == "sched") {
     seL4_DebugDumpScheduler();
     return 0;
@@ -84,6 +92,11 @@ int Shell::newCommand(const string &cmd) {
     return -1;
   } else if (cmd == "vm") {
     Syscall::perform(Syscall::Id::VMStats, _endpoint);
+    return 0;
+  } else if (cmd == "history") {
+    for (const auto &cmd : _history) {
+      printf("'%s'\n", cmd.c_str());
+    }
     return 0;
   }
   printf("Command '%s' does not exist\n", cmd.c_str());

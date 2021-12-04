@@ -1,5 +1,6 @@
 #pragma once
 #include "lib/basic_string.hpp"
+#include "lib/vector.hpp"
 #include "sel4.hpp"
 #include <stddef.h>
 
@@ -11,10 +12,13 @@ public:
 
 private:
   int newCommand(const string &cmd);
+  int processNewCommand(const string &cmd);
   void showPrompt();
   enum { BufferSize = 256 };
   char *buffer = nullptr;
   size_t bufferIndex = 0;
 
   seL4_Word _endpoint = 0;
+
+  vector<string> _history;
 };
