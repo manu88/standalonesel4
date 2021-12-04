@@ -4,6 +4,9 @@
 
 class Thread {
 public:
+  static bool calledFrom(const Thread &t);
+  static bool calledFromMain() { return calledFrom(main); }
+  static Thread main;
   using EntryPoint = std::function<void *(Thread &, void *)>;
 
   Thread(seL4_CPtr tcb = 0, EntryPoint entryPoint = 0);
@@ -21,6 +24,8 @@ public:
     badge = rhs.badge;
     return *this;
   }
+
+  bool calledFrom() const noexcept;
 
   seL4_Error resume();
 
