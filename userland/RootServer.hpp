@@ -17,6 +17,7 @@ public:
   void earlyInit(); // kmalloc/kfree/new/delete are setup here!
   void lateInit();
   void run();
+  void processSyscall(const seL4_MessageInfo_t &msgInfo, seL4_Word sender);
 
 private:
   enum { ReservedPages = 10 };

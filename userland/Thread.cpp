@@ -3,11 +3,14 @@
 #include "runtime.h"
 #include <cstddef>
 
+/*static*/ Thread Thread::main;
+
 Thread::Thread(seL4_CPtr tcb, EntryPoint entryPoint)
     : _tcb(tcb), entryPoint(entryPoint) {}
 
 static void _threadMain(seL4_Word p2) {
   Thread *self = reinterpret_cast<Thread *>(p2);
+  seL4_SetUserData((seL4_Word)self);
   self->retValue = self->entryPoint(*self, nullptr);
   printf("Thread %i returned, suspend it\n", self->badge);
   seL4_TCB_Suspend(self->_tcb);
@@ -19,6 +22,14 @@ seL4_Error Thread::setPriority(seL4_Word prio) {
     priority = prio;
   }
   return err;
+}
+
+/*static*/ bool Thread::calledFrom(const Thread &t) {
+  return seL4_GetUserData() == (seL4_Word)&t;
+}
+
+bool Thread::calledFrom() const noexcept {
+  return seL4_GetUserData() == (seL4_Word)this;
 }
 
 seL4_Error Thread::resume() {

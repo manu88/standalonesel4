@@ -1,4 +1,5 @@
 #include "Shell.hpp"
+#include "Syscall.hpp"
 #include "kmalloc.hpp"
 #include "lib/cstring.h"
 #include "runtime.h"
@@ -11,7 +12,8 @@ void Shell::init() {
   memset(buffer, 0, BufferSize);
 }
 void Shell::showPrompt() { printf(":>"); }
-void Shell::start() {
+void Shell::start(seL4_Word endpoint) {
+  _endpoint = endpoint;
   printf("RootServer shell. type 'help' for ... well ... help\n");
   showPrompt();
 }
@@ -47,6 +49,15 @@ void Shell::onChar(char c) {
 }
 
 int Shell::newCommand(const string &cmd) {
+  int r = processNewCommand(cmd);
+  lastRet = r;
+  if (!_history.empty() && _history.back() == cmd) {
+    return r;
+  }
+  _history.push_back(cmd.c_str());
+  return r;
+}
+int Shell::processNewCommand(const string &cmd) {
   if (cmd == "sched") {
     seL4_DebugDumpScheduler();
     return 0;
@@ -62,8 +73,23 @@ int Shell::newCommand(const string &cmd) {
     //    printf("Got kmalloc command args are '%s' size %zi\n", args.c_str(),
     //    size);
     if (size) {
-      void *ret = kmalloc(size);
-      printf("kmalloced at address %lu\n", ret);
+      auto responseOrErr =
+          Syscall::perform::kmalloc(_endpoint, Syscall::KMallocRequest(size));
+      if (responseOrErr) {
+        printf("kmalloced at address %lu\n", responseOrErr.value.p);
+      }
+      return 0;
+    }
+    return -1;
+  } else if (cmd.starts_with("touch")) {
+    if (cmd.size() < 7) {
+      return -1;
+    }
+    auto args = cmd.substr(6);
+    long addr = strtol(args.c_str(), NULL, 10);
+    if (addr) {
+      printf("Touching %lu\n", addr);
+      ((char *)addr)[0] = 53;
       return 0;
     }
     return -1;
@@ -73,15 +99,42 @@ int Shell::newCommand(const string &cmd) {
     }
     auto args = cmd.substr(6);
     long addr = strtol(args.c_str(), NULL, 10);
-    //    printf("Got kfree command args are '%s' addr %zi\n", args.c_str(),
-    //    addr);
     if (addr) {
-      kfree((void *)addr);
-      return 0;
+      auto respOrErr = Syscall::perform::kfree(
+          _endpoint, Syscall::KFreeRequest((void *)addr));
+      if (respOrErr) {
+        return respOrErr.value.response;
+      }
+      return -1;
     }
     return -1;
   } else if (cmd == "vm") {
+    Syscall::perform::vmstats(_endpoint);
     return 0;
+  } else if (cmd == "history") {
+    for (const auto &cmd : _history) {
+      printf("'%s'\n", cmd.c_str());
+    }
+    return 0;
+  } else if (cmd == "last") {
+    printf("Last command returned %i\n", lastRet);
+    return lastRet;
+  } else if (cmd.starts_with("mmap")) {
+    if (cmd.size() < 6) {
+      return -1;
+    }
+    auto args = cmd.substr(5);
+    long numPages = strtol(args.c_str(), NULL, 10);
+    if (numPages) {
+      auto retOrErr =
+          Syscall::perform::mmap(_endpoint, Syscall::MMapRequest(numPages));
+      if (retOrErr) {
+        printf("mmapped %zi pages at %lu\n", numPages, retOrErr.value.p);
+        return 0;
+      }
+      return -1;
+    }
+    return -1;
   }
   printf("Command '%s' does not exist\n", cmd.c_str());
   return -1;

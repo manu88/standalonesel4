@@ -48,6 +48,7 @@ PageTable::PageCapOrError PageTable::mapPage(seL4_Word vaddr,
       assert(false);
     }
   }
+  _mappedPages++;
   return success<seL4_CPtr, seL4_Error>(frame);
 }
 
