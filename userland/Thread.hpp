@@ -6,6 +6,7 @@ class Thread {
 public:
   static bool calledFrom(const Thread &t);
   static bool calledFromMain() { return calledFrom(main); }
+  static Thread *getCurrent() { return (Thread *)seL4_GetUserData(); }
   static Thread main;
   using EntryPoint = std::function<void *(Thread &, void *)>;
 

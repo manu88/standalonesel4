@@ -12,8 +12,8 @@ void Shell::init() {
   memset(buffer, 0, BufferSize);
 }
 void Shell::showPrompt() { printf(":>"); }
-void Shell::start(seL4_Word endpoint) {
-  _endpoint = endpoint;
+
+void Shell::start() {
   printf("RootServer shell. type 'help' for ... well ... help\n");
   showPrompt();
 }
@@ -60,7 +60,7 @@ int Shell::newCommand(const string &cmd) {
 int Shell::processNewCommand(const string &cmd) {
   if (cmd == "sched") {
     Syscall::perform::debug(
-        _endpoint,
+        Thread::getCurrent()->endpoint,
         Syscall::DebugRequest(Syscall::DebugRequest::Operation::DumpScheduler));
     return 0;
   } else if (cmd == "help") {
@@ -75,8 +75,8 @@ int Shell::processNewCommand(const string &cmd) {
     //    printf("Got kmalloc command args are '%s' size %zi\n", args.c_str(),
     //    size);
     if (size) {
-      auto responseOrErr =
-          Syscall::perform::kmalloc(_endpoint, Syscall::KMallocRequest(size));
+      auto responseOrErr = Syscall::perform::kmalloc(
+          Thread::getCurrent()->endpoint, Syscall::KMallocRequest(size));
       if (responseOrErr) {
         printf("kmalloced at address %lu\n", responseOrErr.value.p);
       }
@@ -103,7 +103,7 @@ int Shell::processNewCommand(const string &cmd) {
     long addr = strtol(args.c_str(), NULL, 10);
     if (addr) {
       auto respOrErr = Syscall::perform::kfree(
-          _endpoint, Syscall::KFreeRequest((void *)addr));
+          Thread::getCurrent()->endpoint, Syscall::KFreeRequest((void *)addr));
       if (respOrErr) {
         return respOrErr.value.response;
       }
@@ -112,7 +112,7 @@ int Shell::processNewCommand(const string &cmd) {
     return -1;
   } else if (cmd == "vm") {
     Syscall::perform::debug(
-        _endpoint,
+        Thread::getCurrent()->endpoint,
         Syscall::DebugRequest(Syscall::DebugRequest::Operation::VMStats));
     return 0;
   } else if (cmd == "history") {
@@ -130,8 +130,8 @@ int Shell::processNewCommand(const string &cmd) {
     auto args = cmd.substr(5);
     long numPages = strtol(args.c_str(), NULL, 10);
     if (numPages) {
-      auto retOrErr =
-          Syscall::perform::mmap(_endpoint, Syscall::MMapRequest(numPages));
+      auto retOrErr = Syscall::perform::mmap(Thread::getCurrent()->endpoint,
+                                             Syscall::MMapRequest(numPages));
       if (retOrErr) {
         printf("mmapped %zi pages at %lu\n", numPages, retOrErr.value.p);
         return 0;

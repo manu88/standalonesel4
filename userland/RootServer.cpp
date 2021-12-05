@@ -68,8 +68,8 @@ RootServer::createThread(Thread::EntryPoint entryPoint) {
 }
 
 void RootServer::run() {
-  auto _comThOrErr = createThread([this](Thread &t, void *) {
-    _shell.start(t.endpoint);
+  auto _comThOrErr = createThread([this](Thread &, void *) {
+    _shell.start();
     while (1) {
       seL4_X86_IOPort_In8_t d = seL4_X86_IOPort_In8(_com1port, 0x3F8);
       if (d.result) {

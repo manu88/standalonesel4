@@ -1,4 +1,5 @@
 #pragma once
+#include "Thread.hpp"
 #include "lib/basic_string.hpp"
 #include "lib/vector.hpp"
 #include "sel4.hpp"
@@ -6,9 +7,9 @@
 
 class Shell {
 public:
-  void init();                    // called from main thread
-  void start(seL4_Word endpoint); // called from com1 thread
-  void onChar(char c);            // called from com1 thread
+  void init();         // called from main thread
+  void start();        // called from com1 thread
+  void onChar(char c); // called from com1 thread
 
 private:
   int newCommand(const string &cmd);
@@ -17,8 +18,6 @@ private:
   enum { BufferSize = 256 };
   char *buffer = nullptr;
   size_t bufferIndex = 0;
-
-  seL4_Word _endpoint = 0;
 
   int lastRet = 0;
   vector<string> _history;
