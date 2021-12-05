@@ -76,7 +76,7 @@ int Shell::processNewCommand(const string &cmd) {
       auto responseOrErr =
           Syscall::perform::kmalloc(_endpoint, Syscall::KMallocRequest(size));
       if (responseOrErr) {
-        printf("kmalloced at address %lu\n", responseOrErr.value);
+        printf("kmalloced at address %lu\n", responseOrErr.value.p);
       }
       return 0;
     }
@@ -119,6 +119,22 @@ int Shell::processNewCommand(const string &cmd) {
   } else if (cmd == "last") {
     printf("Last command returned %i\n", lastRet);
     return lastRet;
+  } else if (cmd.starts_with("mmap")) {
+    if (cmd.size() < 6) {
+      return -1;
+    }
+    auto args = cmd.substr(5);
+    long numPages = strtol(args.c_str(), NULL, 10);
+    if (numPages) {
+      auto retOrErr =
+          Syscall::perform::mmap(_endpoint, Syscall::MMapRequest(numPages));
+      if (retOrErr) {
+        printf("mmapped %zi pages at %lu\n", numPages, retOrErr.value.p);
+        return 0;
+      }
+      return -1;
+    }
+    return -1;
   }
   printf("Command '%s' does not exist\n", cmd.c_str());
   return -1;

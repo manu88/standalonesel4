@@ -98,35 +98,66 @@ void RootServer::run() {
   while (1) {
     seL4_Word sender = 0;
     seL4_MessageInfo_t msgInfo = seL4_Recv(_apiEndpoint, &sender);
-    assert(seL4_MessageInfo_get_length(msgInfo) > 0);
-    switch ((Syscall::ID)seL4_GetMR(0)) {
-    case Syscall::ID::VMStats:
-      printf("VMStats\n");
-      printf("Num mapped pages %zi\n", _pt.getMappedPagesCount());
-      printf("kmalloc'ed %zi/%zi bytes\n", getTotalKMallocated(),
-             ReservedPages * PAGE_SIZE);
+    switch (seL4_MessageInfo_get_label(msgInfo)) {
+    case seL4_Fault_NullFault:
+      processSyscall(msgInfo, sender);
       break;
-    case Syscall::ID::KMalloc: {
-      auto paramOrErr = Syscall::KMallocRequest::decode(msgInfo);
-      if (paramOrErr) {
-        void *ret = kmalloc(paramOrErr.value.size);
-        seL4_SetMR(1, (seL4_Word)ret);
-        seL4_Reply(msgInfo);
-      }
-    } break;
-    case Syscall::ID::KFree: {
-      auto paramOrErr = Syscall::KFreeRequest::decode(msgInfo);
-      if (paramOrErr) {
-        printf("kfreeing %lu\n", paramOrErr.value.ptr);
-        kfree(paramOrErr.value.ptr);
-        seL4_SetMR(1, 0);
-        seL4_Reply(msgInfo);
-      }
-    } break;
+    case seL4_Fault_CapFault:
+      printf("Cap fault to handle\n");
+      break;
+    case seL4_Fault_UnknownSyscall:
+      printf("Unknown syscall to handle\n");
+      break;
+    case seL4_Fault_UserException:
+      printf("User exception to handle\n");
+      break;
+    case seL4_Fault_VMFault:
+      printf("VM fault to handle\n");
+      break;
     default:
-      printf("RootTask: Received msg from %i %X\n", sender, seL4_GetMR(0));
       break;
     }
+  }
+}
+
+void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
+                                seL4_Word sender) {
+  assert(seL4_MessageInfo_get_length(msgInfo) > 0);
+  switch ((Syscall::ID)seL4_GetMR(0)) {
+  case Syscall::ID::VMStats:
+    printf("VMStats\n");
+    printf("Num mapped pages %zi\n", _pt.getMappedPagesCount());
+    printf("kmalloc'ed %zi/%zi bytes\n", getTotalKMallocated(),
+           ReservedPages * PAGE_SIZE);
+    break;
+  case Syscall::ID::KMalloc: {
+    auto paramOrErr = Syscall::KMallocRequest::decode(msgInfo);
+    if (paramOrErr) {
+      void *ret = kmalloc(paramOrErr.value.size);
+      seL4_SetMR(1, (seL4_Word)ret);
+      seL4_Reply(msgInfo);
+    }
+  } break;
+  case Syscall::ID::KFree: {
+    auto paramOrErr = Syscall::KFreeRequest::decode(msgInfo);
+    if (paramOrErr) {
+      printf("kfreeing %lu\n", paramOrErr.value.ptr);
+      kfree(paramOrErr.value.ptr);
+      seL4_SetMR(1, 0);
+      seL4_Reply(msgInfo);
+    }
+  } break;
+  case Syscall::ID::MMap: {
+    auto paramOrErr = Syscall::MMapRequest::decode(msgInfo);
+    if (paramOrErr) {
+      printf("mmap request for %zi pages\n", paramOrErr.value.numPages);
+      seL4_SetMR(1, 12345);
+      seL4_Reply(msgInfo);
+    }
+  } break;
+  default:
+    printf("RootTask: Received msg from %i %X\n", sender, seL4_GetMR(0));
+    break;
   }
 }
 

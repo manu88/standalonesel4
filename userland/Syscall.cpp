@@ -11,7 +11,7 @@ Syscall::KMallocRequest::decode(const seL4_MessageInfo_t &info) {
 /*static*/ Expected<Syscall::KMallocResponse, bool>
 Syscall::KMallocResponse::decode(const seL4_MessageInfo_t &) {
   return success<Syscall::KMallocResponse, bool>(
-      Syscall::KMallocResponse(seL4_GetMR(1)));
+      Syscall::KMallocResponse((void *)seL4_GetMR(1)));
 }
 
 /*static*/ Expected<Syscall::KFreeRequest, bool>
@@ -27,6 +27,20 @@ Syscall::KFreeRequest::decode(const seL4_MessageInfo_t &info) {
 Syscall::KFreeResponse::decode(const seL4_MessageInfo_t &) {
   return success<Syscall::KFreeResponse, bool>(
       Syscall::KFreeResponse(seL4_GetMR(1)));
+}
+
+/*static*/ Expected<Syscall::MMapRequest, bool>
+Syscall::MMapRequest::decode(const seL4_MessageInfo_t &info) {
+  if (seL4_MessageInfo_get_length(info) < 2) {
+    return unexpected<Syscall::MMapRequest, bool>(false);
+  }
+  return success<Syscall::MMapRequest, bool>(MMapRequest(seL4_GetMR(1)));
+}
+
+/*static*/ Expected<Syscall::MMapResponse, bool>
+Syscall::MMapResponse::decode(const seL4_MessageInfo_t &) {
+  return success<Syscall::MMapResponse, bool>(
+      Syscall::MMapResponse((void *)seL4_GetMR(1)));
 }
 
 template <typename RequestType, typename ReturnType>
@@ -55,6 +69,10 @@ template Expected<Syscall::KMallocResponse, bool>
 Syscall::performBase<Syscall::KMallocRequest>(seL4_Word endpoint,
                                               Syscall::ID id,
                                               const Syscall::KMallocRequest &b);
+
+template Expected<Syscall::MMapResponse, bool>
+Syscall::performBase<Syscall::MMapRequest>(seL4_Word endpoint, Syscall::ID id,
+                                           const Syscall::MMapRequest &b);
 
 template Expected<Syscall::KFreeResponse, bool>
 Syscall::performBase<Syscall::KFreeRequest>(seL4_Word endpoint, Syscall::ID id,
