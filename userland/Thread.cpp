@@ -28,6 +28,8 @@ seL4_Error Thread::setPriority(seL4_Word prio) {
   return seL4_GetUserData() == (seL4_Word)&t;
 }
 
+void Thread::setName(const char *name) { seL4_DebugNameThread(_tcb, name); }
+
 bool Thread::calledFrom() const noexcept {
   return seL4_GetUserData() == (seL4_Word)this;
 }

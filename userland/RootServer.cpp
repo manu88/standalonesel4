@@ -57,42 +57,29 @@ void RootServer::lateInit() {
   _shell.init();
 }
 
-void RootServer::run() {
-#if 0
-  Thread threads[10] = {};
-  for (int i = 0; i < 10; i++) {
-    auto threadOrErr = _factory.createThread(
-        i,
-        [](Thread &t, void *) {
-          printf("Hello from THREAD %X\n", t.badge);
-          auto info = seL4_MessageInfo_new(0, 0, 0, 0);
-          seL4_Call(t.endpoint, info);
-          printf("THREAD %X: call returned\n", t.badge);
-
-          return nullptr;
-        },
-        _apiEndpoint);
-    if (threadOrErr) {
-      threads[i] = threadOrErr.value;
-      threads[i].resume();
-    }
+Expected<Thread, seL4_Error>
+RootServer::createThread(Thread::EntryPoint entryPoint) {
+  auto ret =
+      _factory.createThread(_tcbBadgeCounter++, entryPoint, _apiEndpoint);
+  if (ret) {
+    _threads.add(ret.value);
   }
-#endif
+  return ret;
+}
 
-  auto _comThOrErr = _factory.createThread(
-      10,
-      [this](Thread &t, void *) {
-        _shell.start(t.endpoint);
-        while (1) {
-          seL4_X86_IOPort_In8_t d = seL4_X86_IOPort_In8(_com1port, 0x3F8);
-          if (d.result) {
-            _shell.onChar((char)d.result);
-          }
-        }
-        return nullptr;
-      },
-      _apiEndpoint);
+void RootServer::run() {
+  auto _comThOrErr = createThread([this](Thread &t, void *) {
+    _shell.start(t.endpoint);
+    while (1) {
+      seL4_X86_IOPort_In8_t d = seL4_X86_IOPort_In8(_com1port, 0x3F8);
+      if (d.result) {
+        _shell.onChar((char)d.result);
+      }
+    }
+    return nullptr;
+  });
   if (_comThOrErr) {
+    _comThOrErr.value.setName("Com1");
     _comThOrErr.value.resume();
   }
   while (1) {
@@ -124,12 +111,24 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
                                 seL4_Word sender) {
   assert(seL4_MessageInfo_get_length(msgInfo) > 0);
   switch ((Syscall::ID)seL4_GetMR(0)) {
-  case Syscall::ID::VMStats:
-    printf("VMStats\n");
-    printf("Num mapped pages %zi\n", _pt.getMappedPagesCount());
-    printf("kmalloc'ed %zi/%zi bytes\n", getTotalKMallocated(),
-           ReservedPages * PAGE_SIZE);
-    break;
+  case Syscall::ID::Debug: {
+    auto paramOrErr = Syscall::DebugRequest::decode(msgInfo);
+    if (paramOrErr) {
+      if (paramOrErr.value.op == Syscall::DebugRequest::Operation::VMStats) {
+        printf("VMStats\n");
+        printf("Num mapped pages %zi\n", _pt.getMappedPagesCount());
+        printf("kmalloc'ed %zi/%zi bytes\n", getTotalKMallocated(),
+               ReservedPages * PAGE_SIZE);
+      } else if (paramOrErr.value.op ==
+                 Syscall::DebugRequest::Operation::DumpScheduler) {
+        seL4_DebugDumpScheduler();
+        for (const auto &t : _threads.threads) {
+          printf("Thread: badge %X endpoint %X prio %i\n", t.badge, t.endpoint,
+                 t.priority);
+        }
+      }
+    }
+  } break;
   case Syscall::ID::KMalloc: {
     auto paramOrErr = Syscall::KMallocRequest::decode(msgInfo);
     if (paramOrErr) {

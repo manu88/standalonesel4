@@ -10,7 +10,7 @@ template <typename ValueType, typename ErrorType> struct Expected {
       : value(value), error(error), isValid(valid) {}
 
   Expected(const Expected &other)
-      : value(other.value), error(other.value), isValid(other.isValid) {}
+      : value(other.value), error(other.error), isValid(other.isValid) {}
 
   Expected &operator=(const Expected &rhs) {
     value = rhs.value;

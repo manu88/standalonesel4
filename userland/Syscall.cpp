@@ -1,5 +1,14 @@
 #include "Syscall.hpp"
 
+/*static*/ Expected<Syscall::DebugRequest, bool>
+Syscall::DebugRequest::decode(const seL4_MessageInfo_t &info) {
+  if (seL4_MessageInfo_get_length(info) < 2) {
+    return unexpected<Syscall::DebugRequest, bool>(false);
+  }
+  return success<Syscall::DebugRequest, bool>(
+      DebugRequest((DebugRequest::Operation)seL4_GetMR(1)));
+}
+
 /*static*/ Expected<Syscall::KMallocRequest, bool>
 Syscall::KMallocRequest::decode(const seL4_MessageInfo_t &info) {
   if (seL4_MessageInfo_get_length(info) < 2) {

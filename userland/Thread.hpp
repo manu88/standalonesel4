@@ -25,6 +25,8 @@ public:
     return *this;
   }
 
+  void setName(const char *name);
+
   bool calledFrom() const noexcept;
 
   seL4_Error resume();

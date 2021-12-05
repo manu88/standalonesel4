@@ -5,7 +5,7 @@
 
 namespace Syscall {
 
-enum class ID : seL4_Word { Unknown, VMStats, KMalloc, KFree, MMap };
+enum class ID : seL4_Word { Unknown, Debug, KMalloc, KFree, MMap };
 
 struct BaseRequest {
   virtual ~BaseRequest() {}
@@ -22,6 +22,21 @@ struct BaseResponse {
   static Expected<BaseResponse, bool> decode(const seL4_MessageInfo_t &) {
     return success<BaseResponse, bool>(BaseResponse());
   }
+};
+
+/* *** *** ***  */
+
+struct DebugRequest : BaseRequest {
+  enum Operation : seL4_Word { Unknown, VMStats, DumpScheduler };
+  DebugRequest(int) : op(Operation::Unknown) {}
+  explicit DebugRequest(Operation op) : op(op) {}
+  size_t getNumMsgRegisters() const noexcept final { return 1; }
+  seL4_Word getMsgRegister(size_t) const noexcept final {
+    return (seL4_Word)op;
+  }
+  Operation op;
+
+  static Expected<DebugRequest, bool> decode(const seL4_MessageInfo_t &);
 };
 
 /* *** *** ***  */
@@ -103,8 +118,9 @@ inline Expected<KFreeResponse, bool> kfree(seL4_Word endpoint,
   return performBase<KFreeRequest, KFreeResponse>(endpoint, ID::KFree, r);
 }
 
-inline Expected<BaseResponse, bool> vmstats(seL4_Word endpoint) {
-  return performBase<BaseRequest, BaseResponse>(endpoint, ID::VMStats);
+inline Expected<BaseResponse, bool> debug(seL4_Word endpoint,
+                                          const DebugRequest &r) {
+  return performBase<BaseRequest, BaseResponse>(endpoint, ID::Debug, r);
 }
 
 inline Expected<MMapResponse, bool> mmap(seL4_Word endpoint,

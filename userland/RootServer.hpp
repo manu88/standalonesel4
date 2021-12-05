@@ -5,10 +5,12 @@
 #include "Shell.hpp"
 #include "Thread.hpp"
 #include "lib/expected.hpp"
+#include "lib/vector.hpp"
 
-struct Com1 {
-  seL4_CPtr irq;
-  seL4_CPtr port;
+struct ThreadTable {
+  vector<Thread> threads;
+
+  void add(const Thread &t) { threads.push_back(t); }
 };
 
 class RootServer {
@@ -20,6 +22,7 @@ public:
   void processSyscall(const seL4_MessageInfo_t &msgInfo, seL4_Word sender);
 
 private:
+  Expected<Thread, seL4_Error> createThread(Thread::EntryPoint entryPoint);
   enum { ReservedPages = 10 };
   enum VirtualAddressLayout // Layout of root server, not other processes!!
   { AddressTables = 0x8000000000,
@@ -29,6 +32,7 @@ private:
   void reservePages();
   void testPt();
 
+  ThreadTable _threads;
   Shell _shell;
   seL4_CPtr _com1port;
 
@@ -36,4 +40,5 @@ private:
   PageTable _pt;
   ObjectFactory _factory;
   seL4_CPtr _apiEndpoint = 0;
+  seL4_Word _tcbBadgeCounter = 1;
 };

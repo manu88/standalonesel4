@@ -59,7 +59,9 @@ int Shell::newCommand(const string &cmd) {
 }
 int Shell::processNewCommand(const string &cmd) {
   if (cmd == "sched") {
-    seL4_DebugDumpScheduler();
+    Syscall::perform::debug(
+        _endpoint,
+        Syscall::DebugRequest(Syscall::DebugRequest::Operation::DumpScheduler));
     return 0;
   } else if (cmd == "help") {
     printf("available commands are help, sched, kmalloc/kfree\n");
@@ -109,7 +111,9 @@ int Shell::processNewCommand(const string &cmd) {
     }
     return -1;
   } else if (cmd == "vm") {
-    Syscall::perform::vmstats(_endpoint);
+    Syscall::perform::debug(
+        _endpoint,
+        Syscall::DebugRequest(Syscall::DebugRequest::Operation::VMStats));
     return 0;
   } else if (cmd == "history") {
     for (const auto &cmd : _history) {

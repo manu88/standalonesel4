@@ -12,7 +12,6 @@ public:
   Expected<Thread, seL4_Error> createThread(seL4_Word tcbBadge,
                                             Thread::EntryPoint entryPoint,
                                             seL4_CPtr apiEndpoint);
-
   ObjectOrError createEndpoint();
   ObjectOrError createNotification();
   seL4_Word currentVirtualAddress = 0;
