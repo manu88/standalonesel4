@@ -50,6 +50,7 @@ void Shell::onChar(char c) {
 
 int Shell::newCommand(const string &cmd) {
   int r = processNewCommand(cmd);
+  lastRet = r;
   if (!_history.empty() && _history.back() == cmd) {
     return r;
   }
@@ -72,11 +73,23 @@ int Shell::processNewCommand(const string &cmd) {
     //    printf("Got kmalloc command args are '%s' size %zi\n", args.c_str(),
     //    size);
     if (size) {
-      auto info = Syscall::perform(Syscall::KMalloc(size), _endpoint);
-      auto responseOrErr = Syscall::KMalloc::decodeResponse(info);
+      auto responseOrErr =
+          Syscall::perform::kmalloc(_endpoint, Syscall::KMallocRequest(size));
       if (responseOrErr) {
         printf("kmalloced at address %lu\n", responseOrErr.value);
       }
+      return 0;
+    }
+    return -1;
+  } else if (cmd.starts_with("touch")) {
+    if (cmd.size() < 7) {
+      return -1;
+    }
+    auto args = cmd.substr(6);
+    long addr = strtol(args.c_str(), NULL, 10);
+    if (addr) {
+      printf("Touching %lu\n", addr);
+      ((char *)addr)[0] = 53;
       return 0;
     }
     return -1;
@@ -86,21 +99,26 @@ int Shell::processNewCommand(const string &cmd) {
     }
     auto args = cmd.substr(6);
     long addr = strtol(args.c_str(), NULL, 10);
-    //    printf("Got kfree command args are '%s' addr %zi\n", args.c_str(),
-    //    addr);
     if (addr) {
-      kfree((void *)addr);
-      return 0;
+      auto respOrErr = Syscall::perform::kfree(
+          _endpoint, Syscall::KFreeRequest((void *)addr));
+      if (respOrErr) {
+        return respOrErr.value.response;
+      }
+      return -1;
     }
     return -1;
   } else if (cmd == "vm") {
-    Syscall::perform(Syscall::VMStats(), _endpoint);
+    Syscall::perform::vmstats(_endpoint);
     return 0;
   } else if (cmd == "history") {
     for (const auto &cmd : _history) {
       printf("'%s'\n", cmd.c_str());
     }
     return 0;
+  } else if (cmd == "last") {
+    printf("Last command returned %i\n", lastRet);
+    return lastRet;
   }
   printf("Command '%s' does not exist\n", cmd.c_str());
   return -1;

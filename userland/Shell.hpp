@@ -20,5 +20,6 @@ private:
 
   seL4_Word _endpoint = 0;
 
+  int lastRet = 0;
   vector<string> _history;
 };

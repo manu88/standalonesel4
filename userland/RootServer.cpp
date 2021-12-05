@@ -107,7 +107,7 @@ void RootServer::run() {
              ReservedPages * PAGE_SIZE);
       break;
     case Syscall::ID::KMalloc: {
-      auto paramOrErr = Syscall::KMalloc::decodeRequest(msgInfo);
+      auto paramOrErr = Syscall::KMallocRequest::decode(msgInfo);
       if (paramOrErr) {
         void *ret = kmalloc(paramOrErr.value.size);
         seL4_SetMR(1, (seL4_Word)ret);
@@ -115,8 +115,9 @@ void RootServer::run() {
       }
     } break;
     case Syscall::ID::KFree: {
-      auto paramOrErr = Syscall::KFree::decodeRequest(msgInfo);
+      auto paramOrErr = Syscall::KFreeRequest::decode(msgInfo);
       if (paramOrErr) {
+        printf("kfreeing %lu\n", paramOrErr.value.ptr);
         kfree(paramOrErr.value.ptr);
         seL4_SetMR(1, 0);
         seL4_Reply(msgInfo);
