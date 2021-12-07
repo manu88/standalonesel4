@@ -3,21 +3,19 @@
 #include "runtime.h"
 #include <cstddef>
 
-/*static*/ Thread Thread::main = 0;
+/*static*/ Thread Thread::main = Thread(0, nullptr);
 
-Thread::Thread(seL4_CPtr tcb, EntryPoint &entryPoint)
-    : _tcb(tcb), entryPoint(entryPoint) {}
+Thread::Thread(seL4_CPtr tcb, EntryPoint entryPoint)
+    : _tcb(tcb), entryPoint(entryPoint), _state(Thread::State::Uninitialized) {}
 
-Thread::~Thread(){
-  printf("Destructing %X\n", badge);
-}
-
-static void _threadMain(seL4_Word p2) {
+/*static*/ void Thread::_threadMain(seL4_Word p2) {
   Thread *self = reinterpret_cast<Thread *>(p2);
+  self->_state = Thread::State::Started;
   seL4_SetUserData((seL4_Word)self);
   self->retValue = self->entryPoint(*self, nullptr);
+  self->_state = Thread::State::Done;
   printf("Thread %i returned, suspend it\n", self->badge);
-  seL4_TCB_Suspend(self->_tcb);
+  self->suspend();
 }
 
 seL4_Error Thread::setPriority(seL4_Word prio) {
@@ -38,7 +36,7 @@ bool Thread::calledFrom() const noexcept {
   return seL4_GetUserData() == (seL4_Word)this;
 }
 
-seL4_Error Thread::resume() {
+seL4_Error Thread::start() {
   seL4_UserContext tcb_context;
   size_t num_regs = sizeof(tcb_context) / sizeof(tcb_context.rax);
   seL4_TCB_ReadRegisters(_tcb, 0, 0, num_regs, &tcb_context);
@@ -52,5 +50,25 @@ seL4_Error Thread::resume() {
   tcb_context.rsi = (seL4_Word)0;                          // p1
   tcb_context.rdx = (seL4_Word)0;                          // p2
   // write registers and start thread
-  return seL4_TCB_WriteRegisters(_tcb, 1, 0, num_regs, &tcb_context);
+  auto err =  seL4_TCB_WriteRegisters(_tcb, 1, 0, num_regs, &tcb_context);
+  if(err == seL4_NoError){
+    _state = Thread::State::Started;
+  }
+  return err;
+}
+
+seL4_Error Thread::suspend(){
+  auto err = seL4_TCB_Suspend(_tcb);
+  if(err == seL4_NoError){
+    _state = Thread::State::Paused;
+  }
+  return err;
+}
+
+seL4_Error Thread::resume(){
+  auto err = seL4_TCB_Resume(_tcb);
+  if(err == seL4_NoError){
+    _state = Thread::State::Running;
+  }
+  return err;
 }
