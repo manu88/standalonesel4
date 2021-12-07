@@ -106,18 +106,22 @@ struct ThreadRequest : BaseRequest {
   enum ThreadOp: seL4_Word{
     List,
     Suspend,
-    Resume
+    Resume,
+    SetPriority
   };
-  ThreadRequest(ThreadOp op, seL4_Word arg1 = 0) : op(op), arg1(arg1) {}
-  size_t getNumMsgRegisters() const noexcept final { return 2; }
+  ThreadRequest(ThreadOp op, seL4_Word arg1 = 0, seL4_Word arg2 = 0) : op(op), arg1(arg1), arg2(arg2) {}
+  size_t getNumMsgRegisters() const noexcept final { return 3; }
   seL4_Word getMsgRegister(size_t index) const noexcept final {
     if(index == 0)
       return op;
-    return arg1;
+    if(index == 1)
+      return arg1;
+    return arg2;
   }
   bool hasResponse() const noexcept final { return true; }
   ThreadOp op;
   seL4_Word arg1 = 0;
+  seL4_Word arg2 = 0;
   static Expected<ThreadRequest, bool> decode(const seL4_MessageInfo_t &);
 };
 

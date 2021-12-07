@@ -59,6 +59,21 @@ int Shell::cmdThread(const string &args){
     auto argStr = args.substr(7);
     long badge = strtol(argStr.c_str(), NULL, 10);
     Syscall::perform::thread(Thread::getCurrent()->endpoint, Syscall::ThreadRequest(Syscall::ThreadRequest::ThreadOp::Resume, badge));
+  } else if (args.starts_with("prio")){
+    auto argStr = args.substr(5);
+    char *outArg = nullptr;
+    long badge = strtol(argStr.c_str(), &outArg, 10);
+    if(outArg == nullptr){
+      printf("Missing priority arg\n");
+      return -1;
+    }
+    long prio = strtol(outArg, nullptr, 10);
+    Syscall::perform::thread(
+      Thread::getCurrent()->endpoint,
+      Syscall::ThreadRequest(Syscall::ThreadRequest::ThreadOp::SetPriority,
+      badge,
+      prio
+    ));
   }else{
     printf("Unknown thread command '%s'\n", args.c_str());
     return -1;

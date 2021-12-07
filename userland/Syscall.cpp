@@ -57,7 +57,8 @@ Expected<Syscall::ThreadRequest, bool> Syscall::ThreadRequest::decode(const seL4
     return success<Syscall::ThreadRequest, bool>(
       Syscall::ThreadRequest(
         (Syscall::ThreadRequest::ThreadOp)seL4_GetMR(1),
-        seL4_GetMR(2)
+        seL4_GetMR(2),
+        seL4_GetMR(3)
         ));
 }
 
