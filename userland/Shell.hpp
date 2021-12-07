@@ -12,6 +12,8 @@ public:
   void onChar(char c); // called from com1 thread
 
 private:
+  int cmdThread(const string &cmd);
+
   int newCommand(const string &cmd);
   int processNewCommand(const string &cmd);
   void showPrompt();

@@ -82,7 +82,7 @@ void RootServer::run() {
   });
   if (_comThOrErr) {
     _comThOrErr.value->setName("Com1");
-    _comThOrErr.value->resume();
+    _comThOrErr.value->start();
   }
 
   auto testThread = createThread([this](Thread &, void *) {
@@ -93,7 +93,7 @@ void RootServer::run() {
     return nullptr;});
   if(testThread){
     testThread.value->setName("Test thread");
-    testThread.value->resume();
+    testThread.value->start();
   }
 
   printf("Start rootServer runloop\n");
@@ -101,7 +101,7 @@ void RootServer::run() {
     seL4_Word sender = 0;
     seL4_MessageInfo_t msgInfo = seL4_Recv(_apiEndpoint, &sender);
     auto caller = _threads.get(sender);
-    assert(caller.has_value());
+    assert(caller != nullptr);
     switch (seL4_MessageInfo_get_label(msgInfo)) {
     case seL4_Fault_NullFault:
       processSyscall(msgInfo, *caller);
@@ -127,7 +127,8 @@ void RootServer::run() {
 void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
                                 Thread &caller) {
   assert(seL4_MessageInfo_get_length(msgInfo) > 0);
-  switch ((Syscall::ID)seL4_GetMR(0)) {
+  seL4_Word syscallID = seL4_GetMR(0);
+  switch ((Syscall::ID)syscallID) {
   case Syscall::ID::Debug: {
     auto paramOrErr = Syscall::DebugRequest::decode(msgInfo);
     if (paramOrErr) {
@@ -163,6 +164,39 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
       seL4_Reply(msgInfo);
     }
   } break;
+  case Syscall::ID::Thread:{
+    auto paramOrErr = Syscall::ThreadRequest::decode(msgInfo);
+    if (paramOrErr){
+      switch(paramOrErr.value.op){
+        case Syscall::ThreadRequest::List:
+        seL4_DebugDumpScheduler();
+        for (const auto &t : _threads.threads) {
+          printf("Thread: badge %X endpoint %X prio %i status %i %s\n", t->badge, t->endpoint,
+                 t->priority, t->getState(), (caller == *t? "<- Calling thread": ""));
+        } break;
+        case Syscall::ThreadRequest::Suspend:{
+          printf("Request to suspend %X\n", paramOrErr.value.arg1);
+          auto threadToSuspend = _threads.get(paramOrErr.value.arg1);
+          if(threadToSuspend){
+            threadToSuspend->suspend();
+          }else{
+            printf("Thread not found\n");
+          }
+        }break;
+        case Syscall::ThreadRequest::Resume:{
+          printf("Request to resume %X\n", paramOrErr.value.arg1);
+          auto threadToResume = _threads.get(paramOrErr.value.arg1);
+          if(threadToResume){
+            threadToResume->resume();
+          }else{
+            printf("Thread not found\n");
+          }
+        }break;
+      }
+      seL4_SetMR(1, 0);
+      seL4_Reply(msgInfo);
+    } break;
+  }
   case Syscall::ID::MMap: {
     auto paramOrErr = Syscall::MMapRequest::decode(msgInfo);
     if (paramOrErr) {
@@ -172,7 +206,7 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
     }
   } break;
   default:
-    printf("RootTask: Received msg from %i %X\n", caller.badge, seL4_GetMR(0));
+    printf("RootTask: Received msg %X from badge %i\n", syscallID, caller.badge);
     break;
   }
 }

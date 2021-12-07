@@ -12,14 +12,15 @@
 struct ThreadTable {
   vector<std::shared_ptr<Thread>> threads;
 
+ 
   void add(const std::shared_ptr<Thread> &t) { threads.push_back(t); }
-  Optional<Thread> get(seL4_Word badge){
+  std::shared_ptr<Thread> get(seL4_Word badge){
     for(auto &t: threads){
       if(t->badge == badge){
-        return Optional<Thread>(*t);
+        return t;
       }
     }
-    return {};
+    return nullptr;
   }
 };
 

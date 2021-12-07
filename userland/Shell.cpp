@@ -48,6 +48,24 @@ void Shell::onChar(char c) {
     */
 }
 
+int Shell::cmdThread(const string &args){
+  if(args == "list"){
+    Syscall::perform::thread(Thread::getCurrent()->endpoint, Syscall::ThreadRequest::ThreadOp::List);
+  } else if (args.starts_with("suspend")){
+    auto argStr = args.substr(8);
+    long badge = strtol(argStr.c_str(), NULL, 10);
+    Syscall::perform::thread(Thread::getCurrent()->endpoint, Syscall::ThreadRequest(Syscall::ThreadRequest::ThreadOp::Suspend, badge));
+  } else if (args.starts_with("resume")){
+    auto argStr = args.substr(7);
+    long badge = strtol(argStr.c_str(), NULL, 10);
+    Syscall::perform::thread(Thread::getCurrent()->endpoint, Syscall::ThreadRequest(Syscall::ThreadRequest::ThreadOp::Resume, badge));
+  }else{
+    printf("Unknown thread command '%s'\n", args.c_str());
+    return -1;
+  }
+  return 0;
+}
+
 int Shell::newCommand(const string &cmd) {
   int r = processNewCommand(cmd);
   lastRet = r;
@@ -63,6 +81,12 @@ int Shell::processNewCommand(const string &cmd) {
         Thread::getCurrent()->endpoint,
         Syscall::DebugRequest(Syscall::DebugRequest::Operation::DumpScheduler));
     return 0;
+  } else if (cmd.starts_with("thread")) {
+    if(cmd.size() < 8){
+      return -1;
+    }
+    auto args = cmd.substr(7);
+    return cmdThread(args);
   } else if (cmd == "help") {
     printf("available commands are help, sched, kmalloc/kfree\n");
     return 0;
