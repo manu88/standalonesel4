@@ -1,4 +1,5 @@
 #include "Syscall.hpp"
+#include "runtime.h"
 
 /*static*/ Expected<Syscall::DebugRequest, bool>
 Syscall::DebugRequest::decode(const seL4_MessageInfo_t &info) {
@@ -52,6 +53,14 @@ Syscall::MMapResponse::decode(const seL4_MessageInfo_t &) {
       Syscall::MMapResponse((void *)seL4_GetMR(1)));
 }
 
+Expected<Syscall::ThreadRequest, bool> Syscall::ThreadRequest::decode(const seL4_MessageInfo_t &){
+    return success<Syscall::ThreadRequest, bool>(
+      Syscall::ThreadRequest(
+        (Syscall::ThreadRequest::ThreadOp)seL4_GetMR(1),
+        seL4_GetMR(2)
+        ));
+}
+
 template <typename RequestType, typename ReturnType>
 Expected<ReturnType, bool>
 Syscall::performBase(seL4_Word endpoint, Syscall::ID id, const RequestType &b) {
@@ -59,7 +68,8 @@ Syscall::performBase(seL4_Word endpoint, Syscall::ID id, const RequestType &b) {
   auto info = seL4_MessageInfo_new(0, 0, 0, numReg + 1);
   seL4_SetMR(0, (seL4_Word)id);
   for (size_t i = 0; i < numReg; i++) {
-    seL4_SetMR(i + 1, b.getMsgRegister(i));
+    auto v = b.getMsgRegister(i);
+    seL4_SetMR(i + 1, v);
   }
   if (b.hasResponse()) {
     auto retInfo = seL4_Call(endpoint, info);
@@ -86,3 +96,7 @@ Syscall::performBase<Syscall::MMapRequest>(seL4_Word endpoint, Syscall::ID id,
 template Expected<Syscall::KFreeResponse, bool>
 Syscall::performBase<Syscall::KFreeRequest>(seL4_Word endpoint, Syscall::ID id,
                                             const Syscall::KFreeRequest &b);
+
+template Expected<Syscall::BaseResponse, bool>
+Syscall::performBase<Syscall::ThreadRequest>(seL4_Word endpoint, Syscall::ID id,
+                                            const Syscall::ThreadRequest &b);

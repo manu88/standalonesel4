@@ -5,7 +5,7 @@
 
 namespace Syscall {
 
-enum class ID : seL4_Word { Unknown, Debug, KMalloc, KFree, MMap };
+enum class ID : seL4_Word { Unknown, Debug, KMalloc, KFree, MMap, Thread };
 
 struct BaseRequest {
   virtual ~BaseRequest() {}
@@ -102,6 +102,27 @@ struct MMapResponse : public BaseResponse {
 
 /* *** *** ***  */
 
+struct ThreadRequest : BaseRequest {
+  enum ThreadOp: seL4_Word{
+    List,
+    Suspend,
+    Resume
+  };
+  ThreadRequest(ThreadOp op, seL4_Word arg1 = 0) : op(op), arg1(arg1) {}
+  size_t getNumMsgRegisters() const noexcept final { return 2; }
+  seL4_Word getMsgRegister(size_t index) const noexcept final {
+    if(index == 0)
+      return op;
+    return arg1;
+  }
+  bool hasResponse() const noexcept final { return true; }
+  ThreadOp op;
+  seL4_Word arg1 = 0;
+  static Expected<ThreadRequest, bool> decode(const seL4_MessageInfo_t &);
+};
+
+/* *** *** ***  */
+
 template <typename RequestType = BaseRequest,
           typename ReturnType = BaseResponse>
 Expected<ReturnType, bool> performBase(seL4_Word endpoint, Syscall::ID id,
@@ -126,6 +147,11 @@ inline Expected<BaseResponse, bool> debug(seL4_Word endpoint,
 inline Expected<MMapResponse, bool> mmap(seL4_Word endpoint,
                                          const MMapRequest &r) {
   return performBase<MMapRequest, MMapResponse>(endpoint, ID::MMap, r);
+}
+
+inline Expected<BaseResponse, bool> thread(seL4_Word endpoint,
+                                         const ThreadRequest &r) {
+  return performBase<ThreadRequest, BaseResponse>(endpoint, ID::Thread, r);
 }
 
 }; // namespace perform
