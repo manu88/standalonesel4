@@ -6,5 +6,6 @@ extern "C" int main() {
   testVector();
   testString();
   testExpected();
+  testOptional();
   return 0;
 }

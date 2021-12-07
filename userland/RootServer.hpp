@@ -6,11 +6,21 @@
 #include "Thread.hpp"
 #include "lib/expected.hpp"
 #include "lib/vector.hpp"
+#include "lib/optional.hpp"
+
 
 struct ThreadTable {
-  vector<Thread> threads;
+  vector<std::shared_ptr<Thread>> threads;
 
-  void add(const Thread &t) { threads.push_back(t); }
+  void add(const std::shared_ptr<Thread> &t) { threads.push_back(t); }
+  Optional<Thread> get(seL4_Word badge){
+    for(auto &t: threads){
+      if(t->badge == badge){
+        return Optional<Thread>(*t);
+      }
+    }
+    return {};
+  }
 };
 
 class RootServer {
@@ -19,10 +29,10 @@ public:
   void earlyInit(); // kmalloc/kfree/new/delete are setup here!
   void lateInit();
   void run();
-  void processSyscall(const seL4_MessageInfo_t &msgInfo, seL4_Word sender);
+  void processSyscall(const seL4_MessageInfo_t &msgInfo, Thread &caller);
 
 private:
-  Expected<Thread, seL4_Error> createThread(Thread::EntryPoint entryPoint);
+  Expected<std::shared_ptr<Thread>, seL4_Error> createThread(Thread::EntryPoint entryPoint);
   enum { ReservedPages = 10 };
   enum VirtualAddressLayout // Layout of root server, not other processes!!
   { AddressTables = 0x8000000000,
@@ -40,5 +50,5 @@ private:
   PageTable _pt;
   ObjectFactory _factory;
   seL4_CPtr _apiEndpoint = 0;
-  seL4_Word _tcbBadgeCounter = 1;
+  seL4_Word _tcbBadgeCounter = 1; // 0 is main rootserver thread
 };

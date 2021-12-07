@@ -57,13 +57,15 @@ void RootServer::lateInit() {
   _shell.init();
 }
 
-Expected<Thread, seL4_Error>
+Expected<std::shared_ptr<Thread>, seL4_Error>
 RootServer::createThread(Thread::EntryPoint entryPoint) {
   auto ret =
       _factory.createThread(_tcbBadgeCounter++, entryPoint, _apiEndpoint);
   if (ret) {
     _threads.add(ret.value);
+    printf("Created new thread with badge %X\n", ret.value->badge);
   }
+
   return ret;
 }
 
@@ -79,15 +81,30 @@ void RootServer::run() {
     return nullptr;
   });
   if (_comThOrErr) {
-    _comThOrErr.value.setName("Com1");
-    _comThOrErr.value.resume();
+    _comThOrErr.value->setName("Com1");
+    _comThOrErr.value->resume();
   }
+
+  auto testThread = createThread([this](Thread &, void *) {
+    printf("TEST THREAD STARTED\n");
+    while (1){
+      seL4_Yield();
+    }
+    return nullptr;});
+  if(testThread){
+    testThread.value->setName("Test thread");
+    testThread.value->resume();
+  }
+
+  printf("Start rootServer runloop\n");
   while (1) {
     seL4_Word sender = 0;
     seL4_MessageInfo_t msgInfo = seL4_Recv(_apiEndpoint, &sender);
+    auto caller = _threads.get(sender);
+    assert(caller.has_value());
     switch (seL4_MessageInfo_get_label(msgInfo)) {
     case seL4_Fault_NullFault:
-      processSyscall(msgInfo, sender);
+      processSyscall(msgInfo, *caller);
       break;
     case seL4_Fault_CapFault:
       printf("Cap fault to handle\n");
@@ -108,7 +125,7 @@ void RootServer::run() {
 }
 
 void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
-                                seL4_Word sender) {
+                                Thread &caller) {
   assert(seL4_MessageInfo_get_length(msgInfo) > 0);
   switch ((Syscall::ID)seL4_GetMR(0)) {
   case Syscall::ID::Debug: {
@@ -123,8 +140,8 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
                  Syscall::DebugRequest::Operation::DumpScheduler) {
         seL4_DebugDumpScheduler();
         for (const auto &t : _threads.threads) {
-          printf("Thread: badge %X endpoint %X prio %i\n", t.badge, t.endpoint,
-                 t.priority);
+          printf("Thread: badge %X endpoint %X prio %i %s\n", t->badge, t->endpoint,
+                 t->priority, (caller == *t? "<- Calling thread": ""));
         }
       }
     }
@@ -155,7 +172,7 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
     }
   } break;
   default:
-    printf("RootTask: Received msg from %i %X\n", sender, seL4_GetMR(0));
+    printf("RootTask: Received msg from %i %X\n", caller.badge, seL4_GetMR(0));
     break;
   }
 }

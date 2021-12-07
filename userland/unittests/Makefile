@@ -1,7 +1,7 @@
 CC=g++
 LD=g++
 
-OBJS = main.o test_vector.o test_string.o test_expected.o
+OBJS = main.o test_vector.o test_string.o test_expected.o test_optional.o
 PROG= unittests
 
 

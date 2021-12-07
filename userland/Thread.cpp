@@ -3,10 +3,14 @@
 #include "runtime.h"
 #include <cstddef>
 
-/*static*/ Thread Thread::main;
+/*static*/ Thread Thread::main = 0;
 
-Thread::Thread(seL4_CPtr tcb, EntryPoint entryPoint)
+Thread::Thread(seL4_CPtr tcb, EntryPoint &entryPoint)
     : _tcb(tcb), entryPoint(entryPoint) {}
+
+Thread::~Thread(){
+  printf("Destructing %X\n", badge);
+}
 
 static void _threadMain(seL4_Word p2) {
   Thread *self = reinterpret_cast<Thread *>(p2);

@@ -8,14 +8,17 @@ public:
   static bool calledFromMain() { return calledFrom(main); }
   static Thread *getCurrent() { return (Thread *)seL4_GetUserData(); }
   static Thread main;
-  using EntryPoint = std::function<void *(Thread &, void *)>;
+  using EntryPoint =  std::function<void *(Thread &, void *)>;
 
-  Thread(seL4_CPtr tcb = 0, EntryPoint entryPoint = 0);
+  Thread(int){}
+  Thread(seL4_CPtr tcb, EntryPoint &entryPoint);
 
   Thread(const Thread &other)
       : _tcb(other._tcb), entryPoint(other.entryPoint),
         tcbStackAddr(other.tcbStackAddr), endpoint(other.endpoint),
-        badge(other.badge) {}
+        badge(other.badge), priority(other.priority) {}
+
+  ~Thread();
 
   Thread &operator=(const Thread &rhs) {
     _tcb = rhs._tcb;
@@ -23,9 +26,13 @@ public:
     tcbStackAddr = rhs.tcbStackAddr;
     endpoint = rhs.endpoint;
     badge = rhs.badge;
+    priority = rhs.priority;
     return *this;
   }
 
+  constexpr bool operator==(const Thread &rhs) noexcept {
+    return badge == rhs.badge;
+  }
   void setName(const char *name);
 
   bool calledFrom() const noexcept;
@@ -36,7 +43,7 @@ public:
   seL4_Error setPriority(seL4_Word prio);
 
   seL4_CPtr _tcb = 0;
-  EntryPoint entryPoint = 0;
+  EntryPoint entryPoint = nullptr;
   seL4_Word tcbStackAddr = 0;
   seL4_Word endpoint = 0;
   seL4_Word badge = 0;

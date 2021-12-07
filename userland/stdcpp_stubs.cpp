@@ -15,6 +15,9 @@ void __throw_bad_function_call() {
 #endif
 
 extern "C" {
+
+void __cxa_pure_virtual() { while (1); }
+
 struct atexit_func_entry_t {
   /*
    * Each member is at least 4 bytes large. Such that each entry is 12bytes.

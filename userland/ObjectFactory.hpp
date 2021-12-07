@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include "Thread.hpp"
 #include "lib/expected.hpp"
 
@@ -9,7 +10,8 @@ public:
   using ObjectOrError = Expected<seL4_CPtr, seL4_Error>;
   ObjectFactory(InitialUntypedPool &, PageTable &,
                 seL4_Word currentVirtualAddress);
-  Expected<Thread, seL4_Error> createThread(seL4_Word tcbBadge,
+
+  Expected<std::shared_ptr<Thread>, seL4_Error> createThread(seL4_Word tcbBadge,
                                             Thread::EntryPoint entryPoint,
                                             seL4_CPtr apiEndpoint);
   ObjectOrError createEndpoint();
