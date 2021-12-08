@@ -10,7 +10,7 @@ Thread::Thread(seL4_CPtr tcb, EntryPoint entryPoint)
 
 /*static*/ void Thread::_threadMain(seL4_Word p2) {
   Thread *self = reinterpret_cast<Thread *>(p2);
-  self->_state = Thread::State::Started;
+  self->_state = Thread::State::Running;
   seL4_SetUserData((seL4_Word)self);
   self->retValue = self->entryPoint(*self, nullptr);
   self->_state = Thread::State::Done;
