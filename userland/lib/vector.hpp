@@ -39,6 +39,20 @@ public:
   }
   [[nodiscard]] constexpr bool empty() const noexcept { return _size == 0; }
 
+  constexpr iterator erase( const_iterator it ){
+    iterator copy_iterator = it; // used to shift elements one position to the left past the deleted element.
+    iterator return_iterator = it; // holds original it position, per std implementation
+
+    while (it != (this -> end() - 1)) { // copies elements one position left
+        *copy_iterator++ = *++it;
+    }
+
+    //alloc.destroy(it); // destroy last element in vector
+    //avail = it; // shortens the vector by 1
+
+    return return_iterator;
+  }
+
   constexpr size_t size() const noexcept { return _size; }
 
   constexpr void push_back(const Type &value) {

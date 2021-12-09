@@ -3,6 +3,23 @@
 #include <assert.h>
 #include <iostream>
 #include <stdio.h>
+#include <memory>
+
+struct Element{
+
+};
+
+static void testVectorRemove(){
+  printf("Test remove from vector\n");
+  vector<std::shared_ptr<Element>> vec;
+  auto a = std::shared_ptr<Element>(new Element());
+  vec.push_back(a);
+
+  assert(vec.size() == 1);
+  assert(vec[0] == a);
+  vec.erase(vec.begin());
+  assert(vec.empty());
+}
 
 int testVector() {
   printf("Test vector 1\n");
@@ -35,5 +52,6 @@ int testVector() {
   }
   b.clear();
   assert(b.empty());
+  testVectorRemove();
   return 0;
 }
