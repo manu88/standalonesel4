@@ -20,8 +20,10 @@ make sim
 * [a calculator system program running on sel4](https://github.com/t-weber/os-seminar/blob/main/sel4/sel4-main.c)
 * [sel4runtime](https://github.com/seL4/sel4runtime/)
 
-
-## Dist
+## Dependencies
+* dtc: apt `install device-tree-compiler`
+* arm-gcc: `apt install g++-arm-linux-gnueabi`
+## Dist (NOT WORKING)
 ```bash
 sh update.sh
 # build kernel

@@ -4,20 +4,19 @@ kernelFile = ./$(userland)/kernel
 kernelBuildFolder = ./build
 rootServer = ./$(userland)/program.bin
 ARCH=x86_64
-CONFIG_FILE=X64_verified_test.cmake
-#CONFIG_FILE=ARM_verified.cmake
+CONFIG_FILE=ARM_verified.cmake
 all: kernelFile user
 
 $(kernelBuildFolder):
 	mkdir -p $(kernelBuildFolder)
 
 kernel_b: $(kernelBuildFolder) $(kernel)
-	cd $(kernelBuildFolder) && cmake -DCROSS_COMPILER_PREFIX= -DCMAKE_TOOLCHAIN_FILE=../kernel/gcc.cmake -G Ninja -C ../kernel/configs/$(CONFIG_FILE) ..
+	cd $(kernelBuildFolder) && cmake -DCROSS_COMPILER_PREFIX=arm-linux-gnueabi- -DCMAKE_TOOLCHAIN_FILE=../kernel/gcc.cmake -G Ninja -C ../kernel/configs/$(CONFIG_FILE) ..
 	cd $(kernelBuildFolder) && ninja kernel.elf
 	cd $(kernelBuildFolder) && ninja libsel4.a
 
 kernelFile: kernel_b
-	objcopy -O elf32-i386 $(kernelBuildFolder)/kernel/kernel.elf $(kernelFile)
+	arm-linux-gnueabi-objcopy $(kernelBuildFolder)/kernel/kernel.elf $(kernelFile)
 
 libsel4: kernel_b
 	rm -rf $(userland)/libsel4
@@ -29,10 +28,10 @@ libsel4: kernel_b
 	mkdir userland/libsel4/include/sel4/
 	cp -r  kernel/libsel4/include/sel4/ userland/libsel4/include/
 	cp build/libsel4/include/sel4/* userland/libsel4/include/sel4/
-	cp -r  build/libsel4/arch_include/x86/sel4/arch/ userland/libsel4/include/sel4/
-	cp kernel/libsel4/arch_include/x86/sel4/arch/* userland/libsel4/include/sel4/arch/
-	cp -r  kernel/libsel4/sel4_arch_include/x86_64/sel4/sel4_arch/ userland/libsel4/include/sel4/
-	cp  build/libsel4/sel4_arch_include/x86_64/sel4/sel4_arch/* userland/libsel4/include/sel4/sel4_arch/
+	cp -r  build/libsel4/arch_include/arm/sel4/arch/ userland/libsel4/include/sel4/
+	cp kernel/libsel4/arch_include/arm/sel4/arch/* userland/libsel4/include/sel4/arch/
+	cp -r  kernel/libsel4/sel4_arch_include/aarch32/sel4/sel4_arch/ userland/libsel4/include/sel4/
+	cp  build/libsel4/sel4_arch_include/aarch32/sel4/sel4_arch/* userland/libsel4/include/sel4/sel4_arch/
 	cp -r  kernel/libsel4/mode_include/64/sel4/mode/ userland/libsel4/include/sel4/
 	cp -r  kernel/libsel4/sel4_plat_include/pc99/sel4/plat/ userland/libsel4/include/sel4/
 	cp -r build/libsel4/autoconf/ userland/libsel4/include/
@@ -42,7 +41,7 @@ libsel4: kernel_b
 	cp -r build/libsel4/include/interfaces/ userland/libsel4/include/
 
 user: libsel4
-	cd $(userland) && make
+	cd $(userland) && make -f Makefile.arm
 
 config:
 	cp configs/$(CONFIG_FILE) $(kernelFolder)/configs/
@@ -57,5 +56,6 @@ clean:
 	rm -f $(kernelFile)
 
 sim:
-	qemu-system-x86_64  -cpu Nehalem,-vme,+pdpe1gb,-xsave,-xsaveopt,-xsavec,-fsgsbase,-invpcid,enforce \
-	-nographic -m 512 -serial mon:stdio -kernel $(kernelFile) -initrd $(rootServer)
+	qemu-system-arm -machine sabrelite -nographic -m 512 -serial mon:stdio -kernel $(kernelFile) -initrd $(rootServer)
+	#qemu-system-x86_64  -cpu Nehalem,-vme,+pdpe1gb,-xsave,-xsaveopt,-xsavec,-fsgsbase,-invpcid,enforce \
+	#-nographic -m 512 -serial mon:stdio -kernel $(kernelFile) -initrd $(rootServer)

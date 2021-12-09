@@ -28,9 +28,11 @@ void RootServer::lateInit() {
   assert(apiEpOrErr);
   _apiEndpoint = apiEpOrErr.value;
 
+#
   printf("Test getting COM1\n");
   auto com1SlotOrErr = _untypedPool.getFreeSlot();
   assert(com1SlotOrErr);
+#ifdef ARCH_X86_64 // TEMP
   seL4_Error err = seL4_X86_IOPortControl_Issue(
       seL4_CapIOPortControl, 0x3F8, 0x3F8 + 7, seL4_CapInitThreadCNode,
       com1SlotOrErr.value, seL4_WordBits);
@@ -38,24 +40,9 @@ void RootServer::lateInit() {
 
   auto com1IRQSlotOrErr = _untypedPool.getFreeSlot();
   assert(com1IRQSlotOrErr);
-#if 0
-  seL4_Word ioapic = 0;
-  seL4_Word com1pin = 4; // com1
-  seL4_Word vector = 4;
-  err = seL4_IRQControl_GetIOAPIC(seL4_CapIRQControl, seL4_CapInitThreadCNode,
-                                  com1IRQSlotOrErr.value, seL4_WordBits, ioapic,
-                                  com1pin, 0, 1, vector);
-  assert(err == seL4_NoError);
-
-  auto irqNotifOrErr = _factory.createNotification();
-  assert(irqNotifOrErr);
-  err = seL4_IRQHandler_SetNotification(com1IRQSlotOrErr.value,
-                                        irqNotifOrErr.value);
-  assert(err == seL4_NoError);
-  _com1.irq = irqNotifOrErr.value;
-#endif
   _com1port = com1SlotOrErr.value;
   _shell.init();
+#endif
 }
 
 Expected<std::shared_ptr<Thread>, seL4_Error>
@@ -71,6 +58,7 @@ RootServer::createThread(Thread::EntryPoint entryPoint) {
 }
 
 void RootServer::run() {
+#ifdef ARCH_X86_64
   auto _comThOrErr = createThread([this](Thread &, void *) {
     _shell.start();
     while (1) {
@@ -85,6 +73,7 @@ void RootServer::run() {
     _comThOrErr.value->setName("Com1");
     _comThOrErr.value->start();
   }
+#endif
 
   auto testThread = createThread([this](Thread &, void *) {
     printf("TEST THREAD STARTED\n");

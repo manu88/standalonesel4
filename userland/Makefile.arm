@@ -1,0 +1,35 @@
+AS=arm-linux-gnueabi-as
+CC=arm-linux-gnueabi-g++
+LD=arm-linux-gnueabi-g++
+PROG=program.bin
+
+CRT_OBJS = crti_arm.o crt0_arm.o
+OBJS = main.o printf.o putchar_impl.o init.o stdcpp_stubs.o tls.o cstubs.o sel4.o InitialUntypedPool.o PageTable.o RootServer.o VMSpace.o Thread.o ObjectFactory.o kmalloc.o Shell.o Syscall.o
+
+LIBS= -L./libsel4/lib/ -lsel4
+CPP_FLAGS=-fno-rtti -fno-exceptions -std=c++2a
+LDFLAGS= -Wl,-m -Wl,armelf_linux_eabi -g -static $(CPP_FLAGS) -fno-builtin -nostdlib -fno-stack-protector -fno-pic -fno-pie -Wl,-u_sel4_start -Wl,-e_sel4_start
+ASFLAGS=
+CCFLAGS= -DARCH_ARM -mthumb -O3 -march=armv7-a -mtune=cortex-a9 -mfpu=neon -mvectorize-with-neon-quad -mfloat-abi=softfp -static -Wall -Wextra -nostdlib -fno-stack-protector -fno-builtin $(CPP_FLAGS) 
+
+C_INCLUDES= -I./libsel4/include/ -I./libsel4/include/autoconf/ -I./libsel4/include/gen_config/
+
+.S.o:
+	$(AS) $(ASFLAGS) $< -o $@
+
+.c.o:
+	$(CC) $(C_INCLUDES) -c $(CCFLAGS)  $<  -o $@
+
+.cpp.o:
+	$(CC) $(C_INCLUDES) -c  $(CCFLAGS)  $<  -o $@
+
+default: $(PROG)
+
+clean:
+	rm -f *.o
+	rm -f $(PROG)
+
+default: $(PROG)  
+
+$(PROG): $(OBJS) $(CRT_OBJS) crtn_arm.o
+	$(LD) -Wl,-T linker.ld $(LDFLAGS)  crti_arm.o crt0_arm.o /usr/lib/gcc-cross/arm-linux-gnueabi/9/crtbegin.o $(OBJS)  /usr/lib/gcc-cross/arm-linux-gnueabi/9/crtend.o crtn_arm.o -lgcc -L./ -lgcc_eh $(LIBS) -o $(PROG)

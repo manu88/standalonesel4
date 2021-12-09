@@ -11,5 +11,6 @@ static char static_tls[CONFIG_SEL4RUNTIME_STATIC_TLS] MIN_ALIGNED = {};
 
 extern "C" void init_tls()
 {
-    seL4_SetTLSBase((seL4_Word)static_tls);
+    seL4_TCB_SetTLSBase(seL4_CapInitThreadTCB, (seL4_Word)static_tls);
+    //seL4_SetTLSBase((seL4_Word)static_tls);
 }   

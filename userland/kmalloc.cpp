@@ -209,7 +209,7 @@ void operator delete(void *p) {
   kfree(p);
 }
 
-void operator delete(void *p, unsigned long size) {
+void operator delete(void *p, std::size_t size) {
   kfreeWithSize(p, size);
 }
 
@@ -217,6 +217,6 @@ void operator delete[](void *p) {
   kfree(p);
 }
 
-void operator delete[](void *p, long unsigned int size){
+void operator delete[](void *p, std::size_t  size){
   kfreeWithSize(p, size);
 }

@@ -36,6 +36,7 @@ bool Thread::calledFrom() const noexcept {
   return seL4_GetUserData() == (seL4_Word)this;
 }
 
+#ifdef ARCH_X86_64
 seL4_Error Thread::start() {
   seL4_UserContext tcb_context;
   size_t num_regs = sizeof(tcb_context) / sizeof(tcb_context.rax);
@@ -56,6 +57,11 @@ seL4_Error Thread::start() {
   }
   return err;
 }
+#elif defined(ARCH_ARM)
+seL4_Error Thread::start() {
+  return seL4_IllegalOperation;
+}
+#endif
 
 seL4_Error Thread::suspend(){
   auto err = seL4_TCB_Suspend(_tcb);
