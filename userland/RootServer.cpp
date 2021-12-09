@@ -202,6 +202,16 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
             printf("Thread not found\n");
           }
         }break;
+        case Syscall::ThreadRequest::StopAndDelete:{
+          printf("Stop and delete %X\n", paramOrErr.value.arg1);
+          auto tread = _threads.get(paramOrErr.value.arg1);
+          if (tread){
+
+          }else{
+            printf("Thread not found\n");
+          }
+
+        }break;
       }
       seL4_SetMR(1, 0);
       seL4_Reply(msgInfo);
