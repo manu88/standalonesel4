@@ -3,7 +3,7 @@
 #include "runtime.h"
 #include <cstddef>
 
-/*static*/ Thread Thread::main = Thread(0, nullptr);
+/*static*/ Thread Thread::main = Thread(seL4_CapInitThreadTCB, nullptr);
 
 Thread::Thread(seL4_CPtr tcb, EntryPoint entryPoint)
     : _tcb(tcb), entryPoint(entryPoint), _state(Thread::State::Uninitialized) {}
