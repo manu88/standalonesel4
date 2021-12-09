@@ -1,9 +1,16 @@
 #include "kmalloc.hpp"
 #include "lib/cstring.h"
-#include "runtime.h"
 #include <stddef.h>
+#include "mutex.h"
+#include "Thread.hpp"
+#include "runtime.h"
+
 
 extern "C" {
+
+void kfree_no_lock(void *ptr);
+void *kmalloc_no_lock(size_t size);
+
 union chunk;
 struct info {
   union chunk *prev;
@@ -30,9 +37,19 @@ static union chunk head = {.node = {{NULL, NULL, 0, 0}}};
 static union chunk tail = {.node = {{NULL, NULL, 0, 0}}};
 static size_t _totalAllocated = 0;
 
-void setMemoryPool(void *start, size_t size) {
+int hasMemoryPool = 0;
+static seL4_CPtr _mutexNotif = 0;
+static sync_mutex_t _lock = {};
+
+void setMemoryPool(void *start, size_t size, seL4_CPtr mutexNotif) {
   pool = reinterpret_cast<union chunk *>(start);
   chunk_max = size / sizeof(union chunk);
+  _mutexNotif = mutexNotif;
+  hasMemoryPool = 1;
+
+  if(sync_mutex_init(&_lock, _mutexNotif) != 0){
+    assert(0);
+  }
 }
 
 size_t getTotalKMallocated() { return _totalAllocated; }
@@ -75,8 +92,9 @@ static void *unlink(union chunk *top, size_t count, size_t size) {
 }
 
 static void relink(union chunk *top) {
-  if (top < pool || pool + chunk_max - 1 < top)
+  if (top < pool || pool + chunk_max - 1 < top){
     return;
+  }
   _totalAllocated -= top->node.info.size;
   union chunk *prev = &head;
   while (prev->node.info.next != &tail && prev->node.info.next < top) {
@@ -99,28 +117,41 @@ static void relink(union chunk *top) {
 }
 
 void *krealloc(void *ptr, size_t size) {
+  sync_mutex_lock(&_lock);
   if (!ptr) {
-    return kmalloc(size);
+    void *r = kmalloc_no_lock(size);
+    sync_mutex_unlock(&_lock);
+    return r;
   }
   char *bptr = (char *)ptr;
   ptr = bptr - sizeof(struct info);
   union chunk *chunk = (union chunk *)ptr;
   size_t prevSize = chunk->node.info.size;
   if (size < prevSize) {
+    sync_mutex_unlock(&_lock);
     return nullptr;
   }
 
   void *newPtr = kmalloc(size);
   if (!newPtr) {
+    sync_mutex_unlock(&_lock);
     return nullptr;
   }
   memcpy(newPtr, ptr, prevSize);
   memset(((char *)newPtr) + prevSize, 0, size - prevSize);
-  kfree(ptr);
+  kfree_no_lock(ptr);
+  sync_mutex_unlock(&_lock);
   return newPtr;
 }
 
 void *kmalloc(size_t size) {
+  sync_mutex_lock(&_lock);
+  void *r = kmalloc_no_lock(size);
+  sync_mutex_unlock(&_lock);
+  return r;
+}
+
+void *kmalloc_no_lock(size_t size) {
   if (!initialized)
     init();
   size_t chunks = chunk_count(size);
@@ -139,22 +170,42 @@ void *kmalloc(size_t size) {
 }
 
 void kfree(void *ptr) {
+  sync_mutex_lock(&_lock);
+  kfree_no_lock(ptr);
+  sync_mutex_unlock(&_lock);
+}
+
+void kfree_no_lock(void *ptr) {
   if (ptr == NULL)
     return;
   char *bptr = (char *)ptr;
   ptr = bptr - sizeof(struct info);
   relink((union chunk *)ptr);
 }
+} // extern "C"
+
+void *operator new(size_t size) { 
+  void * r = kmalloc(size); 
+  return r;
 }
 
-void *operator new(size_t size) { return kmalloc(size); }
+void *operator new[](size_t size) {
+  void* r = kmalloc(size);
+  return r;
+}
 
-void *operator new[](size_t size) { return kmalloc(size); }
+void operator delete(void *p) { 
+  kfree(p);
+}
 
-void operator delete(void *p) { kfree(p); }
+void operator delete(void *p, unsigned long size) {
+  kfree(p);
+}
 
-void operator delete(void *p, unsigned long) { kfree(p); }
+void operator delete[](void *p) {
+  kfree(p);
+}
 
-void operator delete[](void *p) { kfree(p); }
-
-void operator delete[](void *p, long unsigned int) { kfree(p); }
+void operator delete[](void *p, long unsigned int size){
+  kfree(p);
+}

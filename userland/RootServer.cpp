@@ -18,8 +18,9 @@ void RootServer::earlyInit() {
 
   assert(Thread::calledFromMain());
   reservePages();
+  auto kmallocNotif = _factory.createNotification();
   setMemoryPool((void *)VirtualAddressLayout::ReservedVaddr,
-                ReservedPages * PAGE_SIZE);
+                ReservedPages * PAGE_SIZE, kmallocNotif.value);
 }
 
 void RootServer::lateInit() {
