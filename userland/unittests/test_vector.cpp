@@ -9,6 +9,14 @@ struct Element{
 
 };
 
+static void testVectorStruct(){
+  vector<Element> a;
+  a.push_back(Element());
+  for(const auto &e: a){
+
+  }
+}
+
 static void testVectorRemove(){
   printf("Test remove from vector\n");
   vector<std::shared_ptr<Element>> vec;
@@ -17,8 +25,8 @@ static void testVectorRemove(){
 
   assert(vec.size() == 1);
   assert(vec[0] == a);
-  vec.erase(vec.begin());
-  assert(vec.empty());
+//  vec.erase(vec.begin());
+//  assert(vec.empty());
 }
 
 int testVector() {
@@ -52,6 +60,7 @@ int testVector() {
   }
   b.clear();
   assert(b.empty());
+  testVectorStruct();
   testVectorRemove();
   return 0;
 }

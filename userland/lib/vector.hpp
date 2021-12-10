@@ -39,6 +39,7 @@ public:
   }
   [[nodiscard]] constexpr bool empty() const noexcept { return _size == 0; }
 
+#if 0
   constexpr iterator erase( const_iterator it ){
     iterator copy_iterator = it; // used to shift elements one position to the left past the deleted element.
     iterator return_iterator = it; // holds original it position, per std implementation
@@ -52,7 +53,7 @@ public:
 
     return return_iterator;
   }
-
+#endif
   constexpr size_t size() const noexcept { return _size; }
 
   constexpr void push_back(const Type &value) {
@@ -67,11 +68,16 @@ public:
   constexpr void clear() noexcept { _size = 0; }
   constexpr const_reference operator[](size_t pos) const { return _data[pos]; }
 
-  constexpr const_reference front() const { return _data[0]; }
-  constexpr const_reference back() const { return _data[_size - 1]; }
+  constexpr const_reference front() const noexcept{ return _data[0]; }
+  constexpr const_reference back() const noexcept{ return _data[_size - 1]; }
 
   constexpr const_iterator begin() noexcept { return const_iterator(_data); };
   constexpr const_iterator end() noexcept {
+    return const_iterator(_data + _size);
+  };
+
+  constexpr const_iterator begin() const noexcept { return const_iterator(_data); };
+  constexpr const_iterator end() const noexcept {
     return const_iterator(_data + _size);
   };
 

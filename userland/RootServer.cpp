@@ -5,22 +5,25 @@
 #include "runtime.h"
 #include <sel4/arch/mapping.h> // seL4_MappingFailedLookupLevel
 
+
 RootServer::RootServer()
     : _pt(_untypedPool),
-      _factory(_untypedPool, _pt, ReservedVaddr + (ReservedPages * PAGE_SIZE)) {
+      _vmspace(VMSpace::RootServerLayout::ReservedVaddr + (KmallocReservedPages * PAGE_SIZE)),
+      _factory(_untypedPool, _pt, _vmspace, VMSpace::RootServerLayout::ReservedVaddr + (KmallocReservedPages * PAGE_SIZE))
+       {
   printf("Initialize Page Table\n");
-  _pt.init(VirtualAddressLayout::AddressTables);
+  _pt.init(VMSpace::RootServerLayout::AddressTables);
 }
 
 void RootServer::earlyInit() {
-  printf("RootServer: reserve %zi pages\n", ReservedPages);
   seL4_SetUserData((seL4_Word)&Thread::main);
 
   assert(Thread::calledFromMain());
+  printf("RootServer: reserve %zi pages\n", KmallocReservedPages);
   reservePages();
   auto kmallocNotif = _factory.createNotification();
-  setMemoryPool((void *)VirtualAddressLayout::ReservedVaddr,
-                ReservedPages * PAGE_SIZE, kmallocNotif.value);
+  setMemoryPool((void *)VMSpace::RootServerLayout::ReservedVaddr,
+                KmallocReservedPages * PAGE_SIZE, kmallocNotif.value);
 }
 
 void RootServer::lateInit() {
@@ -126,7 +129,7 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
         printf("VMStats\n");
         printf("Num mapped pages %zi\n", _pt.getMappedPagesCount());
         printf("kmalloc'ed %zi/%zi bytes\n", getTotalKMallocated(),
-               ReservedPages * PAGE_SIZE);
+               KmallocReservedPages * PAGE_SIZE);
       } else if (paramOrErr.value.op ==
                  Syscall::DebugRequest::Operation::DumpScheduler) {
         seL4_DebugDumpScheduler();
@@ -210,8 +213,24 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
     auto paramOrErr = Syscall::MMapRequest::decode(msgInfo);
     if (paramOrErr) {
       printf("mmap request for %zi pages\n", paramOrErr.value.numPages);
-      seL4_SetMR(1, 12345);
+//      size_t toAlloc = 3 * 1024 * 1024; // 3M
+//    size_t nPages = toAlloc / PAGE_SIZE;
+      auto res = _vmspace.allocRangeAnywhere(paramOrErr.value.numPages);
+      _vmspace.print();
+#if 0      
+      printf("Start at vaddr %X num pages %zi\n", _factory.currentVirtualAddress, nPages);
+      auto startVirtualAddressRange = _factory.currentVirtualAddress;
+      for(size_t i=0;i<nPages;i++){
+        auto capOrErr = _pt.mapPage(_factory.currentVirtualAddress, seL4_ReadWrite);
+        assert(capOrErr);
+        _factory.currentVirtualAddress += PAGE_SIZE;
+        printf("%i ok\n", i);
+      }
+      printf("vaddr start = %X end = %X\n", startVirtualAddressRange, _factory.currentVirtualAddress);
+#endif
+      seL4_SetMR(1, res.vaddr);
       seL4_Reply(msgInfo);
+
     }
   } break;
   default:
@@ -221,21 +240,21 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
 }
 
 void RootServer::reservePages() {
-  seL4_Word vaddr = VirtualAddressLayout::ReservedVaddr;
-  for (int i = 0; i < ReservedPages; i++) {
+  seL4_Word vaddr = VMSpace::RootServerLayout::ReservedVaddr;
+  for (int i = 0; i < KmallocReservedPages; i++) {
     auto capOrError = _pt.mapPage(vaddr, seL4_ReadWrite);
     assert(capOrError);
     vaddr += PAGE_SIZE;
   }
-
-  printf("Test reserved pages\n");
-  vaddr = VirtualAddressLayout::ReservedVaddr;
-  for (int i = 0; i < ReservedPages; i++) {
+  auto endVaddr = vaddr;
+  vaddr = VMSpace::RootServerLayout::ReservedVaddr;
+  printf("Test reserved pages between %X and %X\n", vaddr, endVaddr);
+  for (int i = 0; i < KmallocReservedPages; i++) {
     memset((void *)vaddr, 0, PAGE_SIZE);
     vaddr += PAGE_SIZE;
   }
-  vaddr = VirtualAddressLayout::ReservedVaddr;
-  for (int i = 0; i < ReservedPages; i++) {
+  vaddr = VMSpace::RootServerLayout::ReservedVaddr;
+  for (int i = 0; i < KmallocReservedPages; i++) {
     for (int j = 0; j < PAGE_SIZE; j++) {
       assert(reinterpret_cast<char *>(vaddr)[j] == 0);
       (reinterpret_cast<char *>(vaddr))[j] = 0;
@@ -245,7 +264,7 @@ void RootServer::reservePages() {
 
 void RootServer::testPt() {
   seL4_Word vaddr =
-      VirtualAddressLayout::ReservedVaddr + (ReservedPages * PAGE_SIZE);
+      VMSpace::RootServerLayout::ReservedVaddr + (KmallocReservedPages * PAGE_SIZE);
 
   size_t sizeToTest = 1024;
   for (size_t i = 0; i < sizeToTest; i++) {
@@ -266,7 +285,7 @@ void RootServer::testPt() {
   }
 
   printf("After test, vaddr is at %X\n", vaddr);
-  vaddr = VirtualAddressLayout::ReservedVaddr + (ReservedPages * PAGE_SIZE);
+  vaddr = VMSpace::RootServerLayout::ReservedVaddr + (KmallocReservedPages * PAGE_SIZE);
   for (size_t i = 0; i < sizeToTest; i++) {
     auto test = reinterpret_cast<size_t *>(vaddr);
     //        *test = i;

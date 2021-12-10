@@ -1,12 +1,13 @@
 #include "ObjectFactory.hpp"
 #include "InitialUntypedPool.hpp"
 #include "PageTable.hpp"
+#include "VMSpace.hpp"
 #include "runtime.h"
 
-ObjectFactory::ObjectFactory(InitialUntypedPool &untypedPool, PageTable &pt,
+ObjectFactory::ObjectFactory(InitialUntypedPool &untypedPool, PageTable &pt, VMSpace &vm,
                              seL4_Word currentVirtualAddress)
     : currentVirtualAddress(currentVirtualAddress), _untypedPool(untypedPool),
-      _pt(pt) {}
+      _pt(pt), _vmSpace(vm) {}
 
 
 Expected<std::shared_ptr<Thread>, seL4_Error> ObjectFactory::createThread(seL4_Word tcbBadge,
@@ -32,7 +33,7 @@ Expected<std::shared_ptr<Thread>, seL4_Error> ObjectFactory::createThread(seL4_W
     _untypedPool.releaseObject(tcbOrErr.value);
     return unexpected<std::shared_ptr<Thread>, seL4_Error>(err);
   }
-  // to release
+
   thread->tcbStackAddr = currentVirtualAddress;
   auto tcbStackOrErr = _pt.mapPage(currentVirtualAddress, seL4_ReadWrite);
   if (!tcbStackOrErr) {

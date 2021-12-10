@@ -6,7 +6,7 @@ void __throw_bad_function_call() {
   assert(0);
   while (1)
     ;
-};
+}
 
 } // namespace std
 

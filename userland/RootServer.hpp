@@ -7,12 +7,10 @@
 #include "lib/expected.hpp"
 #include "lib/vector.hpp"
 #include "lib/optional.hpp"
-
+#include "VMSpace.hpp"
 
 struct ThreadTable {
   vector<std::shared_ptr<Thread>> threads;
-
- 
   void add(const std::shared_ptr<Thread> &t) { threads.push_back(t); }
   std::shared_ptr<Thread> get(seL4_Word badge){
     for(auto &t: threads){
@@ -34,11 +32,7 @@ public:
 
 private:
   Expected<std::shared_ptr<Thread>, seL4_Error> createThread(Thread::EntryPoint entryPoint);
-  enum { ReservedPages = 10 };
-  enum VirtualAddressLayout // Layout of root server, not other processes!!
-  { AddressTables = 0x8000000000,
-    ReservedVaddr = 0x8000001000, // size is ReservedPages pages
-  };
+  enum { KmallocReservedPages = 10 };
 
   void reservePages();
   void testPt();
@@ -49,7 +43,9 @@ private:
 
   InitialUntypedPool _untypedPool;
   PageTable _pt;
+  VMSpace _vmspace;
   ObjectFactory _factory;
   seL4_CPtr _apiEndpoint = 0;
   seL4_Word _tcbBadgeCounter = 1; // 0 is main rootserver thread
+
 };

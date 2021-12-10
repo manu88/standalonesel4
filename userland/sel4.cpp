@@ -36,3 +36,38 @@ const char *seL4::errorStr(seL4_Error err) {
   }
   NOT_REACHED();
 }
+
+static bool operator==(const seL4_CapRights_t& lhs, const seL4_CapRights_t& rhs){
+  return lhs.words[0] == rhs.words[0];
+}
+
+const char *seL4::rightsStr(seL4_CapRights_t rights){
+  if(rights == seL4_ReadWrite){
+    return "ReadWrite";
+  }
+  if(rights == seL4_AllRights){
+    return "AllRights";
+  }
+  if(rights == seL4_CanRead){
+    return "CanRead";
+  }
+  if(rights == seL4_CanWrite){
+    return "CanWrite";
+  }
+  if(rights == seL4_CanGrant){
+    return "CanGrant";
+  }
+  if(rights == seL4_CanGrantReply){
+    return "CanGrantReply";
+  }
+  if(rights == seL4_NoWrite){
+    return "NoWrite";
+  }
+  if(rights == seL4_NoRead){
+    return "NoRead";
+  }
+  if(rights == seL4_NoRights){
+    return "NoRights";
+  }
+  return nullptr;
+}

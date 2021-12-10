@@ -5,10 +5,12 @@
 
 class PageTable;
 class InitialUntypedPool;
+class VMSpace;
+
 class ObjectFactory {
 public:
   using ObjectOrError = Expected<seL4_CPtr, seL4_Error>;
-  ObjectFactory(InitialUntypedPool &, PageTable &,
+  ObjectFactory(InitialUntypedPool &, PageTable &, VMSpace&,
                 seL4_Word currentVirtualAddress);
 
   Expected<std::shared_ptr<Thread>, seL4_Error> createThread(seL4_Word tcbBadge,
@@ -21,4 +23,5 @@ public:
 private:
   InitialUntypedPool &_untypedPool;
   PageTable &_pt;
+  VMSpace &_vmSpace;
 };

@@ -2,10 +2,8 @@
 #include "InitialUntypedPool.hpp"
 #include "lib/expected.hpp"
 #include <cstddef>
+#include "lib/vector.hpp"
 
-struct Page {
-  seL4_CPtr frame;
-};
 
 class PageTable {
 public:

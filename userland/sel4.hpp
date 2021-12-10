@@ -10,4 +10,6 @@ namespace seL4
 seL4_BootInfo* GetBootInfo(void);
 
 const char* errorStr(seL4_Error err);
+
+const char* rightsStr(seL4_CapRights_t rights);
 }
