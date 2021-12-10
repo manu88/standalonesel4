@@ -35,7 +35,7 @@ PageTable::PageCapOrError PageTable::mapPage(seL4_Word vaddr,
     if (level == 0) {
       auto newPageTable = untypedPool.allocObject(seL4_X86_PageTableObject);
       printf("Alloc'ed a new page table cap\n");
-      error = seL4_X86_PageTable_Map(newPageTable, seL4_CapInitThreadVSpace,
+      error = seL4_X86_PageTable_Map(newPageTable.value, seL4_CapInitThreadVSpace,
                                      vaddr, seL4_X86_Default_VMAttributes);
       printf("Mapped a new page table err =%i\n", error);
       assert(error == seL4_NoError);
