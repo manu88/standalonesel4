@@ -23,17 +23,7 @@ Expected<std::shared_ptr<Thread>, seL4_Error> ObjectFactory::createThread(seL4_W
         return unexpected<std::shared_ptr<Thread>, seL4_Error>(seL4_NotEnoughMemory);
   }
   thread->badge = tcbBadge;
-  seL4_Word faultEP = 0;
-  seL4_Word cspaceRootData = 0;
-  seL4_Word vspaceRootData = 0;
-  seL4_Error err = seL4_TCB_SetSpace(thread->_tcb, faultEP,
-                                     seL4_CapInitThreadCNode, cspaceRootData,
-                                     seL4_CapInitThreadVSpace, vspaceRootData);
-  if (err != seL4_NoError) {
-    _untypedPool.releaseObject(tcbOrErr.value);
-    return unexpected<std::shared_ptr<Thread>, seL4_Error>(err);
-  }
-
+  
   thread->tcbStackAddr = currentVirtualAddress;
   auto tcbStackOrErr = _pt.mapPage(currentVirtualAddress, seL4_ReadWrite);
   if (!tcbStackOrErr) {
@@ -61,7 +51,7 @@ Expected<std::shared_ptr<Thread>, seL4_Error> ObjectFactory::createThread(seL4_W
   }
   currentVirtualAddress += PAGE_SIZE;
 
-  err = seL4_TCB_SetTLSBase(thread->_tcb, tlsAddr);
+  auto err = seL4_TCB_SetTLSBase(thread->_tcb, tlsAddr);
   if (err != seL4_NoError) {
     _untypedPool.releaseObject(tcbOrErr.value);
     _pt.unmapPage(tcbStackOrErr.value);
@@ -111,6 +101,21 @@ Expected<std::shared_ptr<Thread>, seL4_Error> ObjectFactory::createThread(seL4_W
     return unexpected<std::shared_ptr<Thread>, seL4_Error>(err);
   }
   thread->endpoint = tcbEndpointSlot;
+  seL4_Word faultEP = thread->endpoint;
+  seL4_Word cspaceRootData = 0;
+  seL4_Word vspaceRootData = 0;
+  err = seL4_TCB_SetSpace(thread->_tcb, faultEP,
+                                     seL4_CapInitThreadCNode, cspaceRootData,
+                                     seL4_CapInitThreadVSpace, vspaceRootData);
+  if (err != seL4_NoError) {
+    _untypedPool.releaseObject(tcbOrErr.value);
+    _pt.unmapPage(tcbStackOrErr.value);
+    _pt.unmapPage(tcbTlsOrErr.value);
+    _pt.unmapPage(tcbIPCOrErr.value);
+    _untypedPool.releaseSlot(tcbEndpointSlotOrErr.value);
+    return unexpected<std::shared_ptr<Thread>, seL4_Error>(err);
+  }
+
   return success<std::shared_ptr<Thread>, seL4_Error>(std::shared_ptr<Thread>(thread));
 }
 
