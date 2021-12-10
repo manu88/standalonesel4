@@ -23,6 +23,8 @@ make sim
 ## Dependencies
 * dtc: apt `install device-tree-compiler`
 * arm-gcc: `apt install g++-arm-linux-gnueabi`
+* lib6 arm: `apt install libc6-armhf-cross`
+
 ## Dist (NOT WORKING)
 ```bash
 sh update.sh
