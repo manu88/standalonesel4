@@ -53,13 +53,11 @@ Syscall::MMapResponse::decode(const seL4_MessageInfo_t &) {
       Syscall::MMapResponse((void *)seL4_GetMR(1)));
 }
 
-Expected<Syscall::ThreadRequest, bool> Syscall::ThreadRequest::decode(const seL4_MessageInfo_t &){
-    return success<Syscall::ThreadRequest, bool>(
-      Syscall::ThreadRequest(
-        (Syscall::ThreadRequest::ThreadOp)seL4_GetMR(1),
-        seL4_GetMR(2),
-        seL4_GetMR(3)
-        ));
+Expected<Syscall::ThreadRequest, bool>
+Syscall::ThreadRequest::decode(const seL4_MessageInfo_t &) {
+  return success<Syscall::ThreadRequest, bool>(
+      Syscall::ThreadRequest((Syscall::ThreadRequest::ThreadOp)seL4_GetMR(1),
+                             seL4_GetMR(2), seL4_GetMR(3)));
 }
 
 template <typename RequestType, typename ReturnType>
@@ -100,4 +98,4 @@ Syscall::performBase<Syscall::KFreeRequest>(seL4_Word endpoint, Syscall::ID id,
 
 template Expected<Syscall::BaseResponse, bool>
 Syscall::performBase<Syscall::ThreadRequest>(seL4_Word endpoint, Syscall::ID id,
-                                            const Syscall::ThreadRequest &b);
+                                             const Syscall::ThreadRequest &b);

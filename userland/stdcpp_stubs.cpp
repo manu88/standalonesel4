@@ -8,6 +8,13 @@ void __throw_bad_function_call() {
     ;
 }
 
+void __throw_bad_alloc() {
+  printf("std::__throw_bad_alloc was called\n");
+  assert(0);
+  while (1)
+    ;
+}
+
 } // namespace std
 
 #ifndef ATEXIT_MAX_FUNCS
@@ -16,7 +23,10 @@ void __throw_bad_function_call() {
 
 extern "C" {
 
-void __cxa_pure_virtual() { while (1); }
+void __cxa_pure_virtual() {
+  while (1)
+    ;
+}
 
 struct atexit_func_entry_t {
   /*
@@ -44,19 +54,12 @@ int __cxa_atexit(void (*f)(void *), void *objptr, void *dso) {
 }
 
 #ifdef ARCH_ARM
-int __aeabi_atexit (void *arg, void (*func) (void *), void *d)
-{
-  return __cxa_atexit (func, arg, d);
+int __aeabi_atexit(void *arg, void (*func)(void *), void *d) {
+  return __cxa_atexit(func, arg, d);
 }
 
-int __aeabi_idiv0(int)
-{
-    return 0;
-}   
-long long __aeabi_ldiv0(long long)
-{
-    return 0;
-}
+int __aeabi_idiv0(int) { return 0; }
+long long __aeabi_ldiv0(long long) { return 0; }
 #endif
 
 } // extern "C"

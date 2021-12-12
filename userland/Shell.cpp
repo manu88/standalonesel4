@@ -48,37 +48,45 @@ void Shell::onChar(char c) {
     */
 }
 
-int Shell::cmdThread(const string &args){
-  if(args == "list"){
-    Syscall::perform::thread(Thread::getCurrent()->endpoint, Syscall::ThreadRequest::ThreadOp::List);
-  } else if (args.starts_with("suspend")){
+int Shell::cmdThread(const string &args) {
+  if (args == "list") {
+    Syscall::perform::thread(Thread::getCurrent()->endpoint,
+                             Syscall::ThreadRequest::ThreadOp::List);
+  } else if (args.starts_with("suspend")) {
     auto argStr = args.substr(8);
     long badge = strtol(argStr.c_str(), NULL, 10);
-    Syscall::perform::thread(Thread::getCurrent()->endpoint, Syscall::ThreadRequest(Syscall::ThreadRequest::ThreadOp::Suspend, badge));
-  } else if (args.starts_with("resume")){
+    Syscall::perform::thread(
+        Thread::getCurrent()->endpoint,
+        Syscall::ThreadRequest(Syscall::ThreadRequest::ThreadOp::Suspend,
+                               badge));
+  } else if (args.starts_with("resume")) {
     auto argStr = args.substr(7);
     long badge = strtol(argStr.c_str(), NULL, 10);
-    Syscall::perform::thread(Thread::getCurrent()->endpoint, Syscall::ThreadRequest(Syscall::ThreadRequest::ThreadOp::Resume, badge));
-  } else if (args.starts_with("del")){
+    Syscall::perform::thread(
+        Thread::getCurrent()->endpoint,
+        Syscall::ThreadRequest(Syscall::ThreadRequest::ThreadOp::Resume,
+                               badge));
+  } else if (args.starts_with("del")) {
     auto argStr = args.substr(5);
     long badge = strtol(argStr.c_str(), NULL, 10);
-    Syscall::perform::thread(Thread::getCurrent()->endpoint, Syscall::ThreadRequest(Syscall::ThreadRequest::ThreadOp::StopAndDelete, badge));
-  } else if (args.starts_with("prio")){
+    Syscall::perform::thread(
+        Thread::getCurrent()->endpoint,
+        Syscall::ThreadRequest(Syscall::ThreadRequest::ThreadOp::StopAndDelete,
+                               badge));
+  } else if (args.starts_with("prio")) {
     auto argStr = args.substr(5);
     char *outArg = nullptr;
     long badge = strtol(argStr.c_str(), &outArg, 10);
-    if(outArg == nullptr){
+    if (outArg == nullptr) {
       printf("Missing priority arg\n");
       return -1;
     }
     long prio = strtol(outArg, nullptr, 10);
     Syscall::perform::thread(
-      Thread::getCurrent()->endpoint,
-      Syscall::ThreadRequest(Syscall::ThreadRequest::ThreadOp::SetPriority,
-      badge,
-      prio
-    ));
-  }else{
+        Thread::getCurrent()->endpoint,
+        Syscall::ThreadRequest(Syscall::ThreadRequest::ThreadOp::SetPriority,
+                               badge, prio));
+  } else {
     printf("Unknown thread command '%s'\n", args.c_str());
     return -1;
   }
@@ -101,7 +109,7 @@ int Shell::processNewCommand(const string &cmd) {
         Syscall::DebugRequest(Syscall::DebugRequest::Operation::DumpScheduler));
     return 0;
   } else if (cmd.starts_with("thread")) {
-    if(cmd.size() < 8){
+    if (cmd.size() < 8) {
       return -1;
     }
     auto args = cmd.substr(7);

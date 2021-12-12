@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include "sel4.hpp"
 #include "bin_sem.h"
+#include "sel4.hpp"
 
 typedef sync_bin_sem_t sync_mutex_t;
 
@@ -16,21 +16,21 @@ typedef sync_bin_sem_t sync_mutex_t;
  * @param notification  A notification object to use for the lock.
  * @return              0 on success, an error code on failure. */
 static inline int sync_mutex_init(sync_mutex_t *mutex, seL4_CPtr notification) {
-    return sync_bin_sem_init(mutex, notification, 1);
+  return sync_bin_sem_init(mutex, notification, 1);
 }
 
 /* Acquire a mutex
  * @param mutex         An initialised mutex to acquire.
  * @return              0 on success, an error code on failure. */
 static inline int sync_mutex_lock(sync_mutex_t *mutex) {
-    return sync_bin_sem_wait(mutex);
+  return sync_bin_sem_wait(mutex);
 }
 
 /* Release a mutex
  * @param mutex         An initialised mutex to release.
  * @return              0 on success, an error code on failure. */
 static inline int sync_mutex_unlock(sync_mutex_t *mutex) {
-    return sync_bin_sem_post(mutex);
+  return sync_bin_sem_post(mutex);
 }
 
 #if 0

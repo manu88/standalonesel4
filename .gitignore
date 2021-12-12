@@ -7,3 +7,4 @@ build/
 libsel4.a
 userland/libsel4/
 userland/unittests/unittests
+userland/unittests/VMSpace.cpp

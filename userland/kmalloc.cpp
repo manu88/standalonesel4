@@ -1,10 +1,9 @@
 #include "kmalloc.hpp"
-#include "lib/cstring.h"
-#include <stddef.h>
-#include "mutex.h"
 #include "Thread.hpp"
+#include "lib/cstring.h"
+#include "mutex.h"
 #include "runtime.h"
-
+#include <stddef.h>
 
 extern "C" {
 
@@ -47,7 +46,7 @@ void setMemoryPool(void *start, size_t size, seL4_CPtr mutexNotif) {
   _mutexNotif = mutexNotif;
   hasMemoryPool = 1;
 
-  if(sync_mutex_init(&_lock, _mutexNotif) != 0){
+  if (sync_mutex_init(&_lock, _mutexNotif) != 0) {
     assert(0);
   }
 }
@@ -92,12 +91,14 @@ static void *unlink(union chunk *top, size_t count, size_t size) {
 }
 
 static void relink(union chunk *top, size_t expectedSize) {
-  if (top < pool || pool + chunk_max - 1 < top){
+  if (top < pool || pool + chunk_max - 1 < top) {
     return;
   }
-  if(expectedSize > 0){
-    if(expectedSize == top->node.info.size){
-      printf("expecting to free %zi bytes, but chunk size is %zi. will assert\n", expectedSize, top->node.info.size);
+  if (expectedSize > 0) {
+    if (expectedSize == top->node.info.size) {
+      printf(
+          "expecting to free %zi bytes, but chunk size is %zi. will assert\n",
+          expectedSize, top->node.info.size);
     }
     assert(expectedSize == top->node.info.size);
   }
@@ -174,7 +175,7 @@ void *kmalloc_no_lock(size_t size) {
   return NULL;
 }
 
-void kfreeWithSize(void *ptr, size_t size){
+void kfreeWithSize(void *ptr, size_t size) {
   sync_mutex_lock(&_lock);
   kfree_no_lock(ptr, size);
   sync_mutex_unlock(&_lock);
@@ -195,28 +196,20 @@ void kfree_no_lock(void *ptr, size_t size) {
 }
 } // extern "C"
 
-void *operator new(size_t size) { 
-  void * r = kmalloc(size); 
+void *operator new(size_t size) {
+  void *r = kmalloc(size);
   return r;
 }
 
 void *operator new[](size_t size) {
-  void* r = kmalloc(size);
+  void *r = kmalloc(size);
   return r;
 }
 
-void operator delete(void *p) { 
-  kfree(p);
-}
+void operator delete(void *p) { kfree(p); }
 
-void operator delete(void *p, std::size_t size) {
-  kfreeWithSize(p, size);
-}
+void operator delete(void *p, std::size_t size) { kfreeWithSize(p, size); }
 
-void operator delete[](void *p) {
-  kfree(p);
-}
+void operator delete[](void *p) { kfree(p); }
 
-void operator delete[](void *p, std::size_t  size){
-  kfreeWithSize(p, size);
-}
+void operator delete[](void *p, std::size_t size) { kfreeWithSize(p, size); }

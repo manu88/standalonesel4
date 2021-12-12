@@ -4,17 +4,17 @@
 #include "PageTable.hpp"
 #include "Shell.hpp"
 #include "Thread.hpp"
-#include "lib/expected.hpp"
-#include "lib/vector.hpp"
-#include "lib/optional.hpp"
 #include "VMSpace.hpp"
+#include "lib/expected.hpp"
+#include "lib/optional.hpp"
+#include "lib/vector.hpp"
 
 struct ThreadTable {
   vector<std::shared_ptr<Thread>> threads;
   void add(const std::shared_ptr<Thread> &t) { threads.push_back(t); }
-  std::shared_ptr<Thread> get(seL4_Word badge){
-    for(auto &t: threads){
-      if(t->badge == badge){
+  std::shared_ptr<Thread> get(seL4_Word badge) {
+    for (auto &t : threads) {
+      if (t->badge == badge) {
         return t;
       }
     }
@@ -22,16 +22,20 @@ struct ThreadTable {
   }
 };
 
-class RootServer {
+class RootServer: public VMSpaceDelegate {
 public:
   RootServer();
   void earlyInit(); // kmalloc/kfree/new/delete are setup here!
   void lateInit();
   void run();
-  void processSyscall(const seL4_MessageInfo_t &msgInfo, Thread &caller);
 
 private:
-  Expected<std::shared_ptr<Thread>, seL4_Error> createThread(Thread::EntryPoint entryPoint);
+  void processSyscall(const seL4_MessageInfo_t &msgInfo, Thread &caller);
+  void handleVMFault(const seL4_MessageInfo_t &msgInfo, Thread &caller);
+  Expected<std::shared_ptr<Thread>, seL4_Error>
+  createThread(Thread::EntryPoint entryPoint);
+
+  seL4_Error mapPage(seL4_Word vaddr, seL4_CapRights_t rights,seL4_Word &cap) override;
   enum { KmallocReservedPages = 10 };
 
   void reservePages();
@@ -47,5 +51,4 @@ private:
   ObjectFactory _factory;
   seL4_CPtr _apiEndpoint = 0;
   seL4_Word _tcbBadgeCounter = 1; // 0 is main rootserver thread
-
 };

@@ -7,5 +7,6 @@ extern "C" int main() {
   testString();
   testExpected();
   testOptional();
+  testVMSpace();
   return 0;
 }

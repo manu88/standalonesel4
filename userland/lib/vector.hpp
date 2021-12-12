@@ -3,6 +3,7 @@
 #ifdef UNIT_TESTS
 #include <cassert>
 #include <cstdlib>
+#include <cstring> // memmove
 #define kmalloc malloc
 #define krealloc realloc
 #define kfree free
@@ -10,18 +11,44 @@
 #include "../kmalloc.hpp"
 #include "../runtime.h"
 #endif
+#include <cmath>
+#include <stdio.h>
 
 template <class Type> struct Iterator {
 
-  Iterator(Type *i) : _item(i) {}
-  Type *_item;
-  Iterator operator++() {
+  Iterator(Type *i, size_t index) : _item(i), _index(index) {}
+
+  constexpr Iterator operator++() {
     _item += 1;
+    _index += 1;
     return *this;
   }
-  bool operator!=(const Iterator &rhs) { return _item != rhs._item; }
+
+  constexpr Iterator operator++(int) {
+    _item += 1;
+    _index -= 1;
+    return Iterator(_item - 1, _index);
+  }
+
+  bool operator!=(const Iterator &rhs) {
+    return _item != rhs._item && _index != rhs._index;
+  }
+
+  constexpr Iterator operator+(ptrdiff_t delta) const {
+    return Iterator{_item + delta, _index + delta};
+  }
+  constexpr Iterator operator-(ptrdiff_t delta) const {
+    return Iterator{_item - delta, _index - delta};
+  }
+
+  constexpr ptrdiff_t operator-(Iterator rhs) const {
+    return static_cast<ptrdiff_t>(_index) - rhs._index;
+  }
 
   Type &operator*() const { return *_item; }
+
+  Type *_item;
+  size_t _index;
 };
 
 template <typename Type> class vector {
@@ -39,21 +66,31 @@ public:
   }
   [[nodiscard]] constexpr bool empty() const noexcept { return _size == 0; }
 
-#if 0
-  constexpr iterator erase( const_iterator it ){
-    iterator copy_iterator = it; // used to shift elements one position to the left past the deleted element.
-    iterator return_iterator = it; // holds original it position, per std implementation
-
-    while (it != (this -> end() - 1)) { // copies elements one position left
-        *copy_iterator++ = *++it;
+  constexpr iterator erase(size_t pos) {
+    return erase(const_iterator(_data + pos, pos));
+  }
+  constexpr iterator erase(const_iterator pos) {
+    iterator return_iterator = pos;
+    if (size() == 0) {
+      return return_iterator;
+    }
+    const size_t dist = pos - begin();
+    if (dist == size()) {
+      return pos;
+    }
+    if (dist == size() - 1) {
+      _size--;
+      return pos;
+    }
+    _size--;
+    if (size() == 0) {
+      return return_iterator;
     }
 
-    //alloc.destroy(it); // destroy last element in vector
-    //avail = it; // shortens the vector by 1
-
+    memmove(_data + dist, pos._item + 1, size() * sizeof(Type));
     return return_iterator;
   }
-#endif
+
   constexpr size_t size() const noexcept { return _size; }
 
   constexpr void push_back(const Type &value) {
@@ -68,17 +105,23 @@ public:
   constexpr void clear() noexcept { _size = 0; }
   constexpr const_reference operator[](size_t pos) const { return _data[pos]; }
 
-  constexpr const_reference front() const noexcept{ return _data[0]; }
-  constexpr const_reference back() const noexcept{ return _data[_size - 1]; }
+  constexpr Type &operator[](size_t pos) { return _data[pos]; }
 
-  constexpr const_iterator begin() noexcept { return const_iterator(_data); };
+  constexpr const_reference front() const noexcept { return _data[0]; }
+  constexpr const_reference back() const noexcept { return _data[_size - 1]; }
+
+  constexpr const_iterator begin() noexcept {
+    return const_iterator(_data, 0);
+  };
   constexpr const_iterator end() noexcept {
-    return const_iterator(_data + _size);
+    return const_iterator(_data + _size, _size);
   };
 
-  constexpr const_iterator begin() const noexcept { return const_iterator(_data); };
+  constexpr const_iterator begin() const noexcept {
+    return const_iterator(_data, 0);
+  };
   constexpr const_iterator end() const noexcept {
-    return const_iterator(_data + _size);
+    return const_iterator(_data + _size, _size);
   };
 
 private:

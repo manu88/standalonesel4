@@ -3,8 +3,7 @@
 #include "sel4.hpp"
 #include <sel4/arch/mapping.h> // seL4_MappingFailedLookupLevel
 
-
- #ifdef ARCH_X86_64
+#ifdef ARCH_X86_64
 PageTable::PageCapOrError PageTable::mapPage(seL4_Word vaddr,
                                              seL4_CapRights_t rights) {
   auto getLevel = [](seL4_Word lookupLevel) -> int {
@@ -35,8 +34,9 @@ PageTable::PageCapOrError PageTable::mapPage(seL4_Word vaddr,
     if (level == 0) {
       auto newPageTable = untypedPool.allocObject(seL4_X86_PageTableObject);
       printf("Alloc'ed a new page table cap\n");
-      error = seL4_X86_PageTable_Map(newPageTable.value, seL4_CapInitThreadVSpace,
-                                     vaddr, seL4_X86_Default_VMAttributes);
+      error =
+          seL4_X86_PageTable_Map(newPageTable.value, seL4_CapInitThreadVSpace,
+                                 vaddr, seL4_X86_Default_VMAttributes);
       printf("Mapped a new page table err =%i\n", error);
       assert(error == seL4_NoError);
       printf("Try the page mapping again:\n");
@@ -89,8 +89,7 @@ void PageTable::init(seL4_Word vaddr) {
 }
 #elif defined(ARCH_ARM)
 
-void PageTable::init(seL4_Word vaddr) {
-}
+void PageTable::init(seL4_Word vaddr) {}
 
 PageTable::PageCapOrError PageTable::mapPage(seL4_Word vaddr,
                                              seL4_CapRights_t rights) {

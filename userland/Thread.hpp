@@ -2,15 +2,17 @@
 #include "sel4.hpp"
 #include <functional>
 
+struct VMSpace;
+
 class Thread {
 public:
   static bool calledFrom(const Thread &t);
   static bool calledFromMain() { return calledFrom(main); }
   static Thread *getCurrent() { return (Thread *)seL4_GetUserData(); }
   static Thread main;
-  using EntryPoint =  std::function<void *(Thread &, void *)>;
+  using EntryPoint = std::function<void *(Thread &, void *)>;
 
-  enum State: int {
+  enum State : int {
     Uninitialized = 0,
     Started = 1,
     Running = 2,
@@ -49,9 +51,7 @@ public:
   seL4_Word getPriority() const noexcept { return priority; }
   seL4_Error setPriority(seL4_Word prio);
 
-  State getState() const noexcept {
-    return _state;
-  }
+  State getState() const noexcept { return _state; }
   seL4_CPtr _tcb = 0;
   EntryPoint entryPoint = nullptr;
   seL4_Word tcbStackAddr = 0;
@@ -60,6 +60,8 @@ public:
   seL4_Word priority = 0;
 
   void *retValue = nullptr;
+
+  VMSpace *vmspace = nullptr;
 
 private:
   static void _threadMain(seL4_Word p2);

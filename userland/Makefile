@@ -29,7 +29,6 @@ clean:
 	rm -f *.o
 	rm -f $(PROG)
 
-default: $(PROG)  
 
 $(PROG): $(OBJS) $(CRT_OBJS) crtn.o
 	$(LD) -Wl,-T linker.ld $(LDFLAGS)  crti.o crt0.o /usr/lib/gcc/x86_64-linux-gnu/9/crtbegin.o $(OBJS)  /usr/lib/gcc/x86_64-linux-gnu/9/crtend.o crtn.o -lgcc -L./ -lgcc_eh $(LIBS) -o $(PROG)

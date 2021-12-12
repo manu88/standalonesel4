@@ -1,22 +1,21 @@
 #pragma once
-#include <functional>
-#include <cstddef>
-#include "sel4.hpp"
-#include "lib/expected.hpp"
 #include "Platform.hpp"
+#include "lib/expected.hpp"
+#include "sel4.hpp"
+#include <cstddef>
+#include <functional>
 
-class InitialUntypedPool
-{
+class InitialUntypedPool {
 public:
-    using ObjectOrError = Expected<seL4_CPtr, seL4_Error>;
-    using SlotOrError = Expected<seL4_SlotPos, seL4_Error>;
+  using ObjectOrError = Expected<seL4_CPtr, seL4_Error>;
+  using SlotOrError = Expected<seL4_SlotPos, seL4_Error>;
 
-    ObjectOrError allocObject(seL4_Word type);
-    void releaseObject(seL4_CPtr obj);
+  ObjectOrError allocObject(seL4_Word type);
+  void releaseObject(seL4_CPtr obj);
 
-    SlotOrError getFreeSlot();
-    void releaseSlot(seL4_SlotPos pos);
+  SlotOrError getFreeSlot();
+  void releaseSlot(seL4_SlotPos pos);
 
 private:
-    seL4_SlotPos emptySlotPos = 0;
+  seL4_SlotPos emptySlotPos = 0;
 };

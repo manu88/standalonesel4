@@ -4,28 +4,29 @@
 #include "VMSpace.hpp"
 #include "runtime.h"
 
-ObjectFactory::ObjectFactory(InitialUntypedPool &untypedPool, PageTable &pt, VMSpace &vm,
-                             seL4_Word currentVirtualAddress)
+ObjectFactory::ObjectFactory(InitialUntypedPool &untypedPool, PageTable &pt,
+                             VMSpace &vm, seL4_Word currentVirtualAddress)
     : currentVirtualAddress(currentVirtualAddress), _untypedPool(untypedPool),
       _pt(pt), _vmSpace(vm) {}
 
-
-Expected<std::shared_ptr<Thread>, seL4_Error> ObjectFactory::createThread(seL4_Word tcbBadge,
-                                            Thread::EntryPoint entryPoint,
-                                            seL4_CPtr apiEndpoint){
+Expected<std::shared_ptr<Thread>, seL4_Error>
+ObjectFactory::createThread(seL4_Word tcbBadge, Thread::EntryPoint entryPoint,
+                            seL4_CPtr apiEndpoint) {
   auto tcbOrErr = _untypedPool.allocObject(seL4_TCBObject);
   if (!tcbOrErr) {
     return unexpected<std::shared_ptr<Thread>, seL4_Error>(tcbOrErr.error);
   }
   assert(tcbOrErr);
   auto thread = new Thread(tcbOrErr.value, entryPoint);
-  if(!thread){
-        return unexpected<std::shared_ptr<Thread>, seL4_Error>(seL4_NotEnoughMemory);
+  if (!thread) {
+    return unexpected<std::shared_ptr<Thread>, seL4_Error>(
+        seL4_NotEnoughMemory);
   }
   thread->badge = tcbBadge;
-  
+
   thread->tcbStackAddr = currentVirtualAddress;
-  auto tcbStackOrErr = _pt.mapPage(currentVirtualAddress, seL4_ReadWrite);
+  auto tcbStackOrErr = _vmSpace.allocRangeAnywhere(
+      1, seL4_ReadWrite); // _pt.mapPage(currentVirtualAddress, seL4_ReadWrite);
   if (!tcbStackOrErr) {
     _untypedPool.releaseObject(tcbOrErr.value);
     return unexpected<std::shared_ptr<Thread>, seL4_Error>(tcbStackOrErr.error);
@@ -36,7 +37,7 @@ Expected<std::shared_ptr<Thread>, seL4_Error> ObjectFactory::createThread(seL4_W
   auto tcbTlsOrErr = _pt.mapPage(currentVirtualAddress, seL4_ReadWrite);
   if (!tcbTlsOrErr) {
     _untypedPool.releaseObject(tcbOrErr.value);
-    _pt.unmapPage(tcbStackOrErr.value);
+    _vmSpace.deallocReservation(tcbStackOrErr.value);
     return unexpected<std::shared_ptr<Thread>, seL4_Error>(tcbTlsOrErr.error);
   }
   currentVirtualAddress += PAGE_SIZE;
@@ -45,7 +46,7 @@ Expected<std::shared_ptr<Thread>, seL4_Error> ObjectFactory::createThread(seL4_W
   auto tcbIPCOrErr = _pt.mapPage(currentVirtualAddress, seL4_ReadWrite);
   if (!tcbIPCOrErr) {
     _untypedPool.releaseObject(tcbOrErr.value);
-    _pt.unmapPage(tcbStackOrErr.value);
+    _vmSpace.deallocReservation(tcbStackOrErr.value);
     _pt.unmapPage(tcbTlsOrErr.value);
     return unexpected<std::shared_ptr<Thread>, seL4_Error>(tcbIPCOrErr.error);
   }
@@ -54,7 +55,7 @@ Expected<std::shared_ptr<Thread>, seL4_Error> ObjectFactory::createThread(seL4_W
   auto err = seL4_TCB_SetTLSBase(thread->_tcb, tlsAddr);
   if (err != seL4_NoError) {
     _untypedPool.releaseObject(tcbOrErr.value);
-    _pt.unmapPage(tcbStackOrErr.value);
+    _vmSpace.deallocReservation(tcbStackOrErr.value);
     _pt.unmapPage(tcbTlsOrErr.value);
     _pt.unmapPage(tcbIPCOrErr.value);
     return unexpected<std::shared_ptr<Thread>, seL4_Error>(err);
@@ -63,7 +64,7 @@ Expected<std::shared_ptr<Thread>, seL4_Error> ObjectFactory::createThread(seL4_W
   err = seL4_TCB_SetIPCBuffer(thread->_tcb, tcbIPC, tcbIPCOrErr.value);
   if (err != seL4_NoError) {
     _untypedPool.releaseObject(tcbOrErr.value);
-    _pt.unmapPage(tcbStackOrErr.value);
+    _vmSpace.deallocReservation(tcbStackOrErr.value);
     _pt.unmapPage(tcbTlsOrErr.value);
     _pt.unmapPage(tcbIPCOrErr.value);
     return unexpected<std::shared_ptr<Thread>, seL4_Error>(err);
@@ -73,7 +74,7 @@ Expected<std::shared_ptr<Thread>, seL4_Error> ObjectFactory::createThread(seL4_W
   err = thread->setPriority(prio);
   if (err != seL4_NoError) {
     _untypedPool.releaseObject(tcbOrErr.value);
-    _pt.unmapPage(tcbStackOrErr.value);
+    _vmSpace.deallocReservation(tcbStackOrErr.value);
     _pt.unmapPage(tcbTlsOrErr.value);
     _pt.unmapPage(tcbIPCOrErr.value);
     return unexpected<std::shared_ptr<Thread>, seL4_Error>(err);
@@ -83,10 +84,11 @@ Expected<std::shared_ptr<Thread>, seL4_Error> ObjectFactory::createThread(seL4_W
   assert(tcbEndpointSlotOrErr);
   if (!tcbEndpointSlotOrErr) {
     _untypedPool.releaseObject(tcbOrErr.value);
-    _pt.unmapPage(tcbStackOrErr.value);
+    _vmSpace.deallocReservation(tcbStackOrErr.value);
     _pt.unmapPage(tcbTlsOrErr.value);
     _pt.unmapPage(tcbIPCOrErr.value);
-    return unexpected<std::shared_ptr<Thread>, seL4_Error>(tcbEndpointSlotOrErr.error);
+    return unexpected<std::shared_ptr<Thread>, seL4_Error>(
+        tcbEndpointSlotOrErr.error);
   }
   seL4_SlotPos tcbEndpointSlot = tcbEndpointSlotOrErr.value;
   err = seL4_CNode_Mint(seL4_CapInitThreadCNode, tcbEndpointSlot, seL4_WordBits,
@@ -94,7 +96,7 @@ Expected<std::shared_ptr<Thread>, seL4_Error> ObjectFactory::createThread(seL4_W
                         seL4_AllRights, thread->badge);
   if (err != seL4_NoError) {
     _untypedPool.releaseObject(tcbOrErr.value);
-    _pt.unmapPage(tcbStackOrErr.value);
+    _vmSpace.deallocReservation(tcbStackOrErr.value);
     _pt.unmapPage(tcbTlsOrErr.value);
     _pt.unmapPage(tcbIPCOrErr.value);
     _untypedPool.releaseSlot(tcbEndpointSlotOrErr.value);
@@ -104,19 +106,20 @@ Expected<std::shared_ptr<Thread>, seL4_Error> ObjectFactory::createThread(seL4_W
   seL4_Word faultEP = thread->endpoint;
   seL4_Word cspaceRootData = 0;
   seL4_Word vspaceRootData = 0;
-  err = seL4_TCB_SetSpace(thread->_tcb, faultEP,
-                                     seL4_CapInitThreadCNode, cspaceRootData,
-                                     seL4_CapInitThreadVSpace, vspaceRootData);
+  err = seL4_TCB_SetSpace(thread->_tcb, faultEP, seL4_CapInitThreadCNode,
+                          cspaceRootData, seL4_CapInitThreadVSpace,
+                          vspaceRootData);
   if (err != seL4_NoError) {
     _untypedPool.releaseObject(tcbOrErr.value);
-    _pt.unmapPage(tcbStackOrErr.value);
+    _vmSpace.deallocReservation(tcbStackOrErr.value);
     _pt.unmapPage(tcbTlsOrErr.value);
     _pt.unmapPage(tcbIPCOrErr.value);
     _untypedPool.releaseSlot(tcbEndpointSlotOrErr.value);
     return unexpected<std::shared_ptr<Thread>, seL4_Error>(err);
   }
 
-  return success<std::shared_ptr<Thread>, seL4_Error>(std::shared_ptr<Thread>(thread));
+  return success<std::shared_ptr<Thread>, seL4_Error>(
+      std::shared_ptr<Thread>(thread));
 }
 
 ObjectFactory::ObjectOrError ObjectFactory::createEndpoint() {

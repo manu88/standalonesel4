@@ -51,29 +51,27 @@ seL4_Error Thread::start() {
   tcb_context.rsi = (seL4_Word)0;                          // p1
   tcb_context.rdx = (seL4_Word)0;                          // p2
   // write registers and start thread
-  auto err =  seL4_TCB_WriteRegisters(_tcb, 1, 0, num_regs, &tcb_context);
-  if(err == seL4_NoError){
+  auto err = seL4_TCB_WriteRegisters(_tcb, 1, 0, num_regs, &tcb_context);
+  if (err == seL4_NoError) {
     _state = Thread::State::Started;
   }
   return err;
 }
 #elif defined(ARCH_ARM)
-seL4_Error Thread::start() {
-  return seL4_IllegalOperation;
-}
+seL4_Error Thread::start() { return seL4_IllegalOperation; }
 #endif
 
-seL4_Error Thread::suspend(){
+seL4_Error Thread::suspend() {
   auto err = seL4_TCB_Suspend(_tcb);
-  if(err == seL4_NoError){
+  if (err == seL4_NoError) {
     _state = Thread::State::Paused;
   }
   return err;
 }
 
-seL4_Error Thread::resume(){
+seL4_Error Thread::resume() {
   auto err = seL4_TCB_Resume(_tcb);
-  if(err == seL4_NoError){
+  if (err == seL4_NoError) {
     _state = Thread::State::Running;
   }
   return err;

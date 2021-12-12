@@ -103,19 +103,20 @@ struct MMapResponse : public BaseResponse {
 /* *** *** ***  */
 
 struct ThreadRequest : BaseRequest {
-  enum ThreadOp: seL4_Word{
+  enum ThreadOp : seL4_Word {
     List,
     Suspend,
     Resume,
     SetPriority,
     StopAndDelete
   };
-  ThreadRequest(ThreadOp op, seL4_Word arg1 = 0, seL4_Word arg2 = 0) : op(op), arg1(arg1), arg2(arg2) {}
+  ThreadRequest(ThreadOp op, seL4_Word arg1 = 0, seL4_Word arg2 = 0)
+      : op(op), arg1(arg1), arg2(arg2) {}
   size_t getNumMsgRegisters() const noexcept final { return 3; }
   seL4_Word getMsgRegister(size_t index) const noexcept final {
-    if(index == 0)
+    if (index == 0)
       return op;
-    if(index == 1)
+    if (index == 1)
       return arg1;
     return arg2;
   }
@@ -155,7 +156,7 @@ inline Expected<MMapResponse, bool> mmap(seL4_Word endpoint,
 }
 
 inline Expected<BaseResponse, bool> thread(seL4_Word endpoint,
-                                         const ThreadRequest &r) {
+                                           const ThreadRequest &r) {
   return performBase<ThreadRequest, BaseResponse>(endpoint, ID::Thread, r);
 }
 
