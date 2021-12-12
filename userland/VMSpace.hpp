@@ -61,6 +61,7 @@ struct VMSpace {
       auto newRes = Reservation(numPages - (afterPage + 1));
       numPages -= newRes.numPages;
       newRes.vaddr = vaddr + (numPages * PAGE_SIZE);
+      newRes.isIPCBuffer = isIPCBuffer;
       return newRes;
     }
 
@@ -70,6 +71,7 @@ struct VMSpace {
     size_t numPages = 0;
     seL4_CapRights_t rights = seL4_ReadWrite;
     seL4_CPtr pageCap = 0;
+    bool isIPCBuffer = false;
 
     bool inRange(seL4_Word addr) const noexcept {
       return addr >= vaddr && addr < (vaddr + numPages * PAGE_SIZE);
@@ -77,7 +79,8 @@ struct VMSpace {
 
     bool operator==(const Reservation &rhs) {
       return vaddr == rhs.vaddr && numPages == rhs.numPages &&
-             rights.words[0] == rhs.rights.words[0] && pageCap == rhs.pageCap;
+             rights.words[0] == rhs.rights.words[0] && pageCap == rhs.pageCap &&
+             isIPCBuffer == rhs.isIPCBuffer;
     }
     bool operator!=(const Reservation &rhs) { return !(*this == rhs); }
   };
@@ -87,8 +90,15 @@ struct VMSpace {
 
   VMSpace() = delete;
   VMSpace(seL4_Word start);
+
   ReservationOrError
-  allocRangeAnywhere(size_t numPages, seL4_CapRights_t rights = seL4_ReadWrite);
+  allocRangeAnywhere(size_t numPages, seL4_CapRights_t rights = seL4_ReadWrite,
+                     bool isIPCBuffer = false);
+
+  ReservationOrError allocIPCBuffer(seL4_CapRights_t rights = seL4_ReadWrite) {
+    return allocRangeAnywhere(1, rights, true);
+  }
+
   seL4_Error deallocReservation(const Reservation &r);
 
   bool pageIsReserved(seL4_Word addr) const noexcept;

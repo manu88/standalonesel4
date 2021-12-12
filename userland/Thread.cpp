@@ -26,6 +26,10 @@ seL4_Error Thread::setPriority(seL4_Word prio) {
   return err;
 }
 
+seL4_Error Thread::setIPCBuffer(seL4_Word buffer, seL4_CPtr bufferFrame) {
+  return seL4_TCB_SetIPCBuffer(_tcb, buffer, bufferFrame);
+}
+
 /*static*/ bool Thread::calledFrom(const Thread &t) {
   return seL4_GetUserData() == (seL4_Word)&t;
 }

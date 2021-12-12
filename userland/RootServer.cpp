@@ -168,9 +168,13 @@ void RootServer::handleVMFault(const seL4_MessageInfo_t &msgInfo,
   auto faultyVmspace = caller.vmspace;
   assert(faultyVmspace != nullptr);
   faultyVmspace->print();
-  if (faultyVmspace->pageIsReserved(faultAddr)) {
+  auto resSlot = faultyVmspace->getReservationForAddress(faultAddr);
+  if (resSlot.first >= 0) {
     printf("faulty page was reserved\n");
     bool ret = faultyVmspace->mapPage(faultAddr);
+    if (resSlot.second.isIPCBuffer) {
+      caller.setIPCBuffer(resSlot.second.vaddr, resSlot.second.pageCap);
+    }
     printf("VSpace after map %i\n", ret);
     faultyVmspace->print();
     if (ret) {

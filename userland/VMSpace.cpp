@@ -8,14 +8,13 @@
 
 VMSpace::VMSpace(seL4_Word start) : currentVirtualAddress(start) {}
 
-VMSpace::ReservationOrError
-VMSpace::allocRangeAnywhere(size_t numPages, seL4_CapRights_t rights) {
+VMSpace::ReservationOrError VMSpace::allocRangeAnywhere(size_t numPages,
+                                                        seL4_CapRights_t rights,
+                                                        bool isIPCBuffer) {
   printf("VMSpace::allocRangeAnywhere nPages %zi start is %X\n", numPages,
          currentVirtualAddress);
-  VMSpace::Reservation r =
-      Reservation(currentVirtualAddress, numPages,
-                  rights); // {.vaddr = currentVirtualAddress, .numPages =
-                           // numPages, .rights = rights};
+  VMSpace::Reservation r = Reservation(currentVirtualAddress, numPages, rights);
+  r.isIPCBuffer = isIPCBuffer;
   _reservations.push_back(r);
   currentVirtualAddress += numPages * PAGE_SIZE;
   return success<Reservation, seL4_Error>(r);
@@ -109,8 +108,8 @@ void VMSpace::print() const noexcept {
   printf("currentVirtualAddress is %X\n", currentVirtualAddress);
   printf("reservations:\n");
   for (const auto &res : _reservations) {
-    printf("vaddr=%X size=%zi pages cap=%X rights=%X\n", res.vaddr,
-           res.numPages, res.pageCap, res.rights);
+    printf("vaddr=%X size=%zi pages cap=%X rights=%X isIPC=%i\n", res.vaddr,
+           res.numPages, res.pageCap, res.rights, res.isIPCBuffer);
   }
   printf("<--\n");
 }

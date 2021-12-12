@@ -42,6 +42,8 @@ public:
   }
   void setName(const char *name);
 
+  seL4_Error setIPCBuffer(seL4_Word buffer, seL4_CPtr bufferFrame);
+
   bool calledFrom() const noexcept;
 
   seL4_Error start();
