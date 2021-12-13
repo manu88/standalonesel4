@@ -117,6 +117,7 @@
 #include <float.h>
 #endif
 
+extern "C"{
 
 // output function type
 typedef void (*out_fct_type)(char character, void* buffer, size_t idx, size_t maxlen);
@@ -869,6 +870,15 @@ int printf_(const char* format, ...)
   return ret;
 }
 
+int __printf_chk(int flag, const char *format, ...){
+  va_list va;
+  va_start(va, format);
+  char buffer[1];
+  const int ret = _vsnprintf(_out_char, buffer, (size_t)-1, format, va);
+  va_end(va);
+  return ret;
+}
+
 
 int sprintf_(char* buffer, const char* format, ...)
 {
@@ -912,3 +922,5 @@ int fctprintf(void (*out)(char character, void* arg), void* arg, const char* for
   va_end(va);
   return ret;
 }
+
+} // extern "C"

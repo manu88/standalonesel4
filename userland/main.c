@@ -36,9 +36,9 @@ void start_root()
     init_tls();
     seL4_BootInfo *bi = seL4::GetBootInfo();
     __sel4_ipc_buffer = bi->ipcBuffer;
-//#ifndef ARCH_ARM
+#ifndef ARCH_ARM
     __sel4_print_error = 1;
-//#endif
+#endif
     printf("Start Root server\n");
     RootServer srv;
     srv.earlyInit();

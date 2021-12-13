@@ -4,13 +4,13 @@ LD=arm-linux-gnueabi-g++
 PROG=program.bin
 
 CRT_OBJS = crti_arm.o crt0_arm.o
-OBJS = main.o printf.o putchar_impl.o init.o stdcpp_stubs.o tls.o cstubs.o sel4.o InitialUntypedPool.o PageTable.o RootServer.o VMSpace.o Thread.o ObjectFactory.o kmalloc.o Shell.o Syscall.o
+OBJS = main.o printf.o putchar_impl.o init.o stdcpp_stubs.o tls.o cstubs.o sel4.o InitialUntypedPool.o PageTable.o RootServer.o VMSpace.o Thread.o ObjectFactory.o kmalloc.o Shell.o Syscall.o PlatformExpert.o
 
 LIBS= -L./libsel4/lib/ -lsel4
 CPP_FLAGS=-fno-rtti -fno-exceptions -std=c++2a
 LDFLAGS= -Wl,-m -Wl,armelf_linux_eabi -g -static $(CPP_FLAGS) -fno-builtin -nostdlib -fno-stack-protector -fno-pic -fno-pie -Wl,-u_sel4_start -Wl,-e_sel4_start
 ASFLAGS=
-CCFLAGS= -DARCH_ARM -mthumb -O3 -march=armv7-a -mtune=cortex-a9 -mfpu=neon -mvectorize-with-neon-quad -mfloat-abi=softfp -static -Wall -Wextra -nostdlib -fno-stack-protector -fno-builtin $(CPP_FLAGS) 
+CCFLAGS= -DARCH_ARM -DCONFIG_ARM_PA_SIZE_BITS_44 -O3 -march=armv8-a  -static -Wall -Wextra -nostdlib -fno-stack-protector -fno-builtin $(CPP_FLAGS) 
 
 C_INCLUDES= -I./libsel4/include/ -I./libsel4/include/autoconf/ -I./libsel4/include/gen_config/
 

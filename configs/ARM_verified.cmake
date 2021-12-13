@@ -9,7 +9,9 @@
 include(${CMAKE_CURRENT_LIST_DIR}/../tools/helpers.cmake)
 cmake_script_build_kernel()
 
-set(KernelPlatform "imx6" CACHE STRING "")
+
+set(KernelPlatform "tk1" CACHE STRING "")
+set(KernelSel4Arch "arm_hyp" CACHE STRING "")
 set(KernelVerificationBuild OFF CACHE BOOL "")
 set(KernelIPCBufferLocation "threadID_register" CACHE STRING "")
 set(KernelMaxNumNodes "1" CACHE STRING "")
@@ -22,5 +24,6 @@ set(KernelPrinting ON CACHE BOOL "")
 set(KernelDebug ON CACHE STRING "")
 set(KernelNumDomains 16 CACHE STRING "")
 set(KernelMaxNumBootinfoUntypedCap 166 CACHE STRING "")
-set(KernelInvocationReportErrorIPC ON CACHE STRING "")
+set(KernelRootCNodeSizeBits 19 CACHE STRING "")
+set(KernelMaxNumBootinfoUntypedCaps 50 CACHE STRING "")
 include(${CMAKE_CURRENT_LIST_DIR}/seL4Config.cmake)

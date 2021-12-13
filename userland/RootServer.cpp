@@ -31,6 +31,7 @@ void RootServer::lateInit() {
 
   _vmspace.delegate = this;
 
+  assert(_platExpert.init());
   printf("Test getting COM1\n");
   auto com1SlotOrErr = _untypedPool.getFreeSlot();
   assert(com1SlotOrErr);

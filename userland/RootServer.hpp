@@ -8,6 +8,7 @@
 #include "lib/expected.hpp"
 #include "lib/optional.hpp"
 #include "lib/vector.hpp"
+#include "PlatformExpert.hpp"
 
 struct ThreadTable {
   vector<std::shared_ptr<Thread>> threads;
@@ -51,4 +52,6 @@ private:
   ObjectFactory _factory;
   seL4_CPtr _apiEndpoint = 0;
   seL4_Word _tcbBadgeCounter = 1; // 0 is main rootserver thread
+
+  PlatformExpert _platExpert;
 };
