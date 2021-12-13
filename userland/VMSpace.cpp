@@ -45,7 +45,6 @@ bool VMSpace::mapPage(seL4_Word addr) {
   }
   if (resSlot.second.numPages == 1) {
     // no split needed
-    printf("MAP REquest at addr %X\n", resSlot.second.vaddr);
     seL4_Word cap = 0;
     auto err =
         delegate->mapPage(resSlot.second.vaddr, resSlot.second.rights, cap);
@@ -56,17 +55,15 @@ bool VMSpace::mapPage(seL4_Word addr) {
   } else {
     seL4_Word relativeAddr = addr - resSlot.second.vaddr;
     size_t containingPageNum = (relativeAddr % PAGE_SIZE) - 1;
-    printf("relativeAddr=%X page %zi\n", relativeAddr, containingPageNum);
+
     auto splitRes1 = resSlot.second.split(containingPageNum);
     assert(splitRes1.isValid());
-    printf("Splittee is numpages=%zi\n", resSlot.second.numPages);
-    _reservations[resSlot.first] = resSlot.second;
-    printf("splitted 1 at addr %X numPages %zi\n", splitRes1.vaddr,
-           splitRes1.numPages);
+
     if (splitRes1.numPages == 1) {
       seL4_Word cap = 0;
       auto err = delegate->mapPage(splitRes1.vaddr, splitRes1.rights, cap);
       if (err == seL4_NoError) {
+        _reservations[resSlot.first] = resSlot.second;
         splitRes1.pageCap = cap;
         _reservations.push_back(splitRes1);
       }
@@ -74,11 +71,10 @@ bool VMSpace::mapPage(seL4_Word addr) {
     }
     auto splitRes2 = splitRes1.split(0);
     if (splitRes2.isValid()) {
-      printf("splitted 2 at addr %X numPages %zi\n", splitRes2.vaddr,
-             splitRes2.numPages);
       seL4_Word cap = 0;
       auto err = delegate->mapPage(splitRes2.vaddr, splitRes2.rights, cap);
       if (err == seL4_NoError) {
+        _reservations[resSlot.first] = resSlot.second;
         splitRes2.pageCap = cap;
         _reservations.push_back(splitRes2);
         _reservations.push_back(splitRes2);

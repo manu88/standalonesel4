@@ -8,9 +8,7 @@
 RootServer::RootServer()
     : _pt(_untypedPool), _vmspace(VMSpace::RootServerLayout::ReservedVaddr +
                                   (KmallocReservedPages * PAGE_SIZE)),
-      _factory(_untypedPool, _pt, _vmspace,
-               VMSpace::RootServerLayout::ReservedVaddr +
-                   (KmallocReservedPages * PAGE_SIZE)) {
+      _factory(_untypedPool, _pt, _vmspace) {
   printf("Initialize Page Table\n");
   _pt.init(VMSpace::RootServerLayout::AddressTables);
 }
@@ -79,19 +77,18 @@ void RootServer::run() {
     _comThOrErr.value->vmspace = &_vmspace;
   }
 #endif
-#if 0
   auto testThread = createThread([this](Thread &, void *) {
     printf("TEST THREAD STARTED\n");
-    while (1){
+    while (1) {
       seL4_Yield();
     }
-    return nullptr;});
-  if(testThread){
+    return nullptr;
+  });
+  if (testThread) {
     testThread.value->setName("Test thread");
     testThread.value->start();
     testThread.value->vmspace = &_vmspace;
   }
-#endif
   printf("Start rootServer runloop\n");
   while (1) {
     seL4_Word sender = 0;
@@ -122,7 +119,6 @@ void RootServer::run() {
 
 seL4_Error RootServer::mapPage(seL4_Word vaddr, seL4_CapRights_t rights,
                                seL4_Word &cap) {
-  printf("RootServer::mapPage request at vaddr %zi\n", vaddr);
   auto pageCapOrErr = _pt.mapPage(vaddr, rights);
   if (!pageCapOrErr) {
     return pageCapOrErr.error;
@@ -210,6 +206,7 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
         printf("Num mapped pages %zi\n", _pt.getMappedPagesCount());
         printf("kmalloc'ed %zi/%zi bytes\n", getTotalKMallocated(),
                KmallocReservedPages * PAGE_SIZE);
+        _vmspace.print();
       } else if (paramOrErr.value.op ==
                  Syscall::DebugRequest::Operation::DumpScheduler) {
         seL4_DebugDumpScheduler();
@@ -305,17 +302,6 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
         seL4_SetMR(1, 0);
       }
       seL4_Reply(msgInfo);
-#if 0      
-      printf("Start at vaddr %X num pages %zi\n", _factory.currentVirtualAddress, nPages);
-      auto startVirtualAddressRange = _factory.currentVirtualAddress;
-      for(size_t i=0;i<nPages;i++){
-        auto capOrErr = _pt.mapPage(_factory.currentVirtualAddress, seL4_ReadWrite);
-        assert(capOrErr);
-        _factory.currentVirtualAddress += PAGE_SIZE;
-        printf("%i ok\n", i);
-      }
-      printf("vaddr start = %X end = %X\n", startVirtualAddressRange, _factory.currentVirtualAddress);
-#endif
     }
   } break;
   default:

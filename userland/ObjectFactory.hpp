@@ -10,15 +10,13 @@ class VMSpace;
 class ObjectFactory {
 public:
   using ObjectOrError = Expected<seL4_CPtr, seL4_Error>;
-  ObjectFactory(InitialUntypedPool &, PageTable &, VMSpace &,
-                seL4_Word currentVirtualAddress);
+  ObjectFactory(InitialUntypedPool &, PageTable &, VMSpace &);
 
   Expected<std::shared_ptr<Thread>, seL4_Error>
   createThread(seL4_Word tcbBadge, Thread::EntryPoint entryPoint,
                seL4_CPtr apiEndpoint);
   ObjectOrError createEndpoint();
   ObjectOrError createNotification();
-  seL4_Word currentVirtualAddress = 0;
 
 private:
   InitialUntypedPool &_untypedPool;
