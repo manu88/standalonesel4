@@ -35,6 +35,7 @@ void RootServer::lateInit() {
   printf("Test getting COM1\n");
   auto com1SlotOrErr = _untypedPool.getFreeSlot();
   assert(com1SlotOrErr);
+
 #ifdef ARCH_X86_64 // TEMP
   seL4_Error err = seL4_X86_IOPortControl_Issue(
       seL4_CapIOPortControl, 0x3F8, 0x3F8 + 7, seL4_CapInitThreadCNode,
@@ -270,6 +271,14 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
         if (threadToResume) {
           threadToResume->setPriority(paramOrErr.value.arg2);
         } else {
+          printf("Thread not found\n");
+        }
+      } break;
+      case Syscall::ThreadRequest::VM:{
+        auto thread = _threads.get(paramOrErr.value.arg1);
+        if(thread){
+          thread->vmspace->print();
+        }else {
           printf("Thread not found\n");
         }
       } break;

@@ -108,7 +108,8 @@ struct ThreadRequest : BaseRequest {
     Suspend,
     Resume,
     SetPriority,
-    StopAndDelete
+    StopAndDelete,
+    VM
   };
   ThreadRequest(ThreadOp op, seL4_Word arg1 = 0, seL4_Word arg2 = 0)
       : op(op), arg1(arg1), arg2(arg2) {}

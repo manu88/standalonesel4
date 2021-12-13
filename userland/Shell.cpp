@@ -60,6 +60,13 @@ int Shell::cmdThread(const string &args) {
         Thread::getCurrent()->endpoint,
         Syscall::ThreadRequest(Syscall::ThreadRequest::ThreadOp::Suspend,
                                badge));
+  } else if (args.starts_with("vm")) {
+    auto argStr = args.substr(3);
+    long badge = strtol(argStr.c_str(), NULL, 10);
+    Syscall::perform::thread(
+        Thread::getCurrent()->endpoint,
+        Syscall::ThreadRequest(Syscall::ThreadRequest::ThreadOp::VM,
+                               badge));
   } else if (args.starts_with("resume")) {
     auto argStr = args.substr(7);
     long badge = strtol(argStr.c_str(), NULL, 10);
