@@ -1,18 +1,15 @@
 #pragma once
 #include <stddef.h>
+#include <cstring> // memmove
 #ifdef UNIT_TESTS
 #include <cassert>
 #include <cstdlib>
-#include <cstring> // memmove
 #define kmalloc malloc
 #define krealloc realloc
 #define kfree free
 #else
 #include "../kmalloc.hpp"
-#include "../runtime.h"
 #endif
-#include <cmath>
-#include <stdio.h>
 
 template <class Type> struct Iterator {
 
@@ -101,6 +98,10 @@ public:
   constexpr void push_back(Type &&value) {
     doRealloc();
     _data[_size++] = value;
+  }
+
+  constexpr void pop_back(){
+    erase(end() -1);
   }
   constexpr void clear() noexcept { _size = 0; }
   constexpr const_reference operator[](size_t pos) const { return _data[pos]; }
