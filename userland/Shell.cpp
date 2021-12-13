@@ -30,6 +30,7 @@ void Shell::onChar(char c) {
     showPrompt();
   } else if (c == 0X7F) { // backspace
     if (bufferIndex > 0) {
+      printf("\b");
       bufferIndex--;
     }
   } else /*if (isprint(c))*/ {
