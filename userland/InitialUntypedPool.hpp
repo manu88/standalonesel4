@@ -1,9 +1,9 @@
 #pragma once
 #include "Platform.hpp"
 #include "lib/expected.hpp"
+#include "lib/vector.hpp"
 #include "sel4.hpp"
 #include <cstddef>
-#include <functional>
 
 class InitialUntypedPool {
 public:
@@ -18,4 +18,5 @@ public:
 
 private:
   seL4_SlotPos emptySlotPos = 0;
+  vector<seL4_SlotPos> releasedSlots;
 };

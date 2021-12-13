@@ -1,6 +1,6 @@
 #include "InitialUntypedPool.hpp"
-#include "runtime.h"
 #include "sel4.hpp"
+#include "runtime.h"
 
 /* a very simple allocation function that iterates through the untypeds in boot
    info until a retype succeeds */
@@ -33,10 +33,15 @@ InitialUntypedPool::allocObject(seL4_Word type) {
 }
 
 void InitialUntypedPool::releaseObject(seL4_CPtr) {
-  printf("InitialUntypedPool::releaseObject does nothing right now :)\n");
+  kprintf("InitialUntypedPool::releaseObject does nothing right now :)\n");
 }
 
 InitialUntypedPool::SlotOrError InitialUntypedPool::getFreeSlot() {
+  if(releasedSlots.size() > 0){
+    seL4_SlotPos slot = releasedSlots.back();
+    releasedSlots.pop_back();
+    return success<seL4_SlotPos, seL4_Error>(slot);
+  }
   auto empty = seL4::GetBootInfo()->empty;
   if (emptySlotPos == 0) {
     emptySlotPos = empty.start;
@@ -44,11 +49,10 @@ InitialUntypedPool::SlotOrError InitialUntypedPool::getFreeSlot() {
     return unexpected<seL4_SlotPos, seL4_Error>(seL4_NotEnoughMemory);
   }
   seL4_SlotPos ret = emptySlotPos;
-  //  printf("---->Start %x slot %X end %x\n", empty.start, ret, empty.end);
   emptySlotPos++;
   return success<seL4_SlotPos, seL4_Error>(ret);
 }
 
-void InitialUntypedPool::releaseSlot(seL4_SlotPos) {
-  printf("InitialUntypedPool::releaseSlot does nothing right now :)\n");
+void InitialUntypedPool::releaseSlot(seL4_SlotPos slot) {
+  releasedSlots.push_back(slot);
 }
