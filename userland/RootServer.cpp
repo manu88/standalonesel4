@@ -171,8 +171,6 @@ void RootServer::handleVMFault(const seL4_MessageInfo_t &msgInfo,
     if (resSlot.second.isIPCBuffer) {
       caller.setIPCBuffer(resSlot.second.vaddr, resSlot.second.pageCap);
     }
-    printf("VSpace after map %i\n", ret);
-    faultyVmspace->print();
     if (ret) {
       seL4_Reply(msgInfo);
     }
@@ -242,8 +240,8 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
       case Syscall::ThreadRequest::List:
         seL4_DebugDumpScheduler();
         for (const auto &t : _threads.threads) {
-          printf("Thread: badge %X endpoint %X prio %i status %i %s\n",
-                 t->badge, t->endpoint, t->priority, t->getState(),
+          printf("Thread: badge %X endpoint %X prio %i status %s %s\n",
+                 t->badge, t->endpoint, t->priority, Thread::getStateStr(t->getState()),
                  (caller == *t ? "<- Calling thread" : ""));
         }
         break;
@@ -276,9 +274,9 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
       } break;
       case Syscall::ThreadRequest::StopAndDelete: {
         printf("Stop and delete %X\n", paramOrErr.value.arg1);
-        auto tread = _threads.get(paramOrErr.value.arg1);
-        if (tread) {
-
+        auto thread = _threads.get(paramOrErr.value.arg1);
+        if (thread) {
+          thread->suspend();
         } else {
           printf("Thread not found\n");
         }

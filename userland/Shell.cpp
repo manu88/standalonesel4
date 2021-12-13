@@ -67,7 +67,7 @@ int Shell::cmdThread(const string &args) {
         Syscall::ThreadRequest(Syscall::ThreadRequest::ThreadOp::Resume,
                                badge));
   } else if (args.starts_with("del")) {
-    auto argStr = args.substr(5);
+    auto argStr = args.substr(4);
     long badge = strtol(argStr.c_str(), NULL, 10);
     Syscall::perform::thread(
         Thread::getCurrent()->endpoint,
