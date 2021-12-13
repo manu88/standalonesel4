@@ -74,6 +74,14 @@ static void testVectorRemove() {
   assert(vec[7]->i == 8);
 }
 
+static void testVectorPopBack(){
+  vector<size_t> v;
+  v.push_back(100);
+  assert(v.back() == 100);
+  v.pop_back();
+  assert(v.empty());
+}
+
 static void testVectorRemove2() {
   printf("testVectorRemove2\n");
   vector<int> v;
@@ -124,6 +132,7 @@ int testVector() {
   testVectorStruct();
   testVectorRemove();
   testVectorRemove2();
+  testVectorPopBack();
   // testStd();
   return 0;
 }
