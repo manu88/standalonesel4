@@ -19,6 +19,23 @@ public:
     Paused = 3,
     Done = 4
   };
+
+  static const char* getStateStr(State s){
+    switch (s)
+    {
+      case Uninitialized:
+        return "Uninitialized";
+      case Started:
+        return "Started";
+      case Running:
+        return "Running";
+      case Paused:
+        return "Paused";
+      case Done:
+        return "Done";
+    }
+    return nullptr;
+  }
   Thread(seL4_CPtr tcb, EntryPoint entryPoint);
 
   Thread(const Thread &other)
