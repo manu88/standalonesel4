@@ -9,7 +9,7 @@ RootServer::RootServer()
     : _pt(_untypedPool), _vmspace(VMSpace::RootServerLayout::ReservedVaddr +
                                   (KmallocReservedPages * PAGE_SIZE)),
       _factory(_untypedPool, _pt, _vmspace) {
-  printf("Initialize Page Table\n");
+  kprintf("Initialize Page Table\n");
   _pt.init(VMSpace::RootServerLayout::AddressTables);
 }
 
@@ -17,7 +17,7 @@ void RootServer::earlyInit() {
   seL4_SetUserData((seL4_Word)&Thread::main);
 
   assert(Thread::calledFromMain());
-  printf("RootServer: reserve %zi pages\n", KmallocReservedPages);
+  kprintf("RootServer: reserve %zi pages\n", KmallocReservedPages);
   reservePages();
   auto kmallocNotif = _factory.createNotification();
   setMemoryPool((void *)VMSpace::RootServerLayout::ReservedVaddr,
@@ -32,7 +32,7 @@ void RootServer::lateInit() {
   _vmspace.delegate = this;
 
   assert(_platExpert.init());
-  printf("Test getting COM1\n");
+  kprintf("Test getting COM1\n");
   auto com1SlotOrErr = _untypedPool.getFreeSlot();
   assert(com1SlotOrErr);
 
@@ -47,6 +47,13 @@ void RootServer::lateInit() {
   _com1port = com1SlotOrErr.value;
   _shell.init();
 #endif
+  kprintf("Test get free slots\n");
+  for(int i=0;i<20;i++){
+    auto slotOrErr = _untypedPool.getFreeSlot();
+    assert(slotOrErr);
+    _untypedPool.releaseSlot(slotOrErr.value);
+  }
+  kprintf("Test get free slots\n");
 }
 
 Expected<std::shared_ptr<Thread>, seL4_Error>
@@ -55,7 +62,7 @@ RootServer::createThread(Thread::EntryPoint entryPoint) {
       _factory.createThread(_tcbBadgeCounter++, entryPoint, _apiEndpoint);
   if (ret) {
     _threads.add(ret.value);
-    printf("Created new thread with badge %X\n", ret.value->badge);
+    kprintf("Created new thread with badge %X\n", ret.value->badge);
   }
 
   return ret;
@@ -80,7 +87,7 @@ void RootServer::run() {
   }
 #endif
   auto testThread = createThread([this](Thread &, void *) {
-    printf("TEST THREAD STARTED\n");
+    kprintf("TEST THREAD STARTED\n");
     while (1) {
       seL4_Yield();
     }
@@ -91,7 +98,7 @@ void RootServer::run() {
     testThread.value->start();
     testThread.value->vmspace = &_vmspace;
   }
-  printf("Start rootServer runloop\n");
+  kprintf("Start rootServer runloop\n");
   while (1) {
     seL4_Word sender = 0;
     seL4_MessageInfo_t msgInfo = seL4_Recv(_apiEndpoint, &sender);
@@ -102,13 +109,13 @@ void RootServer::run() {
       processSyscall(msgInfo, *caller);
       break;
     case seL4_Fault_CapFault:
-      printf("Cap fault to handle\n");
+      kprintf("Cap fault to handle\n");
       break;
     case seL4_Fault_UnknownSyscall:
-      printf("Unknown syscall to handle\n");
+      kprintf("Unknown syscall to handle\n");
       break;
     case seL4_Fault_UserException:
-      printf("User exception to handle\n");
+      kprintf("User exception to handle\n");
       break;
     case seL4_Fault_VMFault:
       handleVMFault(msgInfo, *caller);
@@ -131,16 +138,16 @@ seL4_Error RootServer::mapPage(seL4_Word vaddr, seL4_CapRights_t rights,
 
 void RootServer::handleVMFault(const seL4_MessageInfo_t &msgInfo,
                                Thread &caller) {
-  printf("VM fault to handle from %X\n", caller.badge);
+  kprintf("VM fault to handle from %X\n", caller.badge);
   const seL4_Word programCounter = seL4_GetMR(seL4_VMFault_IP);
   const seL4_Word faultAddr = seL4_GetMR(seL4_VMFault_Addr);
   const seL4_Word isPrefetch = seL4_GetMR(seL4_VMFault_PrefetchFault);
   const seL4_Word faultStatusRegister = seL4_GetMR(seL4_VMFault_FSR);
 
-  printf("programCounter      0X%lX\n", programCounter);
-  printf("faultAddr           0X%lX\n", faultAddr);
-  printf("isPrefetch          0X%lX\n", isPrefetch);
-  printf("faultStatusRegister 0X%lX\n", faultStatusRegister);
+  kprintf("programCounter      0X%lX\n", programCounter);
+  kprintf("faultAddr           0X%lX\n", faultAddr);
+  kprintf("isPrefetch          0X%lX\n", isPrefetch);
+  kprintf("faultStatusRegister 0X%lX\n", faultStatusRegister);
   typedef struct {
     uint8_t present : 1; // P: When set, the page fault was caused by a
                          // page-protection violation. When not set, it was
@@ -161,14 +168,14 @@ void RootServer::handleVMFault(const seL4_MessageInfo_t &msgInfo,
   } PageFault; // see https://wiki.osdev.org/Exceptions#Page_Fault
 
   PageFault *fault = (PageFault *)&faultStatusRegister;
-  printf("Fault P=%u W=%u U=%u R=%u I=%u\n", fault->present, fault->write,
+  kprintf("Fault P=%u W=%u U=%u R=%u I=%u\n", fault->present, fault->write,
          fault->user, fault->reservedWrite, fault->instructionFetch);
   auto faultyVmspace = caller.vmspace;
   assert(faultyVmspace != nullptr);
   faultyVmspace->print();
   auto resSlot = faultyVmspace->getReservationForAddress(faultAddr);
   if (resSlot.first >= 0) {
-    printf("faulty page was reserved\n");
+    kprintf("faulty page was reserved\n");
     bool ret = faultyVmspace->mapPage(faultAddr);
     if (resSlot.second.isIPCBuffer) {
       caller.setIPCBuffer(resSlot.second.vaddr, resSlot.second.pageCap);
@@ -177,8 +184,8 @@ void RootServer::handleVMFault(const seL4_MessageInfo_t &msgInfo,
       seL4_Reply(msgInfo);
     }
   } else {
-    printf("faulty page was NOT reserved\n");
-    printf("TODO: terminate caller\n");
+    kprintf("faulty page was NOT reserved\n");
+    kprintf("TODO: terminate caller\n");
   }
 
   /*
@@ -202,16 +209,16 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
     auto paramOrErr = Syscall::DebugRequest::decode(msgInfo);
     if (paramOrErr) {
       if (paramOrErr.value.op == Syscall::DebugRequest::Operation::VMStats) {
-        printf("VMStats\n");
-        printf("Num mapped pages %zi\n", _pt.getMappedPagesCount());
-        printf("kmalloc'ed %zi/%zi bytes\n", getTotalKMallocated(),
+        kprintf("VMStats\n");
+        kprintf("Num mapped pages %zi\n", _pt.getMappedPagesCount());
+        kprintf("kmalloc'ed %zi/%zi bytes\n", getTotalKMallocated(),
                KmallocReservedPages * PAGE_SIZE);
         _vmspace.print();
       } else if (paramOrErr.value.op ==
                  Syscall::DebugRequest::Operation::DumpScheduler) {
         seL4_DebugDumpScheduler();
         for (const auto &t : _threads.threads) {
-          printf("Thread: badge %X endpoint %X prio %i %s\n", t->badge,
+          kprintf("Thread: badge %X endpoint %X prio %i %s\n", t->badge,
                  t->endpoint, t->priority,
                  (caller == *t ? "<- Calling thread" : ""));
         }
@@ -229,7 +236,7 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
   case Syscall::ID::KFree: {
     auto paramOrErr = Syscall::KFreeRequest::decode(msgInfo);
     if (paramOrErr) {
-      printf("kfreeing %lu\n", paramOrErr.value.ptr);
+      kprintf("kfreeing %lu\n", paramOrErr.value.ptr);
       kfree(paramOrErr.value.ptr);
       seL4_SetMR(1, 0);
       seL4_Reply(msgInfo);
@@ -242,36 +249,36 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
       case Syscall::ThreadRequest::List:
         seL4_DebugDumpScheduler();
         for (const auto &t : _threads.threads) {
-          printf("Thread: badge %X endpoint %X prio %i status %s %s\n",
+          kprintf("Thread: badge %X endpoint %X prio %i status %s %s\n",
                  t->badge, t->endpoint, t->priority, Thread::getStateStr(t->getState()),
                  (caller == *t ? "<- Calling thread" : ""));
         }
         break;
       case Syscall::ThreadRequest::Suspend: {
-        printf("Request to suspend %X\n", paramOrErr.value.arg1);
+        kprintf("Request to suspend %X\n", paramOrErr.value.arg1);
         auto threadToSuspend = _threads.get(paramOrErr.value.arg1);
         if (threadToSuspend) {
           threadToSuspend->suspend();
         } else {
-          printf("Thread not found\n");
+          kprintf("Thread not found\n");
         }
       } break;
       case Syscall::ThreadRequest::Resume: {
-        printf("Request to resume %X\n", paramOrErr.value.arg1);
+        kprintf("Request to resume %X\n", paramOrErr.value.arg1);
         auto threadToResume = _threads.get(paramOrErr.value.arg1);
         if (threadToResume) {
           threadToResume->resume();
         } else {
-          printf("Thread not found\n");
+          kprintf("Thread not found\n");
         }
       } break;
       case Syscall::ThreadRequest::SetPriority: {
-        printf("Change priority %X\n", paramOrErr.value.arg1);
+        kprintf("Change priority %X\n", paramOrErr.value.arg1);
         auto threadToResume = _threads.get(paramOrErr.value.arg1);
         if (threadToResume) {
           threadToResume->setPriority(paramOrErr.value.arg2);
         } else {
-          printf("Thread not found\n");
+          kprintf("Thread not found\n");
         }
       } break;
       case Syscall::ThreadRequest::VM:{
@@ -279,16 +286,16 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
         if(thread){
           thread->vmspace->print();
         }else {
-          printf("Thread not found\n");
+          kprintf("Thread not found\n");
         }
       } break;
       case Syscall::ThreadRequest::StopAndDelete: {
-        printf("Stop and delete %X\n", paramOrErr.value.arg1);
+        kprintf("Stop and delete %X\n", paramOrErr.value.arg1);
         auto thread = _threads.get(paramOrErr.value.arg1);
         if (thread) {
           thread->suspend();
         } else {
-          printf("Thread not found\n");
+          kprintf("Thread not found\n");
         }
 
       } break;
@@ -301,7 +308,7 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
   case Syscall::ID::MMap: {
     auto paramOrErr = Syscall::MMapRequest::decode(msgInfo);
     if (paramOrErr) {
-      printf("mmap request for %zi pages\n", paramOrErr.value.numPages);
+      kprintf("mmap request for %zi pages\n", paramOrErr.value.numPages);
       auto res = _vmspace.allocRangeAnywhere(paramOrErr.value.numPages);
       _vmspace.print();
       if (res) {
@@ -313,7 +320,7 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
     }
   } break;
   default:
-    printf("RootTask: Received msg %X from badge %i\n", syscallID,
+    kprintf("RootTask: Received msg %X from badge %i\n", syscallID,
            caller.badge);
     break;
   }
@@ -328,7 +335,7 @@ void RootServer::reservePages() {
   }
   auto endVaddr = vaddr;
   vaddr = VMSpace::RootServerLayout::ReservedVaddr;
-  printf("Test reserved pages between %X and %X\n", vaddr, endVaddr);
+  kprintf("Test reserved pages between %X and %X\n", vaddr, endVaddr);
   for (int i = 0; i < KmallocReservedPages; i++) {
     memset((void *)vaddr, 0, PAGE_SIZE);
     vaddr += PAGE_SIZE;
@@ -350,21 +357,21 @@ void RootServer::testPt() {
   for (size_t i = 0; i < sizeToTest; i++) {
     auto capOrError = _pt.mapPage(vaddr, seL4_ReadWrite);
     if (capOrError.error == seL4_FailedLookup) {
-      printf("Missing intermediate paging structure at level %lu\n",
+      kprintf("Missing intermediate paging structure at level %lu\n",
              seL4_MappingFailedLookupLevel());
     } else if (capOrError.error != seL4_NoError) {
-      printf("Test mapping error = %i at %i\n", capOrError.error, i);
+      kprintf("Test mapping error = %i at %i\n", capOrError.error, i);
     }
     auto test = reinterpret_cast<size_t *>(vaddr);
     *test = i;
     assert(*test == i);
     vaddr += 4096;
     if (i % 100 == 0) {
-      printf("Page %zi/%zi ok\n", i, sizeToTest);
+      kprintf("Page %zi/%zi ok\n", i, sizeToTest);
     }
   }
 
-  printf("After test, vaddr is at %X\n", vaddr);
+  kprintf("After test, vaddr is at %X\n", vaddr);
   vaddr = VMSpace::RootServerLayout::ReservedVaddr +
           (KmallocReservedPages * PAGE_SIZE);
   for (size_t i = 0; i < sizeToTest; i++) {
@@ -373,5 +380,5 @@ void RootServer::testPt() {
     assert(*test == i);
     vaddr += 4096;
   }
-  printf("After test OK \n");
+  kprintf("After test OK \n");
 }

@@ -11,16 +11,16 @@ void Shell::init() {
   assert(buffer != nullptr);
   memset(buffer, 0, BufferSize);
 }
-void Shell::showPrompt() { printf(":>"); }
+void Shell::showPrompt() { kprintf(":>"); }
 
 void Shell::start() {
-  printf("RootServer shell. type 'help' for ... well ... help\n");
+  kprintf("RootServer shell. type 'help' for ... well ... help\n");
   showPrompt();
 }
 void Shell::onChar(char c) {
   if (c == 0XD) {
     buffer[bufferIndex] = 0;
-    printf("\n");
+    kprintf("\n");
     if (strlen(buffer) > 0) {
       auto str = string(buffer, bufferIndex);
       newCommand(str);
@@ -30,21 +30,21 @@ void Shell::onChar(char c) {
     showPrompt();
   } else if (c == 0X7F) { // backspace
     if (bufferIndex > 0) {
-      printf("\b");
+      kprintf("\b");
       bufferIndex--;
     }
   } else /*if (isprint(c))*/ {
     assert(bufferIndex + 1 < BufferSize);
     buffer[bufferIndex] = c;
     buffer[bufferIndex + 1] = 0;
-    printf("%c", c);
+    kprintf("%c", c);
     if (++bufferIndex >= BufferSize - 1) {
       bufferIndex = 0;
     }
   }
   /*
     else {
-      printf("Other char %X\n", c);
+      kprintf("Other char %X\n", c);
     }
     */
 }
@@ -86,7 +86,7 @@ int Shell::cmdThread(const string &args) {
     char *outArg = nullptr;
     long badge = strtol(argStr.c_str(), &outArg, 10);
     if (outArg == nullptr) {
-      printf("Missing priority arg\n");
+      kprintf("Missing priority arg\n");
       return -1;
     }
     long prio = strtol(outArg, nullptr, 10);
@@ -95,7 +95,7 @@ int Shell::cmdThread(const string &args) {
         Syscall::ThreadRequest(Syscall::ThreadRequest::ThreadOp::SetPriority,
                                badge, prio));
   } else {
-    printf("Unknown thread command '%s'\n", args.c_str());
+    kprintf("Unknown thread command '%s'\n", args.c_str());
     return -1;
   }
   return 0;
@@ -123,7 +123,7 @@ int Shell::processNewCommand(const string &cmd) {
     auto args = cmd.substr(7);
     return cmdThread(args);
   } else if (cmd == "help") {
-    printf("available commands are help, sched, kmalloc/kfree\n");
+    kprintf("available commands are help, sched, kmalloc/kfree\n");
     return 0;
   } else if (cmd.starts_with("kmalloc")) {
     if (cmd.size() < 9) {
@@ -131,13 +131,13 @@ int Shell::processNewCommand(const string &cmd) {
     }
     auto args = cmd.substr(8);
     long size = strtol(args.c_str(), NULL, 10);
-    //    printf("Got kmalloc command args are '%s' size %zi\n", args.c_str(),
+    //    kprintf("Got kmalloc command args are '%s' size %zi\n", args.c_str(),
     //    size);
     if (size) {
       auto responseOrErr = Syscall::perform::kmalloc(
           Thread::getCurrent()->endpoint, Syscall::KMallocRequest(size));
       if (responseOrErr) {
-        printf("kmalloced at address %lu\n", responseOrErr.value.p);
+        kprintf("kmalloced at address %lu\n", responseOrErr.value.p);
       }
       return 0;
     }
@@ -149,7 +149,7 @@ int Shell::processNewCommand(const string &cmd) {
     auto args = cmd.substr(6);
     long addr = strtol(args.c_str(), NULL, 10);
     if (addr) {
-      printf("Touching %lu\n", addr);
+      kprintf("Touching %lu\n", addr);
       ((char *)addr)[0] = 53;
       return 0;
     }
@@ -176,11 +176,11 @@ int Shell::processNewCommand(const string &cmd) {
     return 0;
   } else if (cmd == "history") {
     for (const auto &cmd : _history) {
-      printf("'%s'\n", cmd.c_str());
+      kprintf("'%s'\n", cmd.c_str());
     }
     return 0;
   } else if (cmd == "last") {
-    printf("Last command returned %i\n", lastRet);
+    kprintf("Last command returned %i\n", lastRet);
     return lastRet;
   } else if (cmd.starts_with("mmap")) {
     if (cmd.size() < 6) {
@@ -192,13 +192,13 @@ int Shell::processNewCommand(const string &cmd) {
       auto retOrErr = Syscall::perform::mmap(Thread::getCurrent()->endpoint,
                                              Syscall::MMapRequest(numPages));
       if (retOrErr) {
-        printf("mmapped %zi pages at %lu\n", numPages, retOrErr.value.p);
+        kprintf("mmapped %zi pages at %lu\n", numPages, retOrErr.value.p);
         return 0;
       }
       return -1;
     }
     return -1;
   }
-  printf("Command '%s' does not exist\n", cmd.c_str());
+  kprintf("Command '%s' does not exist\n", cmd.c_str());
   return -1;
 }

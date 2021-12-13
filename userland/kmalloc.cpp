@@ -96,7 +96,7 @@ static void relink(union chunk *top, size_t expectedSize) {
   }
   if (expectedSize > 0) {
     if (expectedSize == top->node.info.size) {
-      printf(
+      kprintf(
           "expecting to free %zi bytes, but chunk size is %zi. will assert\n",
           expectedSize, top->node.info.size);
     }

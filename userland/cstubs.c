@@ -20,7 +20,7 @@ extern "C" void __stack_chk_fail(void)
 
 extern "C" void __assert_fail( char const* assertion,  char const* file, int line,  char const* function)
 {
-    printf("assertion failed %s file line %d in function %s %s\n", assertion, file, line, function);
+    kprintf("assertion failed %s file line %d in function %s %s\n", assertion, file, line, function);
     oops();
 }
 

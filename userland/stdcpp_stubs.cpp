@@ -2,14 +2,14 @@
 
 namespace std {
 void __throw_bad_function_call() {
-  printf("std::__throw_bad_function_call was called\n");
+  kprintf("std::__throw_bad_function_call was called\n");
   assert(0);
   while (1)
     ;
 }
 
 void __throw_bad_alloc() {
-  printf("std::__throw_bad_alloc was called\n");
+  kprintf("std::__throw_bad_alloc was called\n");
   assert(0);
   while (1)
     ;

@@ -1,6 +1,7 @@
 #include "VMSpace.hpp"
 #ifdef UNIT_TESTS
 #include <cstdio>
+#define kprintf printf
 #else
 #include "runtime.h"
 #endif
@@ -11,8 +12,6 @@ VMSpace::VMSpace(seL4_Word start) : currentVirtualAddress(start) {}
 VMSpace::ReservationOrError VMSpace::allocRangeAnywhere(size_t numPages,
                                                         seL4_CapRights_t rights,
                                                         bool isIPCBuffer) {
-  printf("VMSpace::allocRangeAnywhere nPages %zi start is %X\n", numPages,
-         currentVirtualAddress);
   VMSpace::Reservation r = Reservation(currentVirtualAddress, numPages, rights);
   r.isIPCBuffer = isIPCBuffer;
   _reservations.push_back(r);
@@ -21,7 +20,7 @@ VMSpace::ReservationOrError VMSpace::allocRangeAnywhere(size_t numPages,
 }
 
 seL4_Error VMSpace::deallocReservation(const VMSpace::Reservation &r) {
-  printf("VMSpace::deallocReservation vaddr %X\n", r.vaddr);
+  kprintf("VMSpace::deallocReservation vaddr %X\n", r.vaddr);
   return seL4_NoError;
 }
 
@@ -35,7 +34,7 @@ bool VMSpace::pageIsReserved(seL4_Word addr) const noexcept {
 }
 
 bool VMSpace::mapPage(seL4_Word addr) {
-  printf("request add addr %X\n", addr);
+  kprintf("request add addr %X\n", addr);
   auto resSlot = getReservationForAddress(addr);
   if (resSlot.first == -1) {
     return false;
@@ -100,12 +99,12 @@ VMSpace::getReservationForAddress(seL4_Word addr) const noexcept {
 }
 
 void VMSpace::print() const noexcept {
-  printf("--> VMSpace desc\n");
-  printf("currentVirtualAddress is %X\n", currentVirtualAddress);
-  printf("reservations:\n");
+  kprintf("--> VMSpace desc\n");
+  kprintf("currentVirtualAddress is %X\n", currentVirtualAddress);
+  kprintf("reservations:\n");
   for (const auto &res : _reservations) {
-    printf("vaddr=%X size=%zi pages cap=%X rights=%X isIPC=%i\n", res.vaddr,
+    kprintf("vaddr=%X size=%zi pages cap=%X rights=%X isIPC=%i\n", res.vaddr,
            res.numPages, res.pageCap, res.rights, res.isIPCBuffer);
   }
-  printf("<--\n");
+  kprintf("<--\n");
 }

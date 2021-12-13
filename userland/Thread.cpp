@@ -14,7 +14,7 @@ Thread::Thread(seL4_CPtr tcb, EntryPoint entryPoint)
   seL4_SetUserData((seL4_Word)self);
   self->retValue = self->entryPoint(*self, nullptr);
   self->_state = Thread::State::Done;
-  printf("Thread %i returned, suspend it\n", self->badge);
+  kprintf("Thread %i returned, suspend it\n", self->badge);
   self->suspend();
 }
 
