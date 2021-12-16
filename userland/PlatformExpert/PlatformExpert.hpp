@@ -1,5 +1,5 @@
 #pragma once
-#include "PCIScan.hpp"
+#include "PCIScanner.hpp"
 
 class ObjectFactory;
 class PlatformExpert{
