@@ -2,11 +2,12 @@
 #include "PCIScanner.hpp"
 
 class ObjectFactory;
-class PlatformExpert{
+class PlatformExpert {
 public:
-    bool init(ObjectFactory* factory);
-    void print() const noexcept;
+  bool init(ObjectFactory *factory);
+  void print() const noexcept;
+
 private:
-    PCIScanner _pciScanner;
-    ObjectFactory* _factory = nullptr;
+  PCIScanner _pciScanner;
+  ObjectFactory *_factory = nullptr;
 };

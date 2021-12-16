@@ -46,7 +46,7 @@ void RootServer::lateInit() {
   _shell.init();
 #endif
   kprintf("Test get free slots\n");
-  for(int i=0;i<20;i++){
+  for (int i = 0; i < 20; i++) {
     auto slotOrErr = _factory.getFreeSlot();
     assert(slotOrErr);
     _untypedPool.releaseSlot(slotOrErr.value);
@@ -167,7 +167,7 @@ void RootServer::handleVMFault(const seL4_MessageInfo_t &msgInfo,
 
   PageFault *fault = (PageFault *)&faultStatusRegister;
   kprintf("Fault P=%u W=%u U=%u R=%u I=%u\n", fault->present, fault->write,
-         fault->user, fault->reservedWrite, fault->instructionFetch);
+          fault->user, fault->reservedWrite, fault->instructionFetch);
   auto faultyVmspace = caller.vmspace;
   assert(faultyVmspace != nullptr);
   faultyVmspace->print();
@@ -210,15 +210,15 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
         kprintf("VMStats\n");
         kprintf("Num mapped pages %zi\n", _pt.getMappedPagesCount());
         kprintf("kmalloc'ed %zi/%zi bytes\n", getTotalKMallocated(),
-               KmallocReservedPages * PAGE_SIZE);
+                KmallocReservedPages * PAGE_SIZE);
         _vmspace.print();
       } else if (paramOrErr.value.op ==
                  Syscall::DebugRequest::Operation::DumpScheduler) {
         seL4_DebugDumpScheduler();
         for (const auto &t : _threads.threads) {
           kprintf("Thread: badge %X endpoint %X prio %i %s\n", t->badge,
-                 t->endpoint, t->priority,
-                 (caller == *t ? "<- Calling thread" : ""));
+                  t->endpoint, t->priority,
+                  (caller == *t ? "<- Calling thread" : ""));
         }
       }
     }
@@ -248,8 +248,9 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
         seL4_DebugDumpScheduler();
         for (const auto &t : _threads.threads) {
           kprintf("Thread: badge %X endpoint %X prio %i status %s %s\n",
-                 t->badge, t->endpoint, t->priority, Thread::getStateStr(t->getState()),
-                 (caller == *t ? "<- Calling thread" : ""));
+                  t->badge, t->endpoint, t->priority,
+                  Thread::getStateStr(t->getState()),
+                  (caller == *t ? "<- Calling thread" : ""));
         }
         break;
       case Syscall::ThreadRequest::Suspend: {
@@ -279,11 +280,11 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
           kprintf("Thread not found\n");
         }
       } break;
-      case Syscall::ThreadRequest::VM:{
+      case Syscall::ThreadRequest::VM: {
         auto thread = _threads.get(paramOrErr.value.arg1);
-        if(thread){
+        if (thread) {
           thread->vmspace->print();
-        }else {
+        } else {
           kprintf("Thread not found\n");
         }
       } break;
@@ -317,12 +318,12 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
       seL4_Reply(msgInfo);
     }
   } break;
-  case Syscall::ID::Platform:{
+  case Syscall::ID::Platform: {
     _platExpert.print();
-  }break;
+  } break;
   default:
     kprintf("RootTask: Received msg %X from badge %i\n", syscallID,
-           caller.badge);
+            caller.badge);
     break;
   }
 }
@@ -359,7 +360,7 @@ void RootServer::testPt() {
     auto capOrError = _pt.mapPage(vaddr, seL4_ReadWrite);
     if (capOrError.error == seL4_FailedLookup) {
       kprintf("Missing intermediate paging structure at level %lu\n",
-             seL4_MappingFailedLookupLevel());
+              seL4_MappingFailedLookupLevel());
     } else if (capOrError.error != seL4_NoError) {
       kprintf("Test mapping error = %i at %i\n", capOrError.error, i);
     }

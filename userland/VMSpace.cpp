@@ -104,7 +104,7 @@ void VMSpace::print() const noexcept {
   kprintf("reservations:\n");
   for (const auto &res : _reservations) {
     kprintf("vaddr=%X size=%zi pages cap=%X rights=%X isIPC=%i\n", res.vaddr,
-           res.numPages, res.pageCap, res.rights, res.isIPCBuffer);
+            res.numPages, res.pageCap, res.rights, res.isIPCBuffer);
   }
   kprintf("<--\n");
 }

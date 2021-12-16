@@ -114,10 +114,10 @@ ObjectFactory::ObjectOrError ObjectFactory::createNotification() {
   return _untypedPool.allocObject(seL4_NotificationObject);
 }
 
-ObjectFactory::SlotOrError ObjectFactory::getFreeSlot(){
+ObjectFactory::SlotOrError ObjectFactory::getFreeSlot() {
   return _untypedPool.getFreeSlot();
 }
 
-void ObjectFactory::releaseSlot(seL4_SlotPos pos){
+void ObjectFactory::releaseSlot(seL4_SlotPos pos) {
   _untypedPool.releaseSlot(pos);
 }

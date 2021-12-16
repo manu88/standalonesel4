@@ -65,8 +65,7 @@ int Shell::cmdThread(const string &args) {
     long badge = strtol(argStr.c_str(), NULL, 10);
     Syscall::perform::thread(
         Thread::getCurrent()->endpoint,
-        Syscall::ThreadRequest(Syscall::ThreadRequest::ThreadOp::VM,
-                               badge));
+        Syscall::ThreadRequest(Syscall::ThreadRequest::ThreadOp::VM, badge));
   } else if (args.starts_with("resume")) {
     auto argStr = args.substr(7);
     long badge = strtol(argStr.c_str(), NULL, 10);
@@ -198,7 +197,7 @@ int Shell::processNewCommand(const string &cmd) {
       return -1;
     }
     return -1;
-  }else if (cmd.starts_with("plat")){
+  } else if (cmd.starts_with("plat")) {
     Syscall::perform::platform(Thread::getCurrent()->endpoint);
     return 0;
   }

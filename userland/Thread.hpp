@@ -20,19 +20,18 @@ public:
     Done = 4
   };
 
-  static const char* getStateStr(State s){
-    switch (s)
-    {
-      case Uninitialized:
-        return "Uninitialized";
-      case Started:
-        return "Started";
-      case Running:
-        return "Running";
-      case Paused:
-        return "Paused";
-      case Done:
-        return "Done";
+  static const char *getStateStr(State s) {
+    switch (s) {
+    case Uninitialized:
+      return "Uninitialized";
+    case Started:
+      return "Started";
+    case Running:
+      return "Running";
+    case Paused:
+      return "Paused";
+    case Done:
+      return "Done";
     }
     return nullptr;
   }

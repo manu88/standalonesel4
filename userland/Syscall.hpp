@@ -5,7 +5,15 @@
 
 namespace Syscall {
 
-enum class ID : seL4_Word { Unknown, Debug, KMalloc, KFree, MMap, Thread, Platform };
+enum class ID : seL4_Word {
+  Unknown,
+  Debug,
+  KMalloc,
+  KFree,
+  MMap,
+  Thread,
+  Platform
+};
 
 struct BaseRequest {
   virtual ~BaseRequest() {}
@@ -161,8 +169,8 @@ inline Expected<BaseResponse, bool> thread(seL4_Word endpoint,
   return performBase<ThreadRequest, BaseResponse>(endpoint, ID::Thread, r);
 }
 
-inline Expected<BaseResponse, bool> platform(seL4_Word endpoint,
-                                           const BaseRequest &r = BaseRequest()) {
+inline Expected<BaseResponse, bool>
+platform(seL4_Word endpoint, const BaseRequest &r = BaseRequest()) {
   return performBase<BaseRequest, BaseResponse>(endpoint, ID::Platform, r);
 }
 

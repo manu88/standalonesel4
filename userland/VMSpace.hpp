@@ -28,7 +28,7 @@ struct seL4_CapRights_t {
 #include "Platform.hpp"
 #include "lib/expected.hpp"
 #include "lib/vector.hpp"
-#include <sys/types.h> 
+#include <sys/types.h>
 
 struct VMSpaceDelegate {
   virtual seL4_Error mapPage(seL4_Word, seL4_CapRights_t, seL4_Word &) {

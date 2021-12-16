@@ -1,6 +1,6 @@
 #pragma once
-#include <stddef.h>
 #include <cstring> // memmove
+#include <stddef.h>
 #ifdef UNIT_TESTS
 #include <cassert>
 #include <cstdlib>
@@ -100,9 +100,7 @@ public:
     _data[_size++] = value;
   }
 
-  constexpr void pop_back(){
-    erase(end() -1);
-  }
+  constexpr void pop_back() { erase(end() - 1); }
   constexpr void clear() noexcept { _size = 0; }
   constexpr const_reference operator[](size_t pos) const { return _data[pos]; }
 

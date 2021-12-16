@@ -74,7 +74,7 @@ static void testVectorRemove() {
   assert(vec[7]->i == 8);
 }
 
-static void testVectorPopBack(){
+static void testVectorPopBack() {
   vector<size_t> v;
   v.push_back(100);
   assert(v.back() == 100);

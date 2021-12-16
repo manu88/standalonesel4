@@ -1,6 +1,6 @@
 #include "InitialUntypedPool.hpp"
-#include "sel4.hpp"
 #include "runtime.h"
+#include "sel4.hpp"
 
 /* a very simple allocation function that iterates through the untypeds in boot
    info until a retype succeeds */
@@ -37,7 +37,7 @@ void InitialUntypedPool::releaseObject(seL4_CPtr) {
 }
 
 InitialUntypedPool::SlotOrError InitialUntypedPool::getFreeSlot() {
-  if(releasedSlots.size() > 0){
+  if (releasedSlots.size() > 0) {
     seL4_SlotPos slot = releasedSlots.back();
     releasedSlots.pop_back();
     return success<seL4_SlotPos, seL4_Error>(slot);
