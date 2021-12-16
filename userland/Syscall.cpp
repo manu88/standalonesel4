@@ -76,7 +76,6 @@ Syscall::performBase(seL4_Word endpoint, Syscall::ID id, const RequestType &b) {
     // return success<ReturnType, bool>(ReturnType(retInfo));
   }
   seL4_Send(endpoint, info);
-
   return success<ReturnType, bool>(ReturnType(0));
 }
 

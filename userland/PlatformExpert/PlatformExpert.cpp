@@ -21,9 +21,13 @@ bool PlatformExpert::init(ObjectFactory* factory){
     _pciScanner.init(pciConfigAddressSlotOrErr.value, pciDataAddressSlotOrErr.value);
 
     _pciScanner.scan();
+    print();
+    return true;
+}
+
+void PlatformExpert::print() const noexcept{
     kprintf("Got %zi PCI devices\n", _pciScanner.getDevices().size());
     for(const auto &dev: _pciScanner.getDevices()){
         dev.print();
     }
-    return true;
 }

@@ -5,7 +5,7 @@
 
 namespace Syscall {
 
-enum class ID : seL4_Word { Unknown, Debug, KMalloc, KFree, MMap, Thread };
+enum class ID : seL4_Word { Unknown, Debug, KMalloc, KFree, MMap, Thread, Platform };
 
 struct BaseRequest {
   virtual ~BaseRequest() {}
@@ -109,7 +109,7 @@ struct ThreadRequest : BaseRequest {
     Resume,
     SetPriority,
     StopAndDelete,
-    VM
+    VM,
   };
   ThreadRequest(ThreadOp op, seL4_Word arg1 = 0, seL4_Word arg2 = 0)
       : op(op), arg1(arg1), arg2(arg2) {}
@@ -159,6 +159,11 @@ inline Expected<MMapResponse, bool> mmap(seL4_Word endpoint,
 inline Expected<BaseResponse, bool> thread(seL4_Word endpoint,
                                            const ThreadRequest &r) {
   return performBase<ThreadRequest, BaseResponse>(endpoint, ID::Thread, r);
+}
+
+inline Expected<BaseResponse, bool> platform(seL4_Word endpoint,
+                                           const BaseRequest &r = BaseRequest()) {
+  return performBase<BaseRequest, BaseResponse>(endpoint, ID::Platform, r);
 }
 
 }; // namespace perform

@@ -198,6 +198,9 @@ int Shell::processNewCommand(const string &cmd) {
       return -1;
     }
     return -1;
+  }else if (cmd.starts_with("plat")){
+    Syscall::perform::platform(Thread::getCurrent()->endpoint);
+    return 0;
   }
   kprintf("Command '%s' does not exist\n", cmd.c_str());
   return -1;
