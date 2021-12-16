@@ -8,7 +8,7 @@
 #include "lib/expected.hpp"
 #include "lib/optional.hpp"
 #include "lib/vector.hpp"
-#include "PlatformExpert.hpp"
+#include "PlatformExpert/PlatformExpert.hpp"
 
 struct ThreadTable {
   vector<std::shared_ptr<Thread>> threads;

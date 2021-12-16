@@ -64,7 +64,7 @@ ObjectFactory::createThread(seL4_Word tcbBadge, Thread::EntryPoint entryPoint,
     return unexpected<std::shared_ptr<Thread>, seL4_Error>(err);
   }
   assert(thread->getPriority() == prio);
-  auto tcbEndpointSlotOrErr = _untypedPool.getFreeSlot();
+  auto tcbEndpointSlotOrErr = getFreeSlot();
   assert(tcbEndpointSlotOrErr);
   if (!tcbEndpointSlotOrErr) {
     _untypedPool.releaseObject(tcbOrErr.value);
@@ -112,4 +112,12 @@ ObjectFactory::ObjectOrError ObjectFactory::createEndpoint() {
 
 ObjectFactory::ObjectOrError ObjectFactory::createNotification() {
   return _untypedPool.allocObject(seL4_NotificationObject);
+}
+
+ObjectFactory::SlotOrError ObjectFactory::getFreeSlot(){
+  return _untypedPool.getFreeSlot();
+}
+
+void ObjectFactory::releaseSlot(seL4_SlotPos pos){
+  _untypedPool.releaseSlot(pos);
 }

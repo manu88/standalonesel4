@@ -31,9 +31,9 @@ void RootServer::lateInit() {
 
   _vmspace.delegate = this;
 
-  assert(_platExpert.init());
+  assert(_platExpert.init(&_factory));
   kprintf("Test getting COM1\n");
-  auto com1SlotOrErr = _untypedPool.getFreeSlot();
+  auto com1SlotOrErr = _factory.getFreeSlot();
   assert(com1SlotOrErr);
 
 #ifdef ARCH_X86_64 // TEMP
@@ -42,14 +42,12 @@ void RootServer::lateInit() {
       com1SlotOrErr.value, seL4_WordBits);
   assert(err == seL4_NoError);
 
-  auto com1IRQSlotOrErr = _untypedPool.getFreeSlot();
-  assert(com1IRQSlotOrErr);
   _com1port = com1SlotOrErr.value;
   _shell.init();
 #endif
   kprintf("Test get free slots\n");
   for(int i=0;i<20;i++){
-    auto slotOrErr = _untypedPool.getFreeSlot();
+    auto slotOrErr = _factory.getFreeSlot();
     assert(slotOrErr);
     _untypedPool.releaseSlot(slotOrErr.value);
   }
