@@ -22,7 +22,7 @@ OBJS = main.o\
 	Shell.o\
 	Syscall.o\
 	PlatformExpert/PlatformExpert.o\
-	PlatformExpert/PCIScan.o\
+	PlatformExpert/PCIScanner.o\
 	PlatformExpert/pciDevices.o\
 
 LIBS= -L./libsel4/lib/ -lsel4
