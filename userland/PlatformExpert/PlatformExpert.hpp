@@ -1,10 +1,9 @@
 #pragma once
-#include "PCIScanner.hpp"
-#include "../lib/vector.hpp"
 #include "../lib/expected.hpp"
-#include <memory>
+#include "../lib/vector.hpp"
 #include "PCIBlk.hpp"
-
+#include "PCIScanner.hpp"
+#include <memory>
 
 class ObjectFactory;
 
@@ -16,6 +15,7 @@ public:
   void print() const noexcept;
 
   SlotOrError issuePortRange(seL4_Word first_port, seL4_Word last_port);
+
 private:
   void tryAssociatePCIDrivers();
   PCIScanner _pciScanner;
