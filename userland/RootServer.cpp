@@ -31,7 +31,7 @@ void RootServer::lateInit() {
 
   _vmspace.delegate = this;
 
-  assert(_platExpert.init(&_factory));
+  assert(_platExpert.init(&_factory, &_pt));
   kprintf("Test getting COM1\n");
   auto com1SlotOrErr = _factory.getFreeSlot();
   assert(com1SlotOrErr);

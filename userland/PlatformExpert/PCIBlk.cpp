@@ -66,6 +66,27 @@ bool PCIBlk::probe(const PCIDevice &dev) {
   return false;
 }
 
+bool PCIBlk::initializeDescRing(PlatformExpert &expert) {
+
+    unsigned sizeVRing = vring_size(queueSize, VIRTIO_PCI_VRING_ALIGN);
+
+    auto rx_ring_bufOrErr = expert.allocDMARange(sizeVRing);// dma_alloc_pin(dma_man, sizeVRing, 1, VIRTIO_PCI_VRING_ALIGN);
+    auto rx_ring_buf = rx_ring_bufOrErr.value;
+    if (!rx_ring_buf.phys) {
+        kprintf("Failed to allocate rx_ring");
+        return false;
+    }
+    memset(rx_ring_buf.virt, 0, vring_size(queueSize, VIRTIO_PCI_VRING_ALIGN));
+    vring_init(&rx_ring, queueSize, rx_ring_buf.virt, VIRTIO_PCI_VRING_ALIGN);
+    rx_ring_phys = rx_ring_buf.phys;
+
+    //dev->rdh = 0;
+    rdt = 0;
+    //dev->ruh = 0;
+
+    return true;
+}
+
 bool PCIBlk::addDevice(PlatformExpert &expert, const PCIDevice &dev) {
   uint32_t iobase0 = dev.getBaseAddr32(0);
   uint32_t iobase0size = dev.getBaseAddrSize32(0);
@@ -133,12 +154,14 @@ bool PCIBlk::addDevice(PlatformExpert &expert, const PCIDevice &dev) {
     if (queueSize == 0) {
       continue;
     }
-    //      dev.queueSize = queueSize;
-    //      dev.queueID = index;
+    queueSize = queueSize;
+    queueID = index;
     numQueues++;
     kprintf("Queue %i size %i\n", index, queueSize);
   }
   kprintf("Virtio blk has %i available queues\n", numQueues);
+
+  initializeDescRing(expert);
 
   return false;
 }

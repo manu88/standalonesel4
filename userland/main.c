@@ -12,22 +12,26 @@ void printSel4Config(void)
     kprintf("---- Sel4 kernel configuration: ----\n");
     kprintf("CONFIG_FSGSBASE_INST : ");
 #ifdef CONFIG_FSGSBASE_INST
-    kprintf("SET");
+    kprintf("SET\n");
 #else
-    kprintf("NOT SET");
+    kprintf("NOT SET\n");
 #endif
-    kprintf("\n");
 
     kprintf("CONFIG_SET_TLS_BASE_SELF : ");
 #ifdef CONFIG_SET_TLS_BASE_SELF
-    kprintf("SET");
+    kprintf("SET\n");
 #else
-    kprintf("NOT SET");
+    kprintf("NOT SET\n");
 #endif
-    kprintf("\n");
+
+kprintf("CONFIG_IOMMU : ");
+#ifdef CONFIG_IOMMU
+    kprintf("SET\n");
+#else
+    kprintf("NOT SET\n");
+#endif
     kprintf("------------------------------------\n");
 }
-
 
 void start_root()
 {

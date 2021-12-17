@@ -3,22 +3,33 @@
 #include "../lib/vector.hpp"
 #include "PCIBlk.hpp"
 #include "PCIScanner.hpp"
-#include <memory>
 
 class ObjectFactory;
+class PageTable;
 
 class PlatformExpert {
 public:
-  using SlotOrError = Expected<seL4_SlotPos, seL4_Error>;
+  struct DMARange{
+    DMARange(int){}
 
-  bool init(ObjectFactory *factory);
+    void* virt = nullptr;
+    uintptr_t phys = 0;
+  };
+
+  using SlotOrError = Expected<seL4_SlotPos, seL4_Error>;
+  using DMARangeOrError = Expected<DMARange, seL4_Error>;
+  bool init(ObjectFactory *factory, PageTable* pt);
   void print() const noexcept;
 
   SlotOrError issuePortRange(seL4_Word first_port, seL4_Word last_port);
+
+  DMARangeOrError allocDMARange(size_t size);
+  void releaseDMARange(DMARange&);
 
 private:
   void tryAssociatePCIDrivers();
   PCIScanner _pciScanner;
   ObjectFactory *_factory = nullptr;
+  PageTable* _pt = nullptr;
   PCIBlk _pciblkDriver;
 };

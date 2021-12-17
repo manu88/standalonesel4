@@ -11,6 +11,7 @@
 #define VIRTIO_CONFIG_S_DRIVER_FEATURES_OK 8
 #define VIRTIO_PCI_QUEUE_NUM 12 /* number of ring entries (16, RO) */
 #define VIRTIO_PCI_QUEUE_SEL 14 /* current VQ selection (16, RW) */
+#define VIRTIO_PCI_VRING_ALIGN 4096
 
 struct VirtioDevice {
   seL4_Error setStatus(uint8_t status);
@@ -28,4 +29,5 @@ struct VirtioDevice {
 
   uint32_t readReg32(uint16_t port);
   uint16_t readReg16(uint16_t port);
+
 };

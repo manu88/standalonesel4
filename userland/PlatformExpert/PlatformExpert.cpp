@@ -1,11 +1,13 @@
 #include "PlatformExpert.hpp"
 #include "../ObjectFactory.hpp"
+#include "../PageTable.hpp"
 #include "../runtime.h"
 #include "DriverBase.hpp"
 #include <stdint.h>
 
-bool PlatformExpert::init(ObjectFactory *factory) {
+bool PlatformExpert::init(ObjectFactory *factory, PageTable* pt) {
   _factory = factory;
+  _pt = pt;
   kprintf("PlatformExpert::init for x86_64\n");
   kprintf("Issue PCI Config range req\n");
 
@@ -54,4 +56,13 @@ void PlatformExpert::tryAssociatePCIDrivers() {
       _pciblkDriver.addDevice(*this, dev);
     }
   }
+}
+
+PlatformExpert::DMARangeOrError PlatformExpert::allocDMARange(size_t size){
+  //auto pageOrErr = _pt->
+  return unexpected<PlatformExpert::DMARange, seL4_Error>(seL4_InvalidArgument);
+}
+
+void PlatformExpert::releaseDMARange(DMARange&){
+
 }
