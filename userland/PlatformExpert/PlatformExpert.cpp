@@ -2,6 +2,8 @@
 #include "../ObjectFactory.hpp"
 #include "../runtime.h"
 #include <stdint.h>
+#include "DriverBase.hpp"
+
 
 bool PlatformExpert::init(ObjectFactory *factory) {
   _factory = factory;
@@ -27,6 +29,7 @@ bool PlatformExpert::init(ObjectFactory *factory) {
 
   _pciScanner.scan();
   print();
+  tryAssociatePCIDrivers();
   return true;
 }
 
@@ -34,5 +37,15 @@ void PlatformExpert::print() const noexcept {
   kprintf("Got %zi PCI devices\n", _pciScanner.getDevices().size());
   for (const auto &dev : _pciScanner.getDevices()) {
     dev.print();
+  }
+}
+
+void PlatformExpert::tryAssociatePCIDrivers(){
+  kprintf("tryAssociatePCIDrivers\n");
+  for (const auto &dev : _pciScanner.getDevices()) {
+      if(_pciblkDriver.probe(dev)){
+        kprintf("probing sucessful for device %s %s and driver %s\n", dev.vendorName(), dev.deviceName(), _pciblkDriver.getName());
+        _pciblkDriver.addDevice(dev, 0);
+      }
   }
 }

@@ -24,6 +24,8 @@ OBJS = main.o\
 	PlatformExpert/PlatformExpert.o\
 	PlatformExpert/PCIScanner.o\
 	PlatformExpert/pciDevices.o\
+	PlatformExpert/PCIBlk.o\
+
 
 LIBS= -L./libsel4/lib/ -lsel4
 CPP_FLAGS=-fno-rtti -fno-exceptions -std=c++2a
@@ -46,6 +48,7 @@ default: $(PROG)
 
 clean:
 	rm -f *.o
+	rm -f $(OBJS)
 	rm -f $(PROG)
 
 
