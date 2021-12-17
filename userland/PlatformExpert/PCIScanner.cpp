@@ -82,7 +82,7 @@ void PCIDevice::print() const {
   kprintf("\n");
   kprintf("bus %X slot %X -> vendor = 0X%X (%s) device = 0X%X ('%s')\n", bus, slot,
           vendorID, vendorName(), deviceID, deviceName());
-  kprintf("Header type %X\n", headerType);
+  kprintf("Header type %X subsystemID 0X%X  subsystem VendorID 0X%X\n", headerType, subSystemID, subSystemVendorID);
   kprintf("Class=0x%X (%s) subClass=0X%X progIf=0X%X\n", class_, className(), subclassCode, progIf);
   kprintf("\n");
   printIOConfig(*this, true);
@@ -149,7 +149,8 @@ void PCIScanner::scan() {
 
       BistAndHeaderType bistAndHeaderType;
       bistAndHeaderType.value = pciConfigReadWord(bus, slot, 0, 14);
-
+      auto subSystemVendorID = pciConfigReadWord(bus, slot, 0, 44);
+      auto subSystemID = pciConfigReadWord(bus, slot, 0, 46);
       PCIDevice dev = {.bus = bus,
                        .slot = slot,
                        .vendorID = vendorID,
@@ -158,14 +159,11 @@ void PCIScanner::scan() {
                        .class_ = static_cast<PCIDevice::Class>(subClassAndClass.fields.classCode),
                        .revId = revIdAndProgIf.fields.revId,
                        .progIf = revIdAndProgIf.fields.progIf,
-                       .headerType = bistAndHeaderType.fields.headerType};
+                       .headerType = bistAndHeaderType.fields.headerType,
+                       .subSystemVendorID = subSystemVendorID,
+                       .subSystemID = subSystemID};
       readIOConfig(dev.cfg, bus, slot, 0);
       _devices.push_back(dev);
-      // kprintf("command reg: ioSpace %i  memSpace %i  busMaster %i
-      // specialCycles %i  memoryWriteAndInvalidateEnable %i  vGAPaletteSnoop %i
-      // parityErrorResponse %i  reserved0 %i  serrEnable %i fastBackToBackEnable
-      // %i  interruptDisable
-      // %i",cmdReg.fields.ioSpace,cmdReg.fields.memSpace,cmdReg.fields.busMaster,cmdReg.fields.specialCycles,cmdReg.fields.memoryWriteAndInvalidateEnable,cmdReg.fields.vGAPaletteSnoop,cmdReg.fields.parityErrorResponse,cmdReg.fields.reserved0,cmdReg.fields.serrEnable,cmdReg.fields.fastBackToBackEnable,cmdReg.fields.interruptDisable);
     }
   }
 }
@@ -209,6 +207,11 @@ uint32_t PCIDevice::getBaseAddr32(int index) const{
         assert(!"WARNING. Zap this assert to ignore.");
     }
     return (uint32_t)(baddr & 0xFFFFFFFFUL);
+}
+
+uint32_t PCIDevice::getBaseAddrSize32(int index) const{
+  assert(index >= 0 && index < 6);
+  return cfg.base_addr_size[index];
 }
 
 /* Print out detailed info about a device's base addresses. */
@@ -300,8 +303,7 @@ uint32_t PCIScanner::in32(seL4_CPtr slot, uint32_t port_no){
   return val.result;
 }
 
-void PCIScanner::readIOConfig(PCIDevice::IOConfig &cfg, uint8_t bus, uint8_t dev, uint8_t fun)
-{
+void PCIScanner::readIOConfig(PCIDevice::IOConfig &cfg, uint8_t bus, uint8_t dev, uint8_t fun){
     for (int i = 0; i < 6; i++) {
         // Read and save the base address assigned by the BIOS.
         uint32_t bios_base_addr = readReg32(bus, dev, fun, PCI_BASE_ADDRESS_0 + (i * 4));

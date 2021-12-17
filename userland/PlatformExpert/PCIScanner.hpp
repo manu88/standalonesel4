@@ -53,6 +53,9 @@ struct PCIDevice {
   uint8_t progIf;
   uint8_t headerType;
 
+  uint16_t subSystemVendorID;
+  uint16_t subSystemID;
+
   IOConfig cfg;
 
   void print() const;
@@ -62,6 +65,8 @@ struct PCIDevice {
 
   uint64_t getBaseAddr(int index) const;
   uint32_t getBaseAddr32(int index) const;
+
+  uint32_t getBaseAddrSize32(int index) const;
 };
 
 class PCIScanner {

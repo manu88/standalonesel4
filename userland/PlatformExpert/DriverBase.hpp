@@ -2,6 +2,7 @@
 #include <stdint.h>
 
 class PCIDevice;
+class PlatformExpert;
 
 class DriverBase{
 public:
@@ -12,5 +13,5 @@ public:
     virtual const char* getName() const noexcept{
         return nullptr;
     }
-    virtual bool addDevice(const PCIDevice&, uint32_t){return false;}
+    virtual bool addDevice(PlatformExpert &, const PCIDevice&){return false;}
 };
