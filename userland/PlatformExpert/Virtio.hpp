@@ -9,6 +9,8 @@
 #define VIRTIO_PCI_GUEST_FEATURES   4 /* guest's supported features (32, RW) */
 #define VIRTIO_PCI_HOST_FEATURES	0
 #define VIRTIO_CONFIG_S_DRIVER_FEATURES_OK 8
+#define VIRTIO_PCI_QUEUE_NUM   12 /* number of ring entries (16, RO) */
+#define VIRTIO_PCI_QUEUE_SEL   14 /* current VQ selection (16, RW) */
 
 struct VirtioDevice{
     seL4_Error setStatus(uint8_t status);
@@ -21,6 +23,9 @@ struct VirtioDevice{
     uint32_t iobase0 = 0;
 
     seL4_Error writeReg8(uint16_t port, uint8_t val);
+    seL4_Error writeReg16(uint16_t port, uint16_t val);
+    seL4_Error writeReg32(uint16_t port, uint32_t val);
+
     uint32_t readReg32(uint16_t port);
-    void writeReg32(uint16_t port, uint32_t val);
+    uint16_t readReg16(uint16_t port);
 };

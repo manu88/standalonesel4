@@ -24,6 +24,14 @@ void VirtioDevice::setFeatures(uint32_t features){
     writeReg32(VIRTIO_PCI_GUEST_FEATURES, features);
 }
 
+seL4_Error VirtioDevice::writeReg32(uint16_t port, uint32_t val) {
+  return seL4_X86_IOPort_Out32(base0cap, iobase0 + port, val);
+}
+
+seL4_Error VirtioDevice::writeReg16(uint16_t port, uint16_t val){
+  return seL4_X86_IOPort_Out16(base0cap, iobase0 + port, val);
+}
+
 seL4_Error VirtioDevice::writeReg8(uint16_t port, uint8_t val){
   return seL4_X86_IOPort_Out16(base0cap, iobase0 +  port, val);
 }
@@ -33,6 +41,7 @@ uint32_t VirtioDevice::readReg32(uint16_t port){
     return r.result;
 }
 
-void VirtioDevice::writeReg32(uint16_t port, uint32_t val) {
-    seL4_X86_IOPort_Out32(base0cap, iobase0 + port, val);
+uint16_t VirtioDevice::readReg16(uint16_t port){
+  auto r = seL4_X86_IOPort_In16(base0cap, iobase0 + port);
+  return r.result;
 }

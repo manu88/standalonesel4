@@ -136,6 +136,22 @@ bool PCIBlk::addDevice(PlatformExpert & expert, const PCIDevice& dev){
   kprintf("headCount %u\n", headCount);
   kprintf("sectorCount %u\n", sectorCount);
   kprintf("blockLen %u\n", blockLen);
+
+  uint8_t numQueues = 0;
+  for(int index = 0;index<16;index++)
+  {
+      _dev.writeReg16(VIRTIO_PCI_QUEUE_SEL, index);
+      uint16_t queueSize = _dev.readReg16(VIRTIO_PCI_QUEUE_NUM);
+      if(queueSize == 0)
+      {
+          continue;
+      }
+//      dev.queueSize = queueSize;
+//      dev.queueID = index;
+      numQueues++;
+      kprintf("Queue %i size %i\n",index, queueSize);
+  }
+  kprintf("Virtio blk has %i available queues\n", numQueues);
   
   return false;
 } 
