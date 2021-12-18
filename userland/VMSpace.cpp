@@ -34,7 +34,6 @@ bool VMSpace::pageIsReserved(seL4_Word addr) const noexcept {
 }
 
 bool VMSpace::mapPage(seL4_Word addr) {
-  kprintf("request add addr %X\n", addr);
   auto resSlot = getReservationForAddress(addr);
   if (resSlot.first == -1) {
     return false;

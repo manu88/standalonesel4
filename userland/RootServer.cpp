@@ -123,16 +123,12 @@ seL4_Error RootServer::mapPage(seL4_Word vaddr, seL4_CapRights_t rights,
 
 void RootServer::handleVMFault(const seL4_MessageInfo_t &msgInfo,
                                Thread &caller) {
-  kprintf("VM fault to handle from %X\n", caller.badge);
   const seL4_Word programCounter = seL4_GetMR(seL4_VMFault_IP);
   const seL4_Word faultAddr = seL4_GetMR(seL4_VMFault_Addr);
   const seL4_Word isPrefetch = seL4_GetMR(seL4_VMFault_PrefetchFault);
   const seL4_Word faultStatusRegister = seL4_GetMR(seL4_VMFault_FSR);
 
-  kprintf("programCounter      0X%lX\n", programCounter);
-  kprintf("faultAddr           0X%lX\n", faultAddr);
-  kprintf("isPrefetch          0X%lX\n", isPrefetch);
-  kprintf("faultStatusRegister 0X%lX\n", faultStatusRegister);
+
   typedef struct {
     uint8_t present : 1; // P: When set, the page fault was caused by a
                          // page-protection violation. When not set, it was
@@ -153,14 +149,12 @@ void RootServer::handleVMFault(const seL4_MessageInfo_t &msgInfo,
   } PageFault; // see https://wiki.osdev.org/Exceptions#Page_Fault
 
   PageFault *fault = (PageFault *)&faultStatusRegister;
-  kprintf("Fault P=%u W=%u U=%u R=%u I=%u\n", fault->present, fault->write,
-          fault->user, fault->reservedWrite, fault->instructionFetch);
+
   auto faultyVmspace = caller.vmspace;
   assert(faultyVmspace != nullptr);
-  faultyVmspace->print();
+
   auto resSlot = faultyVmspace->getReservationForAddress(faultAddr);
   if (resSlot.first >= 0) {
-    kprintf("faulty page was reserved\n");
     bool ret = faultyVmspace->mapPage(faultAddr);
     if (resSlot.second.isIPCBuffer) {
       caller.setIPCBuffer(resSlot.second.vaddr, resSlot.second.pageCap);
@@ -169,6 +163,13 @@ void RootServer::handleVMFault(const seL4_MessageInfo_t &msgInfo,
       seL4_Reply(msgInfo);
     }
   } else {
+    faultyVmspace->print();
+    kprintf("Fault P=%u W=%u U=%u R=%u I=%u\n", fault->present, fault->write,
+            fault->user, fault->reservedWrite, fault->instructionFetch);
+    kprintf("programCounter      0X%lX\n", programCounter);
+    kprintf("faultAddr           0X%lX\n", faultAddr);
+    kprintf("isPrefetch          0X%lX\n", isPrefetch);
+    kprintf("faultStatusRegister 0X%lX\n", faultStatusRegister);
     kprintf("faulty page was NOT reserved\n");
     kprintf("TODO: terminate caller\n");
   }
