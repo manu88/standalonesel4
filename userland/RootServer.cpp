@@ -32,26 +32,13 @@ void RootServer::lateInit() {
   _vmspace.delegate = this;
 
   assert(_platExpert.init(&_factory, &_pt));
-  kprintf("Test getting COM1\n");
-  auto com1SlotOrErr = _factory.getFreeSlot();
-  assert(com1SlotOrErr);
 
-#ifdef ARCH_X86_64 // TEMP
-  seL4_Error err = seL4_X86_IOPortControl_Issue(
-      seL4_CapIOPortControl, 0x3F8, 0x3F8 + 7, seL4_CapInitThreadCNode,
-      com1SlotOrErr.value, seL4_WordBits);
-  assert(err == seL4_NoError);
+  kprintf("Test getting COM1\n");
+  auto com1SlotOrErr = _platExpert.issuePortRangeWithSize(0x3F8, 8);
+  assert(com1SlotOrErr);
 
   _com1port = com1SlotOrErr.value;
   _shell.init();
-#endif
-  kprintf("Test get free slots\n");
-  for (int i = 0; i < 20; i++) {
-    auto slotOrErr = _factory.getFreeSlot();
-    assert(slotOrErr);
-    _untypedPool.releaseSlot(slotOrErr.value);
-  }
-  kprintf("Test get free slots\n");
 }
 
 Expected<std::shared_ptr<Thread>, seL4_Error>

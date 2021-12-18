@@ -25,6 +25,10 @@ bool PlatformExpert::init(ObjectFactory *factory, PageTable* pt) {
   return true;
 }
 
+PlatformExpert::SlotOrError PlatformExpert::issuePortRangeWithSize(seL4_Word port, size_t range){
+  return issuePortRange(port, port + range -1);
+}
+
 PlatformExpert::SlotOrError
 PlatformExpert::issuePortRange(seL4_Word first_port, seL4_Word last_port) {
   auto slotOrErr = _factory->getFreeSlot();

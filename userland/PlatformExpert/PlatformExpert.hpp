@@ -22,6 +22,7 @@ public:
   void print() const noexcept;
 
   SlotOrError issuePortRange(seL4_Word first_port, seL4_Word last_port);
+  SlotOrError issuePortRangeWithSize(seL4_Word port, size_t range);
 
   DMARangeOrError allocDMARange(size_t size);
   void releaseDMARange(DMARange&);
