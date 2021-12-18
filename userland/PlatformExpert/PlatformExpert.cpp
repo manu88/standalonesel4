@@ -66,3 +66,15 @@ PlatformExpert::DMARangeOrError PlatformExpert::allocDMARange(size_t size){
 void PlatformExpert::releaseDMARange(DMARange&){
 
 }
+
+
+seL4_Error PlatformExpert::doPowerOff(){
+  // QEMU specific! see https://github.com/manu88/Sofa/blob/fce20513a68c2e50a9b5185fc048b4fee0183eac/projects/Sofa/kernel_task/src/Drivers/X86/PCI.c#L40
+  // and https://wiki.osdev.org/QEMU_fw_cfg on how to check is running under qemu
+  auto stopSlot = issuePortRange(0x604, 0x604 +1);
+  if(!stopSlot){
+    return stopSlot.error;
+  }
+  return seL4_X86_IOPort_Out16(stopSlot.value, 0x604, 0x2000);
+}
+

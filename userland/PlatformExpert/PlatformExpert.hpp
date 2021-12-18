@@ -25,7 +25,8 @@ public:
 
   DMARangeOrError allocDMARange(size_t size);
   void releaseDMARange(DMARange&);
-
+  
+  seL4_Error doPowerOff();
 private:
   void tryAssociatePCIDrivers();
   PCIScanner _pciScanner;

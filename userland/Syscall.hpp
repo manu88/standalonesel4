@@ -12,7 +12,8 @@ enum class ID : seL4_Word {
   KFree,
   MMap,
   Thread,
-  Platform
+  Platform,
+  Poweroff
 };
 
 struct BaseRequest {
@@ -173,6 +174,11 @@ inline Expected<BaseResponse, bool>
 platform(seL4_Word endpoint, const BaseRequest &r = BaseRequest()) {
   return performBase<BaseRequest, BaseResponse>(endpoint, ID::Platform, r);
 }
+
+inline Expected<BaseResponse, bool> poweroff(seL4_Word endpoint, const BaseRequest &r = BaseRequest()) {
+  return performBase<BaseRequest, BaseResponse>(endpoint, ID::Poweroff, r);
+}
+
 
 }; // namespace perform
 }; // namespace Syscall

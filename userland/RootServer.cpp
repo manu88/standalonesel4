@@ -321,6 +321,9 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
   case Syscall::ID::Platform: {
     _platExpert.print();
   } break;
+  case Syscall::ID::Poweroff: {
+    _platExpert.doPowerOff();
+  } break;
   default:
     kprintf("RootTask: Received msg %X from badge %i\n", syscallID,
             caller.badge);
