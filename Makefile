@@ -61,4 +61,4 @@ sim:
 	-nographic -m 512 -serial mon:stdio -kernel $(kernelFile) -initrd $(rootServer)
 disk-sim:
 	qemu-system-x86_64  -cpu Nehalem,-vme,+pdpe1gb,-xsave,-xsaveopt,-xsavec,-fsgsbase,-invpcid,enforce \
-	-nographic -m 512 -device virtio-blk-pci,drive=drive0 -drive file=sofa.img,if=none,id=drive0 -serial mon:stdio -kernel $(kernelFile) -initrd $(rootServer)
+	-nographic -m 512  -device virtio-blk-pci,drive=drive0 -drive file=sofa.img,if=none,id=drive0 -serial mon:stdio -kernel $(kernelFile) -initrd $(rootServer)

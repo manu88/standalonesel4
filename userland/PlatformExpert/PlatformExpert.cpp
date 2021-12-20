@@ -63,8 +63,11 @@ void PlatformExpert::tryAssociatePCIDrivers() {
 }
 
 PlatformExpert::DMARangeOrError PlatformExpert::allocDMARange(size_t size){
-  //auto pageOrErr = _pt->
-  return unexpected<PlatformExpert::DMARange, seL4_Error>(seL4_InvalidArgument);
+  auto slotOrErr = _factory->getFreeSlot();
+  if (!slotOrErr) {
+    return unexpected<PlatformExpert::DMARange, seL4_Error>(slotOrErr.error);
+  }
+  return unexpected<PlatformExpert::DMARange, seL4_Error>(seL4_NotEnoughMemory);
 }
 
 void PlatformExpert::releaseDMARange(DMARange&){

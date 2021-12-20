@@ -3,7 +3,7 @@
 #include "sel4.hpp"
 #include <sel4/arch/mapping.h> // seL4_MappingFailedLookupLevel
 
-#ifdef ARCH_X86_64
+//#ifdef ARCH_X86_64
 PageTable::PageCapOrError PageTable::mapPage(seL4_Word vaddr,
                                              seL4_CapRights_t rights) {
   auto getLevel = [](seL4_Word lookupLevel) -> int {
@@ -87,7 +87,8 @@ void PageTable::init(seL4_Word vaddr) {
                                  seL4_X86_Default_VMAttributes);
   assert(error == seL4_NoError);
 }
-#elif defined(ARCH_ARM)
+
+#if 0 //defined(ARCH_ARM)
 
 void PageTable::init(seL4_Word vaddr) {}
 

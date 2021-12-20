@@ -29,6 +29,7 @@ struct PCIDevice {
       is partial and should not be directly processed in any way. */
     bool base_addr_64H[6];
   };
+
   enum class Class : uint8_t {
     Unclassified = 0,
     MassStorageController = 1,
@@ -43,6 +44,7 @@ struct PCIDevice {
   };
   uint8_t bus;
   uint8_t slot;
+  uint8_t fun;
   uint16_t vendorID;
   uint16_t deviceID;
   uint8_t subclassCode;
