@@ -11,6 +11,7 @@ RootServer::RootServer()
       _factory(_untypedPool, _pt, _vmspace) {
   kprintf("Initialize Page Table\n");
   _pt.init(VMSpace::RootServerLayout::AddressTables);
+  _pt.initIOPages(VMSpace::RootServerLayout::IOAddressTables);
 }
 
 void RootServer::earlyInit() {

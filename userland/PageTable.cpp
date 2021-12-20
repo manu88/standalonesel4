@@ -3,7 +3,7 @@
 #include "sel4.hpp"
 #include <sel4/arch/mapping.h> // seL4_MappingFailedLookupLevel
 
-#ifdef ARCH_X86_64
+//#ifdef ARCH_X86_64
 PageTable::PageCapOrError PageTable::mapPage(seL4_Word vaddr,
                                              seL4_CapRights_t rights) {
   auto getLevel = [](seL4_Word lookupLevel) -> int {
@@ -62,6 +62,43 @@ seL4_Error PageTable::unmapPage(seL4_CPtr pageCap) {
   return err;
 }
 
+void PageTable::initIOPages(seL4_Word vaddr){
+  kprintf("PageTable: initIOPages\n");
+#define FAKE_PCI_DEVICE 0x216u
+#define DOMAIN_ID       0x0
+  auto iospace = untypedPool.getFreeSlot();
+  assert(iospace);
+  auto err = seL4_CNode_Mint(seL4_CapInitThreadCNode, iospace.value, seL4_WordBits, 
+                  seL4_CapIOSpace, seL4_CapIOSpace, seL4_WordBits,
+                  seL4_AllRights, (DOMAIN_ID << 16) | FAKE_PCI_DEVICE
+                  );
+  kprintf("seL4_CNode_Mint err=%s\n", seL4::errorStr(err));
+#if 0
+  auto ioFrameOrErr = untypedPool.allocObject(seL4_X86_4K);
+  if(!ioFrameOrErr){
+    kprintf("allocObject(seL4_X86_IOPageTableObject) err %s\n" ,seL4::errorStr(ioFrameOrErr.error));
+  }
+  assert(ioFrameOrErr);
+
+  int i = 0;
+  while (i<3){ //seL4_X86_Page_MapIO(ioFrameOrErr.value, seL4_CapIOSpace, seL4_AllRights, vaddr) == seL4_FailedLookup){
+    kprintf("Alloc intermediate page iter %i\n", i);
+    auto ioPageOrErr = untypedPool.allocObject(seL4_X86_IOPageTableObject);
+    assert(ioPageOrErr);
+    seL4_X86_IOSpace iospace = untypedPool.getFreeSlot();
+    auto err = seL4_X86_IOPageTable_Map(ioPageOrErr.value, iospace, vaddr);
+    if(err != seL4_NoError){
+      kprintf("seL4_X86_IOPageTable_Map err %s\n" ,seL4::errorStr(err));
+    }
+    assert(err == seL4_NoError);
+    i++;
+  }
+  kprintf("End while loop\n");
+//  auto err = seL4_X86_Page_MapIO(ioFrameOrErr.value, seL4_CapIOSpace, seL4_AllRights, vaddr);
+//  kprintf("seL4_X86_Page_MapIO err %s\n" ,seL4::errorStr(err));
+#endif
+}
+
 void PageTable::init(seL4_Word vaddr) {
   kprintf("PageTable: init\n");
   auto pdptOrErr = untypedPool.allocObject(seL4_X86_PDPTObject);
@@ -87,7 +124,8 @@ void PageTable::init(seL4_Word vaddr) {
                                  seL4_X86_Default_VMAttributes);
   assert(error == seL4_NoError);
 }
-#elif defined(ARCH_ARM)
+
+#if 0 //defined(ARCH_ARM)
 
 void PageTable::init(seL4_Word vaddr) {}
 

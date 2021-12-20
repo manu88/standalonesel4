@@ -66,11 +66,21 @@ bool PCIBlk::probe(const PCIDevice &dev) {
   return false;
 }
 
-bool PCIBlk::initializeDescRing(PlatformExpert &expert) {
-
+bool PCIBlk::initializeDescRing(PlatformExpert &expert, const PCIDevice &dev) {
     unsigned sizeVRing = vring_size(queueSize, VIRTIO_PCI_VRING_ALIGN);
-
-    auto rx_ring_bufOrErr = expert.allocDMARange(sizeVRing);// dma_alloc_pin(dma_man, sizeVRing, 1, VIRTIO_PCI_VRING_ALIGN);
+    uint16_t identifier =  dev.getPCIIdentifier();
+    assert(get_pci_bus(identifier) == dev.bus);
+    assert(get_pci_dev(identifier) == dev.slot);
+    assert(get_pci_fun(identifier) == dev.fun);
+    kprintf("PCI identifier = %i\n", identifier);
+  #define DOMAIN_ID       0x0
+    auto rx_ring_bufOrErr = expert.allocDMARange(sizeVRing, identifier, DOMAIN_ID);// dma_alloc_pin(dma_man, sizeVRing, 1, VIRTIO_PCI_VRING_ALIGN);
+    kprintf("allocDMARange returned err %s\n", seL4::errorStr(rx_ring_bufOrErr.error));
+    if(rx_ring_bufOrErr.error == seL4_NoError){
+      assert(0);
+    }
+    return false;
+#if 0
     auto rx_ring_buf = rx_ring_bufOrErr.value;
     if (!rx_ring_buf.phys) {
         kprintf("Failed to allocate rx_ring");
@@ -85,6 +95,7 @@ bool PCIBlk::initializeDescRing(PlatformExpert &expert) {
     //dev->ruh = 0;
 
     return true;
+#endif
 }
 
 bool PCIBlk::addDevice(PlatformExpert &expert, const PCIDevice &dev) {
@@ -161,7 +172,7 @@ bool PCIBlk::addDevice(PlatformExpert &expert, const PCIDevice &dev) {
   }
   kprintf("Virtio blk has %i available queues\n", numQueues);
 
-  initializeDescRing(expert);
+  initializeDescRing(expert, dev);
 
   return false;
 }

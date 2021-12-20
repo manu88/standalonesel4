@@ -39,7 +39,8 @@ struct VMSpaceDelegate {
 struct VMSpace {
   enum RootServerLayout // Layout of root server, not other processes!!
   { AddressTables = 0x8000000000,
-    ReservedVaddr = 0x8000001000, // size is KmallocReservedPages pages
+    IOAddressTables = 0x8000001000,
+    ReservedVaddr = 0x8000002000, // size is KmallocReservedPages pages
   };
 
   struct Reservation {

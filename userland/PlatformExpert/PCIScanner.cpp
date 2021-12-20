@@ -152,8 +152,9 @@ void PCIScanner::scan() {
       bistAndHeaderType.value = pciConfigReadWord(bus, slot, 0, 14);
       auto subSystemVendorID = pciConfigReadWord(bus, slot, 0, 44);
       auto subSystemID = pciConfigReadWord(bus, slot, 0, 46);
-      PCIDevice dev = {.bus = bus,
-                       .slot = slot,
+      PCIDevice dev = {.bus = (uint8_t) bus,
+                       .slot = (uint8_t) slot,
+                       .fun = 0,
                        .vendorID = vendorID,
                        .deviceID = deviceID,
                        .subclassCode = subClassAndClass.fields.subclassCode,

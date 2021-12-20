@@ -62,9 +62,22 @@ void PlatformExpert::tryAssociatePCIDrivers() {
   }
 }
 
-PlatformExpert::DMARangeOrError PlatformExpert::allocDMARange(size_t size){
-  //auto pageOrErr = _pt->
-  return unexpected<PlatformExpert::DMARange, seL4_Error>(seL4_InvalidArgument);
+PlatformExpert::DMARangeOrError PlatformExpert::allocDMARange(size_t size, uint16_t deviceID ,uint16_t domainID){
+  auto slotOrErr = _factory->getFreeSlot();
+  if (!slotOrErr) {
+    return unexpected<PlatformExpert::DMARange, seL4_Error>(slotOrErr.error);
+  }
+  auto slot = slotOrErr.value;
+  seL4_Word badge = ((uint32_t)domainID << 16) | (uint32_t)deviceID;
+  assert(seL4_CapIOSpace);
+  kprintf("Test seL4_CNode_Mint dma range thing seL4_CapIOSpace=0X%X dest slot 0X%X\n", seL4_CapIOSpace, slot);
+  auto err = seL4_CNode_Mint(seL4_CapInitThreadCNode, slot, seL4_WordBits, // dest
+                            seL4_CapInitThreadCNode, seL4_CapIOSpace, seL4_WordBits, // src
+                            seL4_AllRights, badge);
+  if(err != seL4_NoError){
+    _factory->releaseSlot(slot);
+  }
+  return unexpected<PlatformExpert::DMARange, seL4_Error>(err);
 }
 
 void PlatformExpert::releaseDMARange(DMARange&){

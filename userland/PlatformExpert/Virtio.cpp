@@ -1,10 +1,5 @@
 #include "Virtio.hpp"
 
-
-bool DescRing::init(){
-  return true;
-}
-
 seL4_Error VirtioDevice::setStatus(uint8_t status) {
   return writeReg8(VIRTIO_PCI_STATUS, status);
 }

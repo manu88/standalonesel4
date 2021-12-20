@@ -2,9 +2,14 @@
 #include "../lib/vector.hpp"
 #include "../sel4.hpp"
 #include <stdint.h>
-
 #define PCI_CONFIG_ADDRESS (seL4_Word)0xCF8
 #define PCI_CONFIG_DATA (seL4_Word)0xCFC
+
+// from  seL4/include/plat/pc99/plat/machine/pci.h 
+#define get_pci_bus(x) (((x)>>8u) & 0xffu)
+#define get_pci_dev(x) (((x)>>3u) & 0x1fu)
+#define get_pci_fun(x) ((x) & 0x7u)
+#define get_dev_id(bus, dev, fun) (((bus) << 8u) | ((dev) << 3u) | (fun))
 
 struct PCIDevice {
   /* Detailed base address information about a device. */
@@ -29,6 +34,7 @@ struct PCIDevice {
       is partial and should not be directly processed in any way. */
     bool base_addr_64H[6];
   };
+
   enum class Class : uint8_t {
     Unclassified = 0,
     MassStorageController = 1,
@@ -43,6 +49,7 @@ struct PCIDevice {
   };
   uint8_t bus;
   uint8_t slot;
+  uint8_t fun;
   uint16_t vendorID;
   uint16_t deviceID;
   uint8_t subclassCode;
@@ -60,6 +67,10 @@ struct PCIDevice {
   const char *vendorName() const noexcept;
   const char *deviceName() const noexcept;
   const char *className() const noexcept;
+
+  uint16_t getPCIIdentifier() const noexcept{
+    return get_dev_id(bus, slot, fun);
+  }
 
   uint64_t getBaseAddr(int index) const;
   uint32_t getBaseAddr32(int index) const;

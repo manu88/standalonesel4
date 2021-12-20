@@ -13,7 +13,7 @@ public:
   size_t queueSize = 0;
   uint8_t queueID = 0;
 private:
-  bool initializeDescRing(PlatformExpert &);
+  bool initializeDescRing(PlatformExpert &, const PCIDevice &);
   VirtioDevice _dev;
   struct vring rx_ring;
   /* R/T Descriptor Tail represents the next free slot to add

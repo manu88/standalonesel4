@@ -24,7 +24,7 @@ public:
   SlotOrError issuePortRange(seL4_Word first_port, seL4_Word last_port);
   SlotOrError issuePortRangeWithSize(seL4_Word port, size_t range);
 
-  DMARangeOrError allocDMARange(size_t size);
+  DMARangeOrError allocDMARange(size_t size, uint16_t deviceID ,uint16_t domainID);
   void releaseDMARange(DMARange&);
   
   seL4_Error doPowerOff();
