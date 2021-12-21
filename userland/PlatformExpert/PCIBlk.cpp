@@ -244,28 +244,31 @@ void* PCIBlk::blkCmd(int op, size_t sector, char* buf, size_t bufSize)
   assert(_dev.hdr_phys);
 
   /* request a buffer */
-  auto dmaDataOrErr = _expert->allocDMARange(bufSize);
-  if(!dmaDataOrErr){
-    return NULL;
-  }
-  auto dma_data = dmaDataOrErr.value;
+  if(!readDMAPhys){
+    auto dmaDataOrErr = _expert->allocDMARange(bufSize);
+    if(!dmaDataOrErr){
+      return NULL;
+    }
+    auto dma_data = dmaDataOrErr.value;
 
-  uintptr_t phys = dma_data.phys;// driver->i_cb.allocate_rx_buf(driver->cb_cookie, BUF_SIZE, &cookie);
-  if (!phys) 
+    readDMAPhys = dma_data.phys;// driver->i_cb.allocate_rx_buf(driver->cb_cookie, BUF_SIZE, &cookie);
+    readDMAVirt = dma_data.virt;
+  }
+  if (!readDMAPhys) 
   {
       return NULL;
   }
   if(op == VIRTIO_BLK_T_OUT)
   {
-      memcpy(dma_data.virt, buf, bufSize);
+      memcpy(readDMAVirt, buf, bufSize);
       //dev->headerReq->type |= VIRTIO_BLK_T_FLUSH;
   }
   else
   {
-      memset(dma_data.virt, 0, bufSize);
+      memset(readDMAVirt, 0, bufSize);
   }
 
-  assert(phys % DMA_ALIGNMENT == 0);
+  assert(readDMAPhys % DMA_ALIGNMENT == 0);
 
   uintptr_t footerPhys = _dev.hdr_phys + VIRTIO_BLK_REQ_HEADER_SIZE;
   if(footerPhys % DMA_ALIGNMENT !=0)
@@ -291,7 +294,7 @@ void* PCIBlk::blkCmd(int op, size_t sector, char* buf, size_t bufSize)
       dataFlag |= VRING_DESC_F_WRITE;
   }
   rx_ring.desc[rdt_data] = (struct vring_desc) {
-      .addr = phys,
+      .addr = readDMAPhys,
       .len = VIRTIO_BLK_SECTOR_SIZE,
       .flags = dataFlag,
       .next = rdt_footer
@@ -317,7 +320,7 @@ void* PCIBlk::blkCmd(int op, size_t sector, char* buf, size_t bufSize)
   //seL4_Wait(irqCap, &sender);
   for(uint64_t t = 0; t< UINT8_MAX; t++){}
   kprintf("End 'sleep' sender is %X\n", sender);
-  return dma_data.virt;
+  return readDMAVirt;
 }
 
 ssize_t PCIBlk::blkReadSector(size_t sector, char* buf, size_t bufSize)
