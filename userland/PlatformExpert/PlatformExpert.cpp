@@ -6,7 +6,6 @@
 #include <stdint.h>
 #include "../Thread.hpp"
 #include "../VMSpace.hpp"
-#include "../MBR.h"
 #include "../BlockDevice.hpp"
 #include "../klog.h"
 
@@ -145,32 +144,6 @@ void PlatformExpert::tryAssociatePCIDrivers() {
       kprintf("probing sucessful for device %s %s and driver %s\n",
               dev.vendorName(), dev.deviceName(), _pciblkDriver.getName());
       bool ret = _pciblkDriver.addDevice(*this, dev);
-      if(ret){
-        char buf[512] = {0};
-        auto readRet = _pciblkDriver.read(0, buf, 512);
-        kprintf("Did read %zi bytes\n", readRet);
-        if(readRet == 512){
-          const MBR* mbr =(const MBR*) buf;
-          kprintf("MBR diskID=%X validboot=%X\n", mbr->diskID, mbr->validBoot);
-          // validBoot should be == 0XAA55 and diskID != 0
-          if(mbr->diskID != 0 && mbr->validBoot == 0XAA55)
-          {
-              kprintf("Found a valid MBR, check partitions\n");
-              kprintf("Check partition1\n");
-              //testPartition(dev, &mbr->part1);
-              kprintf("Check partition2\n");
-              //testPartition(dev, &mbr->part2);
-              kprintf("Check partition3\n");
-              //testPartition(dev, &mbr->part3);
-              kprintf("Check partition4\n");
-              //testPartition(dev, &mbr->part4);
-          }
-          else // single partition disk
-          {
-              kprintf("No MBR, mount disk directly\n");
-          }
-        }
-      }
     }
   }
 }

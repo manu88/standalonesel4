@@ -36,6 +36,10 @@ void RootServer::lateInit() {
   assert(_platExpert.init(&_factory, &_pt));
   _vfs.init();
 
+  for(auto dev: _platExpert.getBlockDevices()){
+    _vfs.inpectDev(*dev);
+  }
+
   kprintf("Test getting COM1\n");
   auto com1SlotOrErr = _platExpert.issuePortRangeWithSize(0x3F8, 8);
   assert(com1SlotOrErr);

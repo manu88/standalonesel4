@@ -317,11 +317,9 @@ void* PCIBlk::blkCmd(int op, size_t sector, char* buf, size_t bufSize)
   assert(queueID == 0);
   _dev.writeReg16(VIRTIO_PCI_QUEUE_NOTIFY, queueID);
   rdt = (rdt + 1) % queueSize;
-  kprintf("Start 'sleep'\n");
   seL4_Word sender = 0;
   //seL4_Wait(irqCap, &sender);
-  for(uint64_t t = 0; t< UINT8_MAX; t++){}
-  kprintf("End 'sleep' sender is %X\n", sender);
+  for(uint64_t t = 0; t< UINT16_MAX; t++){}
   return readDMAVirt;
 }
 
@@ -349,8 +347,6 @@ ssize_t PCIBlk::blkReadSector(size_t sector, char* buf, size_t bufSize)
   if(!(rx_ring.desc[desc1].flags & VRING_DESC_F_NEXT))
   {
       kprintf("desc1 (%i) is missing the Next desc flag!\n", desc1);
-      kprintf("SHOULD RELEASE DMA PAGE\n");
-      //dma_unpin_free(&dev->dma_man, dma_virt, bufSize);
       return -1;
   }
   desc2 = rx_ring.desc[desc1].next % queueSize;
@@ -359,9 +355,6 @@ ssize_t PCIBlk::blkReadSector(size_t sector, char* buf, size_t bufSize)
   {
       kprintf("desc2 (%i) is missing the Next desc flag!\n", desc2);
       kprintf("Desc1 is %i\n", desc1);
-      //blk_debug(dev);
-      kprintf("SHOULD RELEASE DMA PAGE\n");
-      //dma_unpin_free(&dev->dma_man, dma_virt, bufSize);        
       return -1;
   }
 
@@ -369,22 +362,15 @@ ssize_t PCIBlk::blkReadSector(size_t sector, char* buf, size_t bufSize)
   if(rx_ring.desc[desc2].len != VIRTIO_BLK_SECTOR_SIZE)
   {
       kprintf("desc2' (%i) size is not VIRTIO_BLK_SECTOR_SIZE but %i\n", desc3, rx_ring.desc[desc2].len);
-      kprintf("SHOULD RELEASE DMA PAGE\n");
-      //dma_unpin_free(&dev->dma_man, dma_virt, bufSize);        
       return -1;
   }
 
   if(rx_ring.desc[desc3].len != VIRTIO_BLK_REQ_FOOTER_SIZE)
   {
       kprintf("desc3' size is not VIRTIO_BLK_REQ_FOOTER_SIZE but %i\n", rx_ring.desc[desc3].len);
-      kprintf("SHOULD RELEASE DMA PAGE\n");
-      //dma_unpin_free(&dev->dma_man, dma_virt, bufSize);        
       return -1;
   }
   memcpy(buf, dma_virt, bufSize);
-
-  kprintf("SHOULD RELEASE DMA PAGE\n");
-  //dma_unpin_free(&dev->dma_man, dma_virt, bufSize);      
 
   rx_ring.desc[desc1].addr = 0;
   rx_ring.desc[desc1].len = 0;

@@ -33,6 +33,10 @@ public:
 
   bool registerBlockDevice(BlockDevice *dev);
 
+  const vector<BlockDevice*>& getBlockDevices() const noexcept{
+    return _devices;
+  }
+
   seL4_Error doPowerOff();
   PCIBlk _pciblkDriver; // TEMP
 private:
