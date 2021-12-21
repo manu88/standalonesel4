@@ -33,6 +33,7 @@ void RootServer::lateInit() {
   Thread::main.vmspace = &_vmspace;
 
   assert(_platExpert.init(&_factory, &_pt));
+  _vfs.init();
 
   kprintf("Test getting COM1\n");
   auto com1SlotOrErr = _platExpert.issuePortRangeWithSize(0x3F8, 8);

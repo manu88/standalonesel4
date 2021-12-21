@@ -26,6 +26,7 @@ OBJS = main.o\
 	PlatformExpert/pciDevices.o\
 	PlatformExpert/PCIBlk.o\
 	PlatformExpert/Virtio.o\
+	VFS.o\
 
 
 LIBS= -L./libsel4/lib/ -lsel4

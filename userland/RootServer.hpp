@@ -5,6 +5,7 @@
 #include "Shell.hpp"
 #include "Thread.hpp"
 #include "VMSpace.hpp"
+#include "VFS.hpp"
 #include "lib/expected.hpp"
 #include "lib/optional.hpp"
 #include "lib/vector.hpp"
@@ -54,4 +55,5 @@ private:
   seL4_Word _tcbBadgeCounter = 1; // 0 is main rootserver thread
 
   PlatformExpert _platExpert;
+  VFS _vfs;
 };
