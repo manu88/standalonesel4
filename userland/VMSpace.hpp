@@ -1,26 +1,7 @@
 #pragma once
 #include <utility>
 #ifdef UNIT_TESTS
-#include <stddef.h>
-// XXX: create a sel4 stub header for unit tests
-typedef size_t seL4_Word;
-typedef size_t seL4_CPtr;
-typedef int seL4_Error;
-#define seL4_NoError 0
-#define seL4_InvalidArgument 1
-#define seL4_InvalidCapability 2
-#define seL4_IllegalOperation 3
-#define seL4_RangeError 4
-#define seL4_AlignmentError 5
-#define seL4_FailedLookup 6
-#define seL4_TruncatedMessage 7
-#define seL4_DeleteFirst 8
-#define seL4_RevokeFirst 9
-#define seL4_NotEnoughMemory 10
-struct seL4_CapRights_t {
-  int words[1];
-};
-#define seL4_ReadWrite seL4_CapRights_t()
+#include "sel4_mock.hpp"
 #else
 #include "sel4.hpp"
 #include <stddef.h>
@@ -28,7 +9,7 @@ struct seL4_CapRights_t {
 #include "Platform.hpp"
 #include "lib/expected.hpp"
 #include "lib/vector.hpp"
-#include <sys/types.h>
+#include <sys/types.h> // size_t
 
 struct VMSpaceDelegate {
   virtual seL4_Error mapPage(seL4_Word, seL4_CapRights_t, seL4_Word &) {

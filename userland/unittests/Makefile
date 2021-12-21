@@ -1,16 +1,16 @@
 CC=g++
 LD=g++
 
-OBJS = main.o test_vector.o test_string.o test_expected.o test_optional.o test_vmspace.o VMSpace.o
+OBJS = main.o test_vector.o test_string.o test_expected.o test_optional.o test_vmspace.o test_kmallocator.o VMSpace.o kmalloc.o
 PROG= unittests
 
 
-CCFLAGS = -I../ -I../lib/ -g -DUNIT_TESTS
+CCFLAGS = -I./ -I../ -I../lib/ -g -DUNIT_TESTS
 
-.cpp.o: VMSpace
+.cpp.o: VMSpace Kmalloc
 	$(CC) $(C_INCLUDES) -c  $(CCFLAGS)  $<  -o $@
 
-$(PROG): VMSpace $(OBJS)
+$(PROG): VMSpace Kmalloc $(OBJS)
 	$(LD) $(OBJS) -o $(PROG)
 
 clean:
@@ -19,3 +19,6 @@ clean:
 
 VMSpace:  
 	cp ../VMSpace.cpp .
+
+Kmalloc:
+	cp ../kmalloc.cpp .

@@ -1,5 +1,9 @@
 #pragma once
+#ifdef UNIT_TESTS
+#include "sel4_mock.hpp"
+#else
 #include "sel4.hpp"
+#endif
 #include <stddef.h>
 
 extern "C" {

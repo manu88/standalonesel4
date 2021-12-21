@@ -8,5 +8,6 @@ extern "C" int main() {
   testExpected();
   testOptional();
   testVMSpace();
+  testKmallocator();
   return 0;
 }

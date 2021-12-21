@@ -5,3 +5,4 @@ int testString(void);
 int testExpected(void);
 int testOptional(void);
 int testVMSpace(void);
+void testKmallocator(void);

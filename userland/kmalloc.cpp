@@ -1,8 +1,12 @@
 #include "kmalloc.hpp"
-#include "Thread.hpp"
 #include "lib/cstring.h"
+#ifdef UNIT_TESTS
+#include "sel4_mock.hpp"
+#include <cassert>
+#else
 #include "mutex.h"
 #include "runtime.h"
+#endif
 #include <stddef.h>
 
 extern "C" {
