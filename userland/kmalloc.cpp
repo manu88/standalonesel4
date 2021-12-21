@@ -200,6 +200,7 @@ void kfree_no_lock(void *ptr, size_t size) {
 }
 } // extern "C"
 
+#ifndef UNIT_TESTS
 void *operator new(size_t size) {
   void *r = kmalloc(size);
   return r;
@@ -217,3 +218,5 @@ void operator delete(void *p, std::size_t size) { kfreeWithSize(p, size); }
 void operator delete[](void *p) { kfree(p); }
 
 void operator delete[](void *p, std::size_t size) { kfreeWithSize(p, size); }
+
+#endif
