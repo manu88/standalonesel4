@@ -115,6 +115,9 @@ int Shell::processNewCommand(const string &cmd) {
         Thread::getCurrent()->endpoint,
         Syscall::DebugRequest(Syscall::DebugRequest::Operation::DumpScheduler));
     return 0;
+  } else if (cmd.starts_with("read")){
+      auto responseOrErr = Syscall::perform::read(Thread::getCurrent()->endpoint, Syscall::ReadRequest(12));
+      return responseOrErr.value.resp;
   } else if (cmd.starts_with("thread")) {
     if (cmd.size() < 8) {
       return -1;
