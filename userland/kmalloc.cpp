@@ -124,12 +124,15 @@ static void relink(union chunk *top, size_t expectedSize) {
 }
 
 void *krealloc(void *ptr, size_t size) {
-  sync_mutex_lock(&_lock);
   if (!ptr) {
-    void *r = kmalloc_no_lock(size);
-    sync_mutex_unlock(&_lock);
+    void *r = kmalloc(size);
     return r;
   }
+  if(ptr && size ==0){
+    kfree(ptr);
+    return NULL;
+  }
+  sync_mutex_lock(&_lock);
   char *bptr = (char *)ptr;
   ptr = bptr - sizeof(struct info);
   union chunk *chunk = (union chunk *)ptr;
