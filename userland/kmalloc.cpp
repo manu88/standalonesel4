@@ -138,7 +138,7 @@ void *krealloc(void *ptr, size_t size) {
     sync_mutex_unlock(&_lock);
     return nullptr;
   }
-  void *newPtr = kmalloc(size);
+  void *newPtr = kmalloc_no_lock(size);
   if (!newPtr) {
     sync_mutex_unlock(&_lock);
     return nullptr;
@@ -158,8 +158,9 @@ void *kmalloc(size_t size) {
 }
 
 void *kmalloc_no_lock(size_t size) {
-  if (!initialized)
+  if (!initialized){
     init();
+  }
   size_t chunks = chunk_count(size);
   size_t keep = 0;
   union chunk *top = head.node.info.next;
