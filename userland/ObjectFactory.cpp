@@ -118,6 +118,10 @@ ObjectFactory::SlotOrError ObjectFactory::getFreeSlot() {
   return _untypedPool.getFreeSlot();
 }
 
+void ObjectFactory::releaseObject(seL4_CPtr){
+  kprintf("ObjectFactory::releaseObject does currently nothing\n");
+}
+
 void ObjectFactory::releaseSlot(seL4_SlotPos pos) {
   _untypedPool.releaseSlot(pos);
 }

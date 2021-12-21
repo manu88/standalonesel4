@@ -19,6 +19,7 @@ public:
                seL4_CPtr apiEndpoint);
   ObjectOrError createEndpoint();
   ObjectOrError createNotification();
+  void releaseObject(seL4_CPtr);
 
   SlotOrError getFreeSlot();
   void releaseSlot(seL4_SlotPos pos);
