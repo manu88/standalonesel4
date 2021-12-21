@@ -3,6 +3,7 @@
 #include "Virtio.hpp"
 #include "virtio_ring.h"
 #include <cstddef>
+#include <sys/types.h> // ssize_t
 
 class PCIBlk : public DriverBase {
 public:
@@ -12,7 +13,12 @@ public:
 
   size_t queueSize = 0;
   uint8_t queueID = 0;
+
+  ssize_t read(size_t sector, char* buf, size_t bufSize);
 private:
+  ssize_t blkReadSector(size_t sector, char* buf, size_t bufSize);
+  void* blkCmd(int op, size_t sector, char* buf, size_t bufSize);
+
   bool initializeDescRing(PlatformExpert &, const PCIDevice &);
   VirtioDevice _dev;
   struct vring rx_ring;
@@ -20,4 +26,8 @@ private:
     * a descriptor */
   unsigned int rdt;
   uintptr_t rx_ring_phys;
+
+  PlatformExpert *_expert = nullptr; // TEMP
+  enum {DMA_ALIGNMENT = 16};
+  seL4_Word irqCap = 0;
 };

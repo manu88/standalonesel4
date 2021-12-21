@@ -4,6 +4,9 @@
 #include "../runtime.h"
 #include "DriverBase.hpp"
 #include <stdint.h>
+#include "../Thread.hpp"
+#include "../VMSpace.hpp"
+#include "../MBR.h"
 
 bool PlatformExpert::init(ObjectFactory *factory, PageTable* pt) {
   _factory = factory;
@@ -44,6 +47,85 @@ PlatformExpert::issuePortRange(seL4_Word first_port, seL4_Word last_port) {
   return slotOrErr;
 }
 
+PlatformExpert::SlotOrError PlatformExpert::getIOAPICIRQHandle(const PCIDevice& dev){
+  auto slotOrErr = _factory->getFreeSlot();
+  if (!slotOrErr) {
+    return slotOrErr;
+  }
+	enum { IRQ_EDGE = 0, IRQ_LEVEL = 1 };
+	enum { IRQ_HIGH = 0, IRQ_LOW = 1 };
+  seL4_Word ioapic = 0;
+  seL4_Word level    = (dev.irqLine < 16) ? IRQ_EDGE : IRQ_LEVEL;
+	seL4_Word polarity = (dev.irqLine < 16) ? IRQ_HIGH : IRQ_LOW;
+  seL4_Word vector = dev.irqLine;
+  auto err = seL4_IRQControl_GetIOAPIC(seL4_CapIRQControl, seL4_CapInitThreadCNode, slotOrErr.value, seL4_WordBits, ioapic, dev.irqLine, level, polarity, vector);
+  if (err != seL4_NoError) {
+    _factory->releaseSlot(slotOrErr.value);
+    return unexpected<seL4_SlotPos, seL4_Error>(err);
+  }
+  auto notifOrErr = _factory->createNotification();
+  if(!notifOrErr){
+    _factory->releaseSlot(slotOrErr.value);
+    return unexpected<seL4_SlotPos, seL4_Error>(notifOrErr.error);
+  }
+  err = seL4_IRQHandler_SetNotification(slotOrErr.value, notifOrErr.value);
+  if( err != seL4_NoError){
+    _factory->releaseSlot(slotOrErr.value);
+    _factory->releaseObject(notifOrErr.value);
+    return unexpected<seL4_SlotPos, seL4_Error>(notifOrErr.error);
+  }
+  return success<seL4_SlotPos, seL4_Error>(notifOrErr.value);
+}
+
+PlatformExpert::SlotOrError PlatformExpert::getIRQHandle(const PCIDevice& dev){
+  auto slotOrErr = _factory->getFreeSlot();
+  if (!slotOrErr) {
+    return slotOrErr;
+  }
+  kprintf("seL4_IRQControl_Get in \n");
+  auto err = seL4_IRQControl_Get(seL4_CapIRQControl, dev.irqLine, seL4_CapInitThreadCNode, slotOrErr.value, seL4_WordBits);
+  kprintf("seL4_IRQControl_Get out\n");
+  if (err != seL4_NoError) {
+    _factory->releaseSlot(slotOrErr.value);
+    return unexpected<seL4_SlotPos, seL4_Error>(err);
+  }
+  auto notifOrErr = _factory->createNotification();
+  if(!notifOrErr){
+    _factory->releaseSlot(slotOrErr.value);
+    return unexpected<seL4_SlotPos, seL4_Error>(notifOrErr.error);
+  }
+  err = seL4_IRQHandler_SetNotification(slotOrErr.value, notifOrErr.value);
+  if( err != seL4_NoError){
+    _factory->releaseSlot(slotOrErr.value);
+    _factory->releaseObject(notifOrErr.value);
+    return unexpected<seL4_SlotPos, seL4_Error>(notifOrErr.error);
+  }
+  return success<seL4_SlotPos, seL4_Error>(notifOrErr.value);
+}
+
+PlatformExpert::SlotOrError PlatformExpert::getMSIHandle(const PCIDevice& dev, seL4_Word handle, seL4_Word vector){
+  auto slotOrErr = _factory->getFreeSlot();
+  if (!slotOrErr) {
+    return slotOrErr;
+  }
+  auto err = seL4_IRQControl_GetMSI(seL4_CapIRQControl, seL4_CapInitThreadCNode, slotOrErr.value, seL4_WordBits, dev.bus, dev.slot, dev.fun, handle, vector);
+  if (err != seL4_NoError) {
+    _factory->releaseSlot(slotOrErr.value);
+  }
+  auto notifOrErr = _factory->createNotification();
+  if(!notifOrErr){
+    _factory->releaseSlot(slotOrErr.value);
+    return unexpected<seL4_SlotPos, seL4_Error>(notifOrErr.error);
+  }
+  err = seL4_IRQHandler_SetNotification(slotOrErr.value, notifOrErr.value);
+  if( err != seL4_NoError){
+    _factory->releaseSlot(slotOrErr.value);
+    _factory->releaseObject(notifOrErr.value);
+    return unexpected<seL4_SlotPos, seL4_Error>(notifOrErr.error);
+  }
+  return success<seL4_SlotPos, seL4_Error>(notifOrErr.value);
+}
+
 void PlatformExpert::print() const noexcept {
   kprintf("Got %zi PCI devices\n", _pciScanner.getDevices().size());
   for (const auto &dev : _pciScanner.getDevices()) {
@@ -57,17 +139,71 @@ void PlatformExpert::tryAssociatePCIDrivers() {
     if (_pciblkDriver.probe(dev)) {
       kprintf("probing sucessful for device %s %s and driver %s\n",
               dev.vendorName(), dev.deviceName(), _pciblkDriver.getName());
-      _pciblkDriver.addDevice(*this, dev);
+      bool ret = _pciblkDriver.addDevice(*this, dev);
+      if(ret){
+        char buf[512] = {0};
+        auto readRet = _pciblkDriver.read(0, buf, 512);
+        kprintf("Did read %zi bytes\n", readRet);
+        if(readRet == 512){
+          const MBR* mbr =(const MBR*) buf;
+          kprintf("MBR diskID=%X validboot=%X\n", mbr->diskID, mbr->validBoot);
+          // validBoot should be == 0XAA55 and diskID != 0
+          if(mbr->diskID != 0 && mbr->validBoot == 0XAA55)
+          {
+              kprintf("Found a valid MBR, check partitions\n");
+              kprintf("Check partition1\n");
+              //testPartition(dev, &mbr->part1);
+              kprintf("Check partition2\n");
+              //testPartition(dev, &mbr->part2);
+              kprintf("Check partition3\n");
+              //testPartition(dev, &mbr->part3);
+              kprintf("Check partition4\n");
+              //testPartition(dev, &mbr->part4);
+          }
+          else // single partition disk
+          {
+              kprintf("No MBR, mount disk directly\n");
+          }
+        }
+      }
     }
   }
 }
 
 PlatformExpert::DMARangeOrError PlatformExpert::allocDMARange(size_t size){
-  auto slotOrErr = _factory->getFreeSlot();
-  if (!slotOrErr) {
-    return unexpected<PlatformExpert::DMARange, seL4_Error>(slotOrErr.error);
+  size_t numPages = (size / PAGE_SIZE) + 1;
+  kprintf("PlatformExpert::allocDMARange request for %zi bytes -> %zi pages\n", size, numPages);
+  auto callingThread = Thread::getCurrent();
+  assert(Thread::calledFromMain()); // XXX Right now we use main thread: be sure to use Syscalls to
+  assert(callingThread->vmspace != nullptr);
+  auto resOrErr = callingThread->vmspace->allocRangeAnywhere(numPages, seL4_ReadWrite, VMSpace::MemoryType::DMA);
+
+  if(!resOrErr){
+    return unexpected<PlatformExpert::DMARange, seL4_Error>(resOrErr.error);
   }
-  return unexpected<PlatformExpert::DMARange, seL4_Error>(seL4_NotEnoughMemory);
+  seL4_Word startVirt = 0;
+  seL4_Word startPhys = 0;
+  for(size_t i = 0;i<numPages;i++){
+    size_t mapAddr = resOrErr.value.vaddr + (i * PAGE_SIZE);
+    kprintf("%zi Mapping the page 0X%X vaddr=0X%X\n",i, resOrErr.value.vaddr, mapAddr);
+    auto physicalAddressOrError = callingThread->vmspace->mapPage(mapAddr);
+    kprintf("mapPage ret=%s 0X%X\n", seL4::errorStr(physicalAddressOrError.error), physicalAddressOrError.value);
+    if(!physicalAddressOrError){
+      return unexpected<PlatformExpert::DMARange, seL4_Error>(seL4_NotEnoughMemory);    
+    }
+    if(startVirt == 0){
+      startVirt = mapAddr;
+    }
+    if(startPhys == 0){
+      startPhys = physicalAddressOrError.value;
+      kprintf("Set startPhys to 0X%X\n", startPhys); 
+    }
+  }
+  callingThread->vmspace->print();
+  PlatformExpert::DMARange r;
+  r.virt = (void*) startVirt;
+  r.phys = startPhys;
+  return success<PlatformExpert::DMARange, seL4_Error>(r);
 }
 
 void PlatformExpert::releaseDMARange(DMARange&){

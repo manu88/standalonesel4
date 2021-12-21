@@ -10,10 +10,9 @@ class PageTable;
 class PlatformExpert {
 public:
   struct DMARange{
-    DMARange(int){}
-
+    DMARange(int = 0){}
     void* virt = nullptr;
-    uintptr_t phys = 0;
+    seL4_Word phys = 0;
   };
 
   using SlotOrError = Expected<seL4_SlotPos, seL4_Error>;
@@ -24,14 +23,18 @@ public:
   SlotOrError issuePortRange(seL4_Word first_port, seL4_Word last_port);
   SlotOrError issuePortRangeWithSize(seL4_Word port, size_t range);
 
+  SlotOrError getMSIHandle(const PCIDevice& dev, seL4_Word handle, seL4_Word vector);
+  SlotOrError getIRQHandle(const PCIDevice& dev);
+  SlotOrError getIOAPICIRQHandle(const PCIDevice& dev);
+
   DMARangeOrError allocDMARange(size_t size);
   void releaseDMARange(DMARange&);
   
   seL4_Error doPowerOff();
+  PCIBlk _pciblkDriver; // TEMP
 private:
   void tryAssociatePCIDrivers();
   PCIScanner _pciScanner;
   ObjectFactory *_factory = nullptr;
   PageTable* _pt = nullptr;
-  PCIBlk _pciblkDriver;
 };
