@@ -30,6 +30,22 @@ struct PCIDevice {
     bool base_addr_64H[6];
   };
 
+  struct StatusRegister{
+    uint8_t _reserved:2;
+    uint8_t interruptStatus:1; // Interrupt Status - Represents the state of the device's INTx# signal. If set to 1 and bit 10 of the Command register (Interrupt Disable bit) is set to 0 the signal will be asserted; otherwise, the signal will be ignored. 
+    uint8_t capabilitiesList :1; // Capabilities List - If set to 1 the device implements the pointer for a New Capabilities Linked list at offset 0x34; otherwise, the linked list is not available. 
+    uint8_t is66MHzCapable:1; // 66 MHz Capable - If set to 1 the device is capable of running at 66 MHz; otherwise, the device runs at 33 MHz. 
+    uint8_t _reserved2:1; 
+    uint8_t fastBackToBackCapable:1; // Fast Back-to-Back Capable - If set to 1 the device can accept fast back-to-back transactions that are not from the same agent; otherwise, transactions can only be accepted from the same agent. 
+    uint8_t masterDataParityError :1; // Master Data Parity Error - This bit is only set when the following conditions are met. The bus agent asserted PERR# on a read or observed an assertion of PERR# on a write, the agent setting the bit acted as the bus master for the operation in which the error occurred, and bit 6 of the Command register (Parity Error Response bit) is set to 1. 
+    uint8_t deVSELTiming:1; // DEVSEL Timing - Read only bits that represent the slowest time that a device will assert DEVSEL# for any bus command except Configuration Space read and writes. Where a value of 0x0 represents fast timing, a value of 0x1 represents medium timing, and a value of 0x2 represents slow timing. 
+    uint8_t signaledTargetAbort :1; // Signalled Target Abort - This bit will be set to 1 whenever a target device terminates a transaction with Target-Abort. 
+    uint8_t receivedTargetAbort :1; // Received Target Abort - This bit will be set to 1, by a master device, whenever its transaction is terminated with Target-Abort. 
+    uint8_t receivedMasterAbort :1; // Received Master Abort - This bit will be set to 1, by a master device, whenever its transaction (except for Special Cycle transactions) is terminated with Master-Abort. 
+    uint8_t signaledSystemError :1; // Signalled System Error - This bit will be set to 1 whenever the device asserts SERR#. 
+    uint8_t detectedParityError :1; // This bit will be set to 1 whenever the device detects a parity error, even if parity error handling is disabled. 
+  };
+
   enum class Class : uint8_t {
     Unclassified = 0,
     MassStorageController = 1,
@@ -56,7 +72,12 @@ struct PCIDevice {
   uint16_t subSystemVendorID;
   uint16_t subSystemID;
 
+  uint8_t irqLine;
+  uint8_t irqPin;
+
   IOConfig cfg;
+
+  StatusRegister status;
 
   void print() const;
   const char *vendorName() const noexcept;

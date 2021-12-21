@@ -85,6 +85,21 @@ void PCIDevice::print() const {
           headerType, subSystemID, subSystemVendorID);
   kprintf("Class=0x%X (%s) subClass=0X%X progIf=0X%X\n", class_, className(),
           subclassCode, progIf);
+  kprintf("IRQ line=%X pin=%X\n", irqLine, irqPin);
+  kprintf("Status:");
+  kprintf(" interruptStatus: 0X%X\n", status.interruptStatus);
+  kprintf(" capabilitiesList: 0X%X\n", status.capabilitiesList);
+  kprintf(" is66MHzCapable: 0X%X\n", status.is66MHzCapable);
+  kprintf(" fastBackToBackCapable: 0X%X\n", status.fastBackToBackCapable);
+  kprintf(" masterDataParityError: 0X%X\n", status.masterDataParityError);
+  kprintf(" deVSELTiming: 0X%X\n", status.deVSELTiming);
+  kprintf(" signaledTargetAbort: 0X%X\n", status.signaledTargetAbort);
+  kprintf(" receivedTargetAbort: 0X%X\n", status.receivedTargetAbort);
+  kprintf(" receivedMasterAbort: 0X%X\n", status.receivedMasterAbort);
+  kprintf(" signaledSystemError: 0X%X\n", status.signaledSystemError);
+  kprintf(" detectedParityError: 0X%X\n", status.detectedParityError);
+
+
   kprintf("\n");
   printIOConfig(*this, true);
 }
@@ -135,23 +150,39 @@ void PCIScanner::scan() {
       if (vendorID == 0XFFFF) {
         continue;
       }
-      uint16_t deviceID = pciConfigReadWord(bus, slot, 0, 2);
+      uint16_t deviceID = pciConfigReadWord(bus, slot, 0, 0x2);
       CommandReg cmdReg;
 
-      cmdReg.value = pciConfigReadWord(bus, slot, 0, 4);
+      cmdReg.value = pciConfigReadWord(bus, slot, 0, 0x4);
 
-      uint16_t status = pciConfigReadWord(bus, slot, 0, 6);
+      union StatusUnion{
+        uint16_t v;
+        PCIDevice::StatusRegister status;
+      };
+      StatusUnion sta;
+      sta.v = pciConfigReadWord(bus, slot, 0, 0x6);
 
       RevIdAndProgIf revIdAndProgIf;
-      revIdAndProgIf.value = pciConfigReadWord(bus, slot, 0, 8);
+      revIdAndProgIf.value = pciConfigReadWord(bus, slot, 0, 0x8);
 
       SubClassAndClass subClassAndClass;
-      subClassAndClass.value = pciConfigReadWord(bus, slot, 0, 10);
+      subClassAndClass.value = pciConfigReadWord(bus, slot, 0, 0xA);
 
       BistAndHeaderType bistAndHeaderType;
       bistAndHeaderType.value = pciConfigReadWord(bus, slot, 0, 14);
-      auto subSystemVendorID = pciConfigReadWord(bus, slot, 0, 44);
-      auto subSystemID = pciConfigReadWord(bus, slot, 0, 46);
+      auto subSystemVendorID = pciConfigReadWord(bus, slot, 0, 0x2C);
+      auto subSystemID = pciConfigReadWord(bus, slot, 0, 0x2E);
+
+      union InterLineAndPin{
+        uint16_t v;
+        struct F{
+          uint8_t line;
+          uint8_t pin;
+        } fields;
+      };
+      InterLineAndPin interLineAndPin;
+      interLineAndPin.v = pciConfigReadWord(bus, slot, 0, 0X3C);
+
       PCIDevice dev = {.bus = (uint8_t) bus,
                        .slot = (uint8_t) slot,
                        .fun = 0,
@@ -164,7 +195,10 @@ void PCIScanner::scan() {
                        .progIf = revIdAndProgIf.fields.progIf,
                        .headerType = bistAndHeaderType.fields.headerType,
                        .subSystemVendorID = subSystemVendorID,
-                       .subSystemID = subSystemID};
+                       .subSystemID = subSystemID,
+                       .irqLine = interLineAndPin.fields.line,
+                       .irqPin = interLineAndPin.fields.pin,
+                       .status = sta.status};
       readIOConfig(dev.cfg, bus, slot, 0);
       _devices.push_back(dev);
     }
