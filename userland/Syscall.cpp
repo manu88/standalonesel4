@@ -53,6 +53,12 @@ Syscall::MMapResponse::decode(const seL4_MessageInfo_t &) {
       Syscall::MMapResponse((void *)seL4_GetMR(1)));
 }
 
+/*static*/ Expected<Syscall::ReadResponse, bool>
+Syscall::ReadResponse::decode(const seL4_MessageInfo_t &) {
+  return success<Syscall::ReadResponse, bool>(
+      Syscall::ReadResponse((ssize_t)seL4_GetMR(1)));
+}
+
 Expected<Syscall::ThreadRequest, bool>
 Syscall::ThreadRequest::decode(const seL4_MessageInfo_t &) {
   return success<Syscall::ThreadRequest, bool>(
@@ -98,3 +104,7 @@ Syscall::performBase<Syscall::KFreeRequest>(seL4_Word endpoint, Syscall::ID id,
 template Expected<Syscall::BaseResponse, bool>
 Syscall::performBase<Syscall::ThreadRequest>(seL4_Word endpoint, Syscall::ID id,
                                              const Syscall::ThreadRequest &b);
+
+template Expected<Syscall::ReadResponse, bool>
+Syscall::performBase<Syscall::ReadRequest>(seL4_Word endpoint, Syscall::ID id,
+                                             const Syscall::ReadRequest &b);

@@ -2,11 +2,13 @@
 #include "lib/expected.hpp"
 #include "sel4.hpp"
 #include <stddef.h>
+#include <sys/types.h> // size_t
 
 namespace Syscall {
 
 enum class ID : seL4_Word {
   Unknown,
+  Read,
   Debug,
   KMalloc,
   KFree,
@@ -111,6 +113,27 @@ struct MMapResponse : public BaseResponse {
 
 /* *** *** ***  */
 
+struct ReadRequest : BaseRequest {
+  ReadRequest(size_t size) : size(size) {}
+  size_t getNumMsgRegisters() const noexcept final { return 1; }
+  seL4_Word getMsgRegister(size_t) const noexcept final {
+    return (seL4_Word)size;
+  }
+  bool hasResponse() const noexcept final { return true; }
+  size_t size;
+
+  static Expected<ReadRequest, bool> decode(const seL4_MessageInfo_t &);
+};
+
+struct ReadResponse : public BaseResponse {
+  ReadResponse(ssize_t resp) : resp(resp) {}
+  static Expected<ReadResponse, bool> decode(const seL4_MessageInfo_t &);
+
+  ssize_t resp;
+};
+
+/* *** *** ***  */
+
 struct ThreadRequest : BaseRequest {
   enum ThreadOp : seL4_Word {
     List,
@@ -145,6 +168,12 @@ Expected<ReturnType, bool> performBase(seL4_Word endpoint, Syscall::ID id,
                                        const RequestType &b = BaseRequest());
 
 namespace perform {
+
+inline Expected<ReadResponse, bool> read(seL4_Word endpoint,
+                                               const ReadRequest &r) {
+  return performBase<ReadRequest, ReadResponse>(endpoint, ID::Read, r);
+}
+
 inline Expected<KMallocResponse, bool> kmalloc(seL4_Word endpoint,
                                                const KMallocRequest &r) {
   return performBase<KMallocRequest, KMallocResponse>(endpoint, ID::KMalloc, r);
