@@ -6,6 +6,7 @@
 
 class ObjectFactory;
 class PageTable;
+struct BlockDevice;
 
 class PlatformExpert {
 public:
@@ -29,7 +30,9 @@ public:
 
   DMARangeOrError allocDMARange(size_t size);
   void releaseDMARange(DMARange&);
-  
+
+  bool registerBlockDevice(BlockDevice *dev);
+
   seL4_Error doPowerOff();
   PCIBlk _pciblkDriver; // TEMP
 private:
@@ -37,4 +40,6 @@ private:
   PCIScanner _pciScanner;
   ObjectFactory *_factory = nullptr;
   PageTable* _pt = nullptr;
+
+  vector<BlockDevice*> _devices;
 };

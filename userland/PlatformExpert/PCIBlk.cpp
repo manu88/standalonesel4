@@ -209,6 +209,7 @@ bool PCIBlk::addDevice(PlatformExpert &expert, const PCIDevice &dev) {
     kprintf("Success!!\n");
     irqCap = irqCapOrErr.value;
   }
+  expert.registerBlockDevice(this);
   return true;
 }
 

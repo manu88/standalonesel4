@@ -7,6 +7,7 @@
 #include "../Thread.hpp"
 #include "../VMSpace.hpp"
 #include "../MBR.h"
+#include "../BlockDevice.hpp"
 
 bool PlatformExpert::init(ObjectFactory *factory, PageTable* pt) {
   _factory = factory;
@@ -131,6 +132,9 @@ void PlatformExpert::print() const noexcept {
   for (const auto &dev : _pciScanner.getDevices()) {
     dev.print();
   }
+  for(const auto &dev: _devices){
+    kprintf("Got a registered device\n");
+  }
 }
 
 void PlatformExpert::tryAssociatePCIDrivers() {
@@ -216,3 +220,10 @@ seL4_Error PlatformExpert::doPowerOff(){
   return seL4_X86_IOPort_Out16(stopSlot.value, 0x604, 0x2000);
 }
 
+
+
+bool PlatformExpert::registerBlockDevice(BlockDevice *dev){
+  kprintf("PlatformExpert::registerBlockDevice new block device\n");
+  _devices.push_back(dev);
+  return false;
+}

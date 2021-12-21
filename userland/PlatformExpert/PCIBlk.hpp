@@ -4,8 +4,9 @@
 #include "virtio_ring.h"
 #include <cstddef>
 #include <sys/types.h> // ssize_t
+#include "../BlockDevice.hpp"
 
-class PCIBlk : public DriverBase {
+class PCIBlk : public DriverBase, public BlockDevice {
 public:
   bool probe(const PCIDevice &dev) override;
   const char *getName() const noexcept override { return "BLK PCI"; }
@@ -14,7 +15,7 @@ public:
   size_t queueSize = 0;
   uint8_t queueID = 0;
 
-  ssize_t read(size_t sector, char* buf, size_t bufSize);
+  ssize_t read(size_t sector, char* buf, size_t bufSize) final;
 private:
   ssize_t blkReadSector(size_t sector, char* buf, size_t bufSize);
   void* blkCmd(int op, size_t sector, char* buf, size_t bufSize);
