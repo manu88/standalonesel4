@@ -4,6 +4,7 @@
 #include "kmalloc.hpp"
 #include "runtime.h"
 #include <sel4/arch/mapping.h> // seL4_MappingFailedLookupLevel
+#include "klog.h"
 
 RootServer::RootServer()
     : _pt(_untypedPool), _vmspace(VMSpace::RootServerLayout::ReservedVaddr +

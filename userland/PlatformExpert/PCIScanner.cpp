@@ -1,6 +1,7 @@
 #include "PCIScanner.hpp"
 #include "../runtime.h"
 #include "pciDevices.h"
+#include "../klog.h"
 
 union CommandReg {
   uint16_t value;

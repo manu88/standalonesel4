@@ -8,6 +8,7 @@
 #include "runtime.h"
 #endif
 #include <stddef.h>
+#include "klog.h"
 
 extern "C" {
 

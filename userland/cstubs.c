@@ -1,6 +1,7 @@
 #include "runtime.h"
 #include "sel4.hpp"
 #include <stdlib.h>
+#include "klog.h"
 
 int __errno_location = 0;
 // TODO: actual implementation :)

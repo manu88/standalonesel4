@@ -2,6 +2,7 @@
 #include "Platform.hpp"
 #include "runtime.h"
 #include <cstddef>
+#include "klog.h"
 
 /*static*/ Thread Thread::main = Thread(seL4_CapInitThreadTCB, nullptr);
 

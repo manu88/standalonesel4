@@ -6,6 +6,7 @@
 #include "runtime.h"
 #endif
 #include "Platform.hpp"
+#include "klog.h"
 
 
 #ifdef UNIT_TESTS

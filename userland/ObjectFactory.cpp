@@ -3,6 +3,7 @@
 #include "PageTable.hpp"
 #include "VMSpace.hpp"
 #include "runtime.h"
+#include "klog.h"
 
 ObjectFactory::ObjectFactory(InitialUntypedPool &untypedPool, PageTable &pt,
                              VMSpace &vm)

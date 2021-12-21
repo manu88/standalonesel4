@@ -8,6 +8,7 @@
 #include "../VMSpace.hpp"
 #include "../MBR.h"
 #include "../BlockDevice.hpp"
+#include "../klog.h"
 
 bool PlatformExpert::init(ObjectFactory *factory, PageTable* pt) {
   _factory = factory;

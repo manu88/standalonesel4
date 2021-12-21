@@ -5,6 +5,7 @@
 #include "../Platform.hpp"
 #include "PCIScanner.hpp"
 #include "PlatformExpert.hpp"
+#include "../klog.h"
 
 
 #define VIRTIO_BLK_S_OK       0

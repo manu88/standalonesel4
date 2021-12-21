@@ -1,5 +1,6 @@
 #include "sel4.hpp"
 #include "RootServer.hpp"
+#include "klog.h"
 
 extern "C"
 {

@@ -5,6 +5,7 @@
 #include "runtime.h"
 #include "sel4.hpp"
 #include <stdlib.h>
+#include "klog.h"
 
 void Shell::init() {
   buffer = reinterpret_cast<char *>(kmalloc(BufferSize));
