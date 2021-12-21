@@ -172,7 +172,6 @@ void PlatformExpert::tryAssociatePCIDrivers() {
 
 PlatformExpert::DMARangeOrError PlatformExpert::allocDMARange(size_t size){
   size_t numPages = (size / PAGE_SIZE) + 1;
-  kprintf("PlatformExpert::allocDMARange request for %zi bytes -> %zi pages\n", size, numPages);
   auto callingThread = Thread::getCurrent();
   assert(Thread::calledFromMain()); // XXX Right now we use main thread: be sure to use Syscalls to
   assert(callingThread->vmspace != nullptr);
@@ -185,9 +184,7 @@ PlatformExpert::DMARangeOrError PlatformExpert::allocDMARange(size_t size){
   seL4_Word startPhys = 0;
   for(size_t i = 0;i<numPages;i++){
     size_t mapAddr = resOrErr.value.vaddr + (i * PAGE_SIZE);
-    kprintf("%zi Mapping the page 0X%X vaddr=0X%X\n",i, resOrErr.value.vaddr, mapAddr);
     auto physicalAddressOrError = callingThread->vmspace->mapPage(mapAddr);
-    kprintf("mapPage ret=%s 0X%X\n", seL4::errorStr(physicalAddressOrError.error), physicalAddressOrError.value);
     if(!physicalAddressOrError){
       return unexpected<PlatformExpert::DMARange, seL4_Error>(seL4_NotEnoughMemory);    
     }
@@ -196,10 +193,8 @@ PlatformExpert::DMARangeOrError PlatformExpert::allocDMARange(size_t size){
     }
     if(startPhys == 0){
       startPhys = physicalAddressOrError.value;
-      kprintf("Set startPhys to 0X%X\n", startPhys); 
     }
   }
-  callingThread->vmspace->print();
   PlatformExpert::DMARange r;
   r.virt = (void*) startVirt;
   r.phys = startPhys;

@@ -114,12 +114,16 @@ struct MMapResponse : public BaseResponse {
 /* *** *** ***  */
 
 struct ReadRequest : BaseRequest {
-  ReadRequest(size_t size) : size(size) {}
-  size_t getNumMsgRegisters() const noexcept final { return 1; }
-  seL4_Word getMsgRegister(size_t) const noexcept final {
+  ReadRequest(size_t sector, size_t size) : sector(sector), size(size) {}
+  size_t getNumMsgRegisters() const noexcept final { return 2; }
+  seL4_Word getMsgRegister(size_t i) const noexcept final {
+    if(i == 0){
+      return (seL4_Word)sector;
+    }
     return (seL4_Word)size;
   }
   bool hasResponse() const noexcept final { return true; }
+  size_t sector;
   size_t size;
 
   static Expected<ReadRequest, bool> decode(const seL4_MessageInfo_t &);

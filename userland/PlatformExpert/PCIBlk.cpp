@@ -235,7 +235,6 @@ ssize_t PCIBlk::read(size_t sector, char* buf, size_t bufSize){
 
 void* PCIBlk::blkCmd(int op, size_t sector, char* buf, size_t bufSize)
 {
-  kprintf("blkCmd for sector %i op %i\n", sector, op);
   memset(_dev.headerReq, 0, sizeof(virtio_blk_req));
   _dev.headerReq->type = op;// VIRTIO_BLK_T_IN or VIRTIO_BLK_T_OUT 
   _dev.headerReq->sector = sector;
@@ -323,11 +322,8 @@ void* PCIBlk::blkCmd(int op, size_t sector, char* buf, size_t bufSize)
 
 ssize_t PCIBlk::blkReadSector(size_t sector, char* buf, size_t bufSize)
 {
-  kprintf("blkReadSector sector %zi bufSize %zi\n", sector, bufSize);
   assert(rx_ring.used);
-  kprintf("PROBE 1 -> %i\n", queueSize);
   int i = rx_ring.used->idx % queueSize;
-  kprintf("PROBE 2\n");
   void* dma_virt = blkCmd(VIRTIO_BLK_T_IN, sector, buf, bufSize);
   if(!dma_virt){
     return -1;

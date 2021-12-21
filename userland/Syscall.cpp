@@ -53,6 +53,12 @@ Syscall::MMapResponse::decode(const seL4_MessageInfo_t &) {
       Syscall::MMapResponse((void *)seL4_GetMR(1)));
 }
 
+/*static*/ Expected<Syscall::ReadRequest, bool>
+Syscall::ReadRequest::decode(const seL4_MessageInfo_t &) {
+  return success<Syscall::ReadRequest, bool>(
+      Syscall::ReadRequest((ssize_t)seL4_GetMR(1), (ssize_t)seL4_GetMR(2)));
+}
+
 /*static*/ Expected<Syscall::ReadResponse, bool>
 Syscall::ReadResponse::decode(const seL4_MessageInfo_t &) {
   return success<Syscall::ReadResponse, bool>(

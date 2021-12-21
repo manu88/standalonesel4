@@ -116,7 +116,23 @@ int Shell::processNewCommand(const string &cmd) {
         Syscall::DebugRequest(Syscall::DebugRequest::Operation::DumpScheduler));
     return 0;
   } else if (cmd.starts_with("read")){
-      auto responseOrErr = Syscall::perform::read(Thread::getCurrent()->endpoint, Syscall::ReadRequest(12));
+      if (cmd.size() < 6) {
+        return -1;
+      }
+      auto args = cmd.substr(5);
+      char *outArg = nullptr;
+      long sector = strtol(args.c_str(), &outArg, 10);
+      if (outArg == nullptr) {
+        kprintf("Missing sector arg\n");
+        return -1;
+      }
+      long size = strtol(outArg, nullptr, 10);
+      auto responseOrErr = Syscall::perform::read(Thread::getCurrent()->endpoint, {sector, size});
+      if(!responseOrErr){
+        kprintf("Read error %i\n", responseOrErr.error);
+        return responseOrErr.error;
+      }
+      kprintf("Did read %zi bytes\n", responseOrErr.value.resp);
       return responseOrErr.value.resp;
   } else if (cmd.starts_with("thread")) {
     if (cmd.size() < 8) {

@@ -193,11 +193,19 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
   seL4_Word syscallID = seL4_GetMR(0);
   switch ((Syscall::ID)syscallID) {
   case Syscall::ID::Read:{
-    kprintf("Read request\n");
-    char buf[512] = {0};
-    auto readRet = _platExpert._pciblkDriver.read(0, buf, 512);
-    seL4_SetMR(1, readRet);
-    seL4_Reply(msgInfo);
+    auto paramOrErr = Syscall::ReadRequest::decode(msgInfo);
+    if (paramOrErr) {
+      kprintf("Read request sector %zi size %zi\n", paramOrErr.value.sector, paramOrErr.value.size);
+      size_t size = paramOrErr.value.size;
+      if(size > 512){
+        kprintf("Read request: size to high, using 512\n");
+        size = 512;
+      }
+      char buf[512] = {0};
+      auto readRet = _platExpert._pciblkDriver.read(paramOrErr.value.sector, buf, size);
+      seL4_SetMR(1, readRet);
+      seL4_Reply(msgInfo);
+    }
   } break;
   case Syscall::ID::Debug: {
     auto paramOrErr = Syscall::DebugRequest::decode(msgInfo);
