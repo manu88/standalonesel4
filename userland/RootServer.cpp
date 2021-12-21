@@ -30,6 +30,7 @@ void RootServer::lateInit() {
   _apiEndpoint = apiEpOrErr.value;
 
   _vmspace.delegate = this;
+  Thread::main.vmspace = &_vmspace;
 
   assert(_platExpert.init(&_factory, &_pt));
 
