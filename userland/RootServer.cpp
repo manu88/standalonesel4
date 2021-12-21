@@ -192,6 +192,13 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
   assert(seL4_MessageInfo_get_length(msgInfo) > 0);
   seL4_Word syscallID = seL4_GetMR(0);
   switch ((Syscall::ID)syscallID) {
+  case Syscall::ID::Read:{
+    kprintf("Read request\n");
+    char buf[512] = {0};
+    auto readRet = _platExpert._pciblkDriver.read(0, buf, 512);
+    seL4_SetMR(1, readRet);
+    seL4_Reply(msgInfo);
+  } break;
   case Syscall::ID::Debug: {
     auto paramOrErr = Syscall::DebugRequest::decode(msgInfo);
     if (paramOrErr) {
