@@ -81,3 +81,10 @@ extern "C" void *memmove(void *dest, const void *src, size_t n)
 	memcpy(dest, src, n);
 	return dest;
 }
+
+
+extern void __assert (const char *msg, const char *file, int line){
+  kprintf("assertion failed in file '%s' at line %i: %s\n", file, line, msg);
+  float *f = NULL;
+  *f = 42.f;
+}

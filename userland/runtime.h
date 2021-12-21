@@ -12,11 +12,9 @@ static inline void oops() {
   *f = 42.f;
 }
 
-static inline void assert(int pred) {
-  if (!pred) {
-    oops();
-  }
-}
+extern void __assert (const char *msg, const char *file, int line);
+#define assert(EX) (void)((EX) || (__assert (#EX, __FILE__, __LINE__),0))
+
 
 #ifndef NOT_REACHED
 #define NOT_REACHED() assert(false)
