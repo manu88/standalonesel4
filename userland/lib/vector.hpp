@@ -132,7 +132,10 @@ private:
         _reservation = _size * 2;
       }
       auto sizeToRealloc = _reservation * sizeof(Type);
-      _data = reinterpret_cast<Type *>(krealloc(_data, sizeToRealloc));
+      auto newData = reinterpret_cast<Type *>(kmalloc(sizeToRealloc));
+      memcpy(newData, _data, _size*sizeof(Type));
+      kfree(_data);
+      _data = newData;
     }
   }
   size_t _size = 0;
