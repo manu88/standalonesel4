@@ -157,7 +157,7 @@ void RootServer::handleVMFault(const seL4_MessageInfo_t &msgInfo,
   auto resSlot = faultyVmspace->getReservationForAddress(faultAddr);
   if (resSlot.first >= 0) {
     bool ret = faultyVmspace->mapPage(faultAddr);
-    if (resSlot.second.isIPCBuffer) {
+    if (resSlot.second.type == VMSpace::MemoryType::IPC) {
       caller.setIPCBuffer(resSlot.second.vaddr, resSlot.second.pageCap);
     }
     if (ret) {

@@ -18,11 +18,17 @@ struct VMSpaceDelegate {
 };
 
 struct VMSpace {
+  using PhysicalAddressOrError = Expected<seL4_Word, seL4_Error>;
+
   enum RootServerLayout // Layout of root server, not other processes!!
   { AddressTables = 0x8000000000,
     ReservedVaddr = 0x8000001000, // size is KmallocReservedPages pages
   };
-
+  enum class MemoryType{
+    Regular, // XXX find a better name :D
+    IPC,
+    DMA,
+  };
   struct Reservation {
 
     Reservation(size_t numPages) : numPages(numPages) {}
@@ -43,7 +49,8 @@ struct VMSpace {
       auto newRes = Reservation(numPages - (afterPage + 1));
       numPages -= newRes.numPages;
       newRes.vaddr = vaddr + (numPages * PAGE_SIZE);
-      newRes.isIPCBuffer = isIPCBuffer;
+      newRes.type = type;
+      newRes.rights = rights;
       return newRes;
     }
 
@@ -53,7 +60,7 @@ struct VMSpace {
     size_t numPages = 0;
     seL4_CapRights_t rights = seL4_ReadWrite;
     seL4_CPtr pageCap = 0;
-    bool isIPCBuffer = false;
+    MemoryType type  = MemoryType::Regular;
 
     bool inRange(seL4_Word addr) const noexcept {
       return addr >= vaddr && addr < (vaddr + numPages * PAGE_SIZE);
@@ -62,9 +69,15 @@ struct VMSpace {
     bool operator==(const Reservation &rhs) {
       return vaddr == rhs.vaddr && numPages == rhs.numPages &&
              rights.words[0] == rhs.rights.words[0] && pageCap == rhs.pageCap &&
-             isIPCBuffer == rhs.isIPCBuffer;
+             type == rhs.type;
     }
     bool operator!=(const Reservation &rhs) { return !(*this == rhs); }
+
+
+    PhysicalAddressOrError getPhysicalAddr() const noexcept{
+      return getPhysicalAddr(pageCap);
+    }
+    static PhysicalAddressOrError getPhysicalAddr(seL4_Word);
   };
 
   using ReservationOrError = Expected<Reservation, seL4_Error>;
@@ -75,17 +88,17 @@ struct VMSpace {
 
   ReservationOrError
   allocRangeAnywhere(size_t numPages, seL4_CapRights_t rights = seL4_ReadWrite,
-                     bool isIPCBuffer = false);
+                     MemoryType type = MemoryType::Regular);
 
   ReservationOrError allocIPCBuffer(seL4_CapRights_t rights = seL4_ReadWrite) {
-    return allocRangeAnywhere(1, rights, true);
+    return allocRangeAnywhere(1, rights, MemoryType::IPC);
   }
 
   seL4_Error deallocReservation(const Reservation &r);
 
   bool pageIsReserved(seL4_Word addr) const noexcept;
   void print() const noexcept;
-  bool mapPage(seL4_Word addr);
+  PhysicalAddressOrError mapPage(seL4_Word addr);
 
   ReservationSlot getReservationForAddress(seL4_Word addr) const noexcept;
   size_t reservationCount() const noexcept { return _reservations.size(); }
