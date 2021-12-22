@@ -40,7 +40,10 @@ void RootServer::lateInit() {
     _vfs.inpectDev(*dev);
   }
   kprintf("Got %zi mountable partition(s)\n", _vfs.getMountables().size());
-
+  if(_vfs.getMountables().size() > 0){
+    _vfs.mount(&_vfs.getMountables()[0], "/");
+  }
+  _vfs.testRead();
   kprintf("Test getting COM1\n");
   auto com1SlotOrErr = _platExpert.issuePortRangeWithSize(0x3F8, 8);
   assert(com1SlotOrErr);

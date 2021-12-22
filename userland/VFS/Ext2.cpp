@@ -5,35 +5,100 @@
 #include <cstring>
 
 
-Ext2FS::OptionalMountable Ext2FS::probe(BlockDevice& dev, size_t lbaStart){
-  auto mountPointOrErr = doProbe(dev, lbaStart);
-  if(!mountPointOrErr){
-    kprintf("ext2_probe error \n");
-    return unexpected<Ext2FS::Mountable, bool>(false);
+static bool doReadBlock(uint8_t *buf, uint32_t block, BlockDevice& dev, const ext2_priv_data *priv){
+	uint32_t sectors_per_block = priv->sectors_per_block;
+	if(!sectors_per_block){
+      sectors_per_block = 1;
   }
-  if(testRead(mountPointOrErr.value)) {
-    return mountPointOrErr;
+  uint32_t startSect = block*sectors_per_block;
+  uint32_t numSectors = block*sectors_per_block + sectors_per_block - startSect;
+
+  buf[(numSectors*512)-1] = 0;
+  uint8_t *bufPos = buf;
+  size_t acc = 0;
+
+  for(uint32_t i=0;i<numSectors;i++){
+    ssize_t ret = dev.read(priv->lbaStart+startSect+i, (char*)bufPos, 512);
+
+    if(ret <= 0){
+      return false;
+    }
+    bufPos += ret;
+    acc += ret;
   }
-  return unexpected<Ext2FS::Mountable, bool>(false);
+	return true;
 }
 
-Ext2FS::OptionalMountable Ext2FS::doProbe(BlockDevice& dev, size_t lbaStart){
+Ext2FS::Operations Ext2FS::ops;
+
+bool Ext2FS::Operations::read(const VFS::FileSystem &fs, inode_t *inode_buf, uint32_t inode){
+  const ext2_priv_data *priv = &fs.priv;
+	uint32_t bg = (inode - 1) / priv->sb.inodes_in_blockgroup;
+	uint32_t i = 0;
+
+  uint8_t* block_buf = (uint8_t*) kmalloc(512);
+  if(block_buf == NULL){
+      return false;
+  }
+
+  if(!readBlock(fs, block_buf,  priv->first_bgd)){
+    kfree(block_buf);
+    return false;
+  }
+	block_group_desc_t *bgd = (block_group_desc_t*)block_buf;
+
+	for(i = 0; i < bg; i++){
+		bgd++;
+  }
+
+	uint32_t index = (inode - 1) % priv->sb.inodes_in_blockgroup;
+
+	uint32_t block = (index * sizeof(inode_t))/ priv->blocksize;
+
+  if(!readBlock(fs, block_buf, bgd->block_of_inode_table + block)){
+    kfree(block_buf);
+    return false;
+  }
+
+	inode_t* _inode = (inode_t *)block_buf;
+	index = index % priv->inodes_per_block;
+
+	for(i = 0; i < index; i++){
+		_inode++;
+	}
+
+	memcpy(inode_buf, _inode, sizeof(inode_t));
+	return true;
+}
+
+
+bool Ext2FS::Operations::readBlock(const VFS::FileSystem &vfs, uint8_t *buf, uint32_t blockID){
+	bool r = doReadBlock(buf, blockID, *vfs.dev, &vfs.priv); 
+  if(!r)
+	{
+		kprintf("Ext2ReadBlock read error, retry once\n");
+		return doReadBlock(buf, blockID, *vfs.dev, &vfs.priv);
+	}
+	return r;
+}
+
+Ext2FS::OptionalFileSystem Ext2FS::probe(BlockDevice& dev, size_t lbaStart){
   uint8_t *buf = (uint8_t *)kmalloc(1024);
   ssize_t ret = dev.read(lbaStart + 2, (char*) buf, 512);
   if(ret!= 512){
     kfree(buf);
-    return unexpected<Ext2FS::Mountable, bool>(false);
+    return unexpected<VFS::FileSystem, bool>(false);
   }
   ret = dev.read(lbaStart + 3, (char*) buf+512, 512);
   if(ret!= 512){
     kfree(buf);
-    return unexpected<Ext2FS::Mountable, bool>(false);
+    return unexpected<VFS::FileSystem, bool>(false);
   }
 	superblock_t *sb = (superblock_t *)buf;
 	if(sb->ext2_sig != EXT2_SIGNATURE){
 		kprintf("Invalid EXT2 signature, have: 0x%x!\n", sb->ext2_sig);
 		kfree(buf);
-		return unexpected<Ext2FS::Mountable, bool>(false);
+		return unexpected<VFS::FileSystem, bool>(false);
 	}
 	kprintf("Valid EXT2 signature!\n");
   ext2_priv_data priv;
@@ -65,124 +130,9 @@ Ext2FS::OptionalMountable Ext2FS::doProbe(BlockDevice& dev, size_t lbaStart){
 	kprintf("Device has EXT2 filesystem. Probe successful.\n");
 	kfree(buf);
 
-  Ext2FS::Mountable montable;
-  montable.priv = priv;
-  montable.dev = &dev;
-	return success<Ext2FS::Mountable, bool>(montable, true);
-}
-
-static bool doReadBlock(uint8_t *buf, uint32_t block, BlockDevice& dev, ext2_priv_data *priv){
-	uint32_t sectors_per_block = priv->sectors_per_block;
-	if(!sectors_per_block){
-      sectors_per_block = 1;
-  }
-  uint32_t startSect = block*sectors_per_block;
-  uint32_t numSectors = block*sectors_per_block + sectors_per_block - startSect;
-
-  buf[(numSectors*512)-1] = 0;
-  uint8_t *bufPos = buf;
-  size_t acc = 0;
-
-  for(uint32_t i=0;i<numSectors;i++){
-    ssize_t ret = dev.read(priv->lbaStart+startSect+i, (char*)bufPos, 512);
-
-    if(ret <= 0){
-      return false;
-    }
-    bufPos += ret;
-    acc += ret;
-  }
-	return true;
-}
-
-bool Ext2ReadBlock(Ext2FS::Mountable &mnt, uint8_t *buf, uint32_t blockID)
-{
-  kprintf("Reading block id %zi\n", blockID);
-	bool r = doReadBlock(buf, blockID, *mnt.dev, &mnt.priv); 
-  if(!r)
-	{
-		kprintf("Ext2ReadBlock read error, retry once\n");
-		return doReadBlock(buf, blockID, *mnt.dev, &mnt.priv);
-	}
-	return r;
-}
-
-bool Ext2ReadInode(Ext2FS::Mountable &mnt, inode_t *inode_buf, uint32_t inode)
-{
-  ext2_priv_data *priv = &mnt.priv;
-	uint32_t bg = (inode - 1) / priv->sb.inodes_in_blockgroup;
-	uint32_t i = 0;
-
-  uint8_t* block_buf = (uint8_t*) kmalloc(512);
-  if(block_buf == NULL)
-  {
-      return false;
-  }
-
-  if(!Ext2ReadBlock(mnt, block_buf,  priv->first_bgd)){
-    kfree(block_buf);
-    return false;
-  }
-	block_group_desc_t *bgd = (block_group_desc_t*)block_buf;
-
-	for(i = 0; i < bg; i++){
-		bgd++;
-  }
-
-	uint32_t index = (inode - 1) % priv->sb.inodes_in_blockgroup;
-
-	uint32_t block = (index * sizeof(inode_t))/ priv->blocksize;
-
-  if(!Ext2ReadBlock(mnt, block_buf, bgd->block_of_inode_table + block)){
-    kfree(block_buf);
-    return false;
-  }
-
-	inode_t* _inode = (inode_t *)block_buf;
-	index = index % priv->inodes_per_block;
-
-	for(i = 0; i < index; i++){
-		_inode++;
-	}
-
-	memcpy(inode_buf, _inode, sizeof(inode_t));
-	return true;
-}
-
-bool Ext2FS::testRead(Ext2FS::Mountable &mnt){
-	kprintf("Mounting ext2 on device\n");
-	inode_t ino;
-	if(Ext2ReadInode(mnt, &ino, 2) == 0){
-		return false;
-	}
-	if((ino.type & 0xF000) != INODE_TYPE_DIRECTORY){
-		kprintf("FATAL: Root directory is not a directory!\n");
-		return false;
-	}
-  kprintf("Root directory IS a directory!\n");
-
-  char tmpName[256] = "";
-  for(int i = 0;i < 12; i++){
-		uint32_t blockID = ino.dbp[i];
-		if(blockID == 0){
-      break;
-    }
-    uint8_t buf[4096] = {0};// = (uint8_t*) kmalloc(1024);
-    Ext2ReadBlock(mnt, buf, blockID);
-    ext2_dir* dir = (ext2_dir*) buf;
-    while(dir->inode != 0) {
-      if(dir->namelength < 255){
-        memcpy(tmpName, &dir->reserved+1, dir->namelength);
-        tmpName[dir->namelength] = 0;
-        kprintf("Got file '%s'\n", tmpName);
-      }
-      dir = (ext2_dir *)((uint64_t)dir + dir->size);
-      ptrdiff_t dif = (char*) dir - (char*) buf;
-      if( dif >= mnt.priv.blocksize){
-        break;
-      }
-    }
-  }
-	return true;
-  return false;
+  VFS::FileSystem fs;
+  fs.priv = priv;
+  fs.dev = &dev;
+  fs.ops = &Ext2FS::ops;
+	return success<VFS::FileSystem, bool>(fs, true);
 }

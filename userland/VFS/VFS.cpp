@@ -52,3 +52,49 @@ bool VFS::inpectDev(BlockDevice& dev){
   }
   return false;
 }
+
+bool VFS::mount(const VFS::FileSystem*fs, const char* path){
+  kprintf("Mount device at path '%s'\n", path);
+  _rootFS = fs;
+  return false;
+}
+
+bool VFS::testRead(){
+  inode_t ino;
+  if(!_rootFS->read(&ino, 2)){
+    kprintf("VFS::testRead error getting superblock\n");
+  }
+  kprintf("VFS::testRead OK\n");
+
+	if(!ino.isDir()){
+		kprintf("FATAL: Root directory is not a directory!\n");
+		return false;
+	}
+  kprintf("Root directory IS a directory!\n");
+
+  char tmpName[256] = "";
+  for(int i = 0;i < 12; i++){
+		uint32_t blockID = ino.dbp[i];
+		if(blockID == 0){
+      break;
+    }
+    uint8_t *buf = (uint8_t*) kmalloc(512);
+    _rootFS->readBlock(buf, blockID);
+    ext2_dir* dir = (ext2_dir*) buf;
+    while(dir->inode != 0) {
+      if(dir->namelength < 255){
+        memcpy(tmpName, &dir->reserved+1, dir->namelength);
+        tmpName[dir->namelength] = 0;
+        kprintf("Got file '%s'\n", tmpName);
+      }
+      dir = (ext2_dir *)((uint64_t)dir + dir->size);
+      ptrdiff_t dif = (char*) dir - (char*) buf;
+      if( dif >= _rootFS->priv.blocksize){
+        break;
+      }
+    }
+    kfree(buf);
+  }
+
+  return true;
+}
