@@ -50,7 +50,7 @@ void* liballoc_alloc(size_t numPages){
   kprintf("liballoc_alloc for %zi pages, current index is at %zi\n", numPages, indexInMemPool);
   size_t index = indexInMemPool;
   indexInMemPool += numPages * PAGE_SIZE;
-  return startMemPool + index;
+  return (char*)startMemPool + index;
 }
 
 int liballoc_free(void*,size_t){

@@ -198,6 +198,7 @@ void PCIScanner::scan() {
                        .subSystemID = subSystemID,
                        .irqLine = interLineAndPin.fields.line,
                        .irqPin = interLineAndPin.fields.pin,
+                       .cfg = {},
                        .status = sta.status};
       readIOConfig(dev.cfg, bus, slot, 0);
       _devices.push_back(dev);

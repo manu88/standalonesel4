@@ -132,8 +132,8 @@ void PlatformExpert::print() const noexcept {
   for (const auto &dev : _pciScanner.getDevices()) {
     dev.print();
   }
-  for(const auto &_: _devices){
-    kprintf("Got a registered device\n");
+  for(const auto &dev: _devices){
+    kprintf("Got a registered device %p\n", (void*) dev);
   }
 }
 
