@@ -28,7 +28,6 @@ bool PlatformExpert::init(ObjectFactory *factory, PageTable* pt) {
   _pciScanner.init(pciConfigAddressSlotOrErr.value,
                    pciDataAddressSlotOrErr.value);
   _pciScanner.scan();
-  print();
   tryAssociatePCIDrivers();
   return true;
 }

@@ -60,10 +60,11 @@ static void virtio_check_capabilities(uint32_t *device, uint32_t *request,
     if (*device & caps[i].bit) {
       if (caps[i].support) {
         *request |= caps[i].bit;
-      } else {
-        kprintf("virtio supports unsupported option %s (%s)\n", caps[i].name,
-                caps[i].help);
-      }
+      } 
+//      else {
+//        kprintf("virtio supports unsupported option %s (%s)\n", caps[i].name,
+//                caps[i].help);
+//      }
     }
     *device &= ~caps[i].bit;
   }
@@ -79,7 +80,6 @@ bool PCIBlk::probe(const PCIDevice &dev) {
 
 bool PCIBlk::initializeDescRing(PlatformExpert &expert) {
     unsigned sizeVRing = vring_size(queueSize, VIRTIO_PCI_VRING_ALIGN);
-    kprintf("PCIBlk::initializeDescRing: sizeVRing=%zi\n", sizeVRing);
     // 5126
     auto rx_ring_bufOrErr = expert.allocDMARange(sizeVRing);// dma_alloc_pin(dma_man, sizeVRing, 1, VIRTIO_PCI_VRING_ALIGN);
     auto rx_ring_buf = rx_ring_bufOrErr.value;
@@ -91,7 +91,6 @@ bool PCIBlk::initializeDescRing(PlatformExpert &expert) {
     vring_init(&rx_ring, queueSize, (void*) rx_ring_buf.virt, VIRTIO_PCI_VRING_ALIGN);
 
     rx_ring_phys = rx_ring_buf.phys;
-    kprintf("rx_ring_phys is at 0X%X\n", rx_ring_phys);
     assert(rx_ring_phys % PAGE_SIZE == 0);
 
     //dev->rdh = 0;
@@ -105,7 +104,6 @@ bool PCIBlk::addDevice(PlatformExpert &expert, const PCIDevice &dev) {
   _expert = &expert;
   uint32_t iobase0 = dev.getBaseAddr32(0);
   uint32_t iobase0size = dev.getBaseAddrSize32(0);
-  kprintf("PCIBlk::addDevice iobase0 is at 0X%X 0X%X\n", iobase0, iobase0size);
   auto base0cap = expert.issuePortRange(iobase0, iobase0 + iobase0size - 1);
   if (!base0cap) {
     kprintf("Get base0 error %s\n", seL4::errorStr(base0cap.error));
@@ -117,13 +115,11 @@ bool PCIBlk::addDevice(PlatformExpert &expert, const PCIDevice &dev) {
   _dev.getStatus();
   _dev.addStatus(VIRTIO_CONFIG_S_ACKNOWLEDGE);
   _dev.addStatus(VIRTIO_CONFIG_S_DRIVER);
-  kprintf("BLK status = 0X%X\n", _dev.getStatus());
-
   auto features = _dev.getFeatures();
-  kprintf("BLK features = 0X%X\n", features);
   uint32_t request_features = 0;
   virtio_check_capabilities(&features, &request_features, blk_caps, 8);
   virtio_check_capabilities(&features, &request_features, indp_caps, 2);
+#if 0
   if (features) {
     kprintf("virtio supports undocumented options 0x%x!\n", features);
     for (int i = 0; i < 32; i++) {
@@ -132,6 +128,7 @@ bool PCIBlk::addDevice(PlatformExpert &expert, const PCIDevice &dev) {
       }
     }
   }
+#endif
   _dev.setFeatures(request_features);
   _dev.addStatus(VIRTIO_CONFIG_S_DRIVER_FEATURES_OK);
 
@@ -139,13 +136,11 @@ bool PCIBlk::addDevice(PlatformExpert &expert, const PCIDevice &dev) {
   if (!(_dev.getStatus() & VIRTIO_CONFIG_S_DRIVER_FEATURES_OK)) {
     kprintf("HOST REFUSED OUR FEATURES\n");
     assert(0);
-  } else {
-    kprintf("HOST is ok with our features\n");
   }
 
   _dev.addStatus(VIRTIO_CONFIG_S_DRIVER_FEATURES_OK);
   asm volatile("mfence" ::: "memory");
-
+#if 0
   uint32_t totSectorCount = _dev.readReg32(0x14);
   uint8_t maxSegSize = _dev.readReg32(0x1C);
   uint8_t maxSegCount = _dev.readReg32(0x20);
@@ -161,7 +156,7 @@ bool PCIBlk::addDevice(PlatformExpert &expert, const PCIDevice &dev) {
   kprintf("headCount %u\n", headCount);
   kprintf("sectorCount %u\n", sectorCount);
   kprintf("blockLen %u\n", blockLen);
-
+#endif
   uint8_t numQueues = 0;
   for (int index = 0; index < 16; index++) {
     _dev.writeReg16(VIRTIO_PCI_QUEUE_SEL, index);
@@ -172,9 +167,7 @@ bool PCIBlk::addDevice(PlatformExpert &expert, const PCIDevice &dev) {
     queueSize = _queueSize;
     queueID = index;
     numQueues++;
-    kprintf("Queue %i size %i\n", index, queueSize);
   }
-  kprintf("Virtio blk has %i available queues, queueSize=%zi\n", numQueues,queueSize);
 
   bool ret = initializeDescRing(expert);
   assert(ret);
@@ -198,15 +191,11 @@ bool PCIBlk::addDevice(PlatformExpert &expert, const PCIDevice &dev) {
 
   _dev.addStatus(VIRTIO_CONFIG_S_DRIVER_OK);
 
-  uint8_t defStatus = _dev.getStatus();
-  kprintf("Dev status %u\n", defStatus);
 
-  kprintf("Test getting MSI IRQ\n");
   auto irqCapOrErr = expert.getIOAPICIRQHandle(dev);
   if(!irqCapOrErr){
     kprintf("Error getting irq cap from MSI: %s\n", seL4::errorStr(irqCapOrErr.error));
   }else{
-    kprintf("Success!!\n");
     irqCap = irqCapOrErr.value;
   }
   expert.registerBlockDevice(this);

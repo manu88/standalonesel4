@@ -378,10 +378,8 @@ void PCIScanner::readIOConfig(PCIDevice::IOConfig &cfg, uint8_t bus,
     uint32_t cfg_base_addr =
         readReg32(bus, dev, fun, PCI_BASE_ADDRESS_0 + (i * 4));
 
-    if (cfg_base_addr == 0)
+    if (cfg_base_addr == 0){
     /* no device here. */
-    {
-      kprintf("PCIScanner::readIOConfig no device at %X %X\n", bus, dev);
       continue;
     }
 
