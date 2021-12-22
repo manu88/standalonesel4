@@ -84,21 +84,26 @@ bool VFS::testRead(){
 }
 
 bool VFS::enumInodeDir(uint32_t inodeID, std::function<void(const char*, uint32_t inodeID)> entryCallback){
-  inode_t ino;
-  if(!_rootFS->read(&ino, inodeID)){
+  inode_t* ino = (inode_t*) kmalloc(sizeof(inode_t)); 
+  if(!ino){
     return false;
   }
-	if(!ino.isDir()){
-		return false;
+  if(!_rootFS->read(ino, inodeID)){
+    kfree(ino);
+    return false;
+  }
+	if(!ino->isDir()){
+		kfree(ino);
+    return false;
 	}
   char tmpName[256] = "";
   for(int i = 0;i < 12; i++){
-		uint32_t blockID = ino.dbp[i];
+		uint32_t blockID = ino->dbp[i];
 		if(blockID == 0){
       break;
     }
-    uint8_t *buf = (uint8_t*) kmalloc(512);
-    _rootFS->readBlock(buf, blockID);
+    uint8_t *buf = (uint8_t*) kmalloc(4096);
+    _rootFS->readBlock(buf, 4096, blockID);
     ext2_dir* dir = (ext2_dir*) buf;
     while(dir->inode != 0) {
       if(dir->namelength < 255){
@@ -115,6 +120,6 @@ bool VFS::enumInodeDir(uint32_t inodeID, std::function<void(const char*, uint32_
     }
     kfree(buf);
   }
-
+  kfree(ino);
   return true;
 }

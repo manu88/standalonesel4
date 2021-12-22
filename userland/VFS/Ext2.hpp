@@ -11,7 +11,7 @@ class Ext2FS{
 public:
 	struct Operations: public VFS::Operations{
 		bool read(const VFS::FileSystem &fs, inode_t *inode_buf, uint32_t inode) final;
-		bool readBlock(const VFS::FileSystem &, uint8_t *buf, uint32_t blockID) final;
+		bool readBlock(const VFS::FileSystem &, uint8_t *buf, size_t bufSize, uint32_t blockID) final;
 		bool getInodeForPath(const VFS::FileSystem &, const char* path, inode_t* ino);
 	};
 	using OptionalFileSystem = Expected<VFS::FileSystem, bool>;

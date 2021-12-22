@@ -52,12 +52,12 @@ public:
     struct Operations{
         virtual ~Operations(){}
         virtual bool read(const FileSystem &, inode_t *, uint32_t) {return false;}
-        virtual bool readBlock(const FileSystem &, uint8_t *, uint32_t) {return false;}
+        virtual bool readBlock(const FileSystem &, uint8_t *, size_t , uint32_t) {return false;}
     };
 
 	struct FileSystem{
         bool read(inode_t *ino, uint32_t inodeID) const {return ops->read(*this, ino, inodeID);}
-        bool readBlock(uint8_t *buf, uint32_t blockID) const {return ops->readBlock(*this, buf, blockID);}
+        bool readBlock(uint8_t *buf, size_t bufSize, uint32_t blockID) const {return ops->readBlock(*this, buf, bufSize, blockID);}
 		FileSystem(int = 0){}
 		ext2_priv_data priv;
 		BlockDevice* dev = nullptr;

@@ -47,15 +47,23 @@ int liballoc_unlock(){
 
 void* liballoc_alloc(size_t numPages){
   assert(hasMemoryPool);
-  kprintf("liballoc_alloc for %zi pages, current index is at %zi\n", numPages, indexInMemPool);
   size_t index = indexInMemPool;
   indexInMemPool += numPages * PAGE_SIZE;
   assert(indexInMemPool<=sizeMemPool && "time to manage memory chunks in liballoc :D");
   return (char*)startMemPool + index;
 }
 
-int liballoc_free(void*,size_t){
-  kprintf("liballoc_free unhandled!\n");
+int liballoc_free(void* ptr,size_t size){
+  size_t pos = (size_t) ptr - (size_t) startMemPool;
+  size_t sizeInBytes = size * PAGE_SIZE;
+  if(indexInMemPool - sizeInBytes == pos){
+    indexInMemPool -= sizeInBytes;
+  }else{
+    kprintf("liballoc_free ptr=0X%X size=%zi\n",ptr, size);
+    kprintf("pos = 0X%X current = 0X%X start = 0X%X\n", pos, indexInMemPool,((size_t) startMemPool));
+    kprintf("liballoc_free should stash freed\n");
+    assert(0);
+  }
   return 0;
 }
 

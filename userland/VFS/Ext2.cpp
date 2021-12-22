@@ -32,8 +32,8 @@ static inode_t * getInodeNamed(const VFS::FileSystem &fs, inode_t* inode, const 
     if(b == 0){
       break;
     }
-    uint8_t* blockData = (uint8_t*) kmalloc(512);
-    if(!fs.readBlock(blockData, b)){
+    uint8_t* blockData = (uint8_t*) kmalloc(4096);
+    if(!fs.readBlock(blockData, 4096, b)){
         return NULL;
     }
     ext2_dir* dir = (ext2_dir*) blockData;
@@ -58,22 +58,22 @@ static inode_t * getInodeNamed(const VFS::FileSystem &fs, inode_t* inode, const 
 }
 
 
-static bool doReadBlock(uint8_t *buf, uint32_t block, BlockDevice& dev, const ext2_priv_data *priv){
+static bool doReadBlock(uint8_t *buf, size_t bufSize, uint32_t block, BlockDevice& dev, const ext2_priv_data *priv){
 	uint32_t sectors_per_block = priv->sectors_per_block;
 	if(!sectors_per_block){
       sectors_per_block = 1;
   }
   uint32_t startSect = block*sectors_per_block;
   uint32_t numSectors = block*sectors_per_block + sectors_per_block - startSect;
-
+  assert((numSectors*512) <= bufSize);
   buf[(numSectors*512)-1] = 0;
   uint8_t *bufPos = buf;
   size_t acc = 0;
 
   for(uint32_t i=0;i<numSectors;i++){
     ssize_t ret = dev.read(priv->lbaStart+startSect+i, (char*)bufPos, 512);
-
     if(ret <= 0){
+      kprintf("doReadBlock: read error for sector %i\n", i);
       return false;
     }
     bufPos += ret;
@@ -85,50 +85,51 @@ static bool doReadBlock(uint8_t *buf, uint32_t block, BlockDevice& dev, const ex
 Ext2FS::Operations Ext2FS::ops;
 
 bool Ext2FS::Operations::read(const VFS::FileSystem &fs, inode_t *inode_buf, uint32_t inode){
-  const ext2_priv_data *priv = &fs.priv;
-	uint32_t bg = (inode - 1) / priv->sb.inodes_in_blockgroup;
+	uint32_t bg = (inode - 1) / fs.priv.sb.inodes_in_blockgroup;
 	uint32_t i = 0;
 
-  uint8_t* block_buf = (uint8_t*) kmalloc(512);
-  if(block_buf == NULL){
+  size_t blockBufSize = 4096;
+  uint8_t* blockBuf = (uint8_t*) kmalloc(blockBufSize);
+
+  if(blockBuf == NULL){
       return false;
   }
 
-  if(!readBlock(fs, block_buf,  priv->first_bgd)){
-    kfree(block_buf);
+  if(!readBlock(fs, blockBuf, blockBufSize, fs.priv.first_bgd)){
+    kfree(blockBuf);
     return false;
   }
-	block_group_desc_t *bgd = (block_group_desc_t*)block_buf;
+	block_group_desc_t *bgd = (block_group_desc_t*)blockBuf;
 
 	for(i = 0; i < bg; i++){
 		bgd++;
   }
 
-	uint32_t index = (inode - 1) % priv->sb.inodes_in_blockgroup;
+	uint32_t index = (inode - 1) % fs.priv.sb.inodes_in_blockgroup;
+	uint32_t block = (index * sizeof(inode_t))/ fs.priv.blocksize;
 
-	uint32_t block = (index * sizeof(inode_t))/ priv->blocksize;
-
-  if(!readBlock(fs, block_buf, bgd->block_of_inode_table + block)){
-    kfree(block_buf);
+  if(!readBlock(fs, blockBuf, blockBufSize, bgd->block_of_inode_table + block)){
+    kfree(blockBuf);
     return false;
   }
 
-	inode_t* _inode = (inode_t *)block_buf;
-	index = index % priv->inodes_per_block;
+	inode_t* _inode = (inode_t *)blockBuf;
+	index = index % fs.priv.inodes_per_block;
 
 	for(i = 0; i < index; i++){
 		_inode++;
 	}
 
 	memcpy(inode_buf, _inode, sizeof(inode_t));
+  kfree(blockBuf);
 	return true;
 }
 
 
-bool Ext2FS::Operations::readBlock(const VFS::FileSystem &vfs, uint8_t *buf, uint32_t blockID){
-	bool r = doReadBlock(buf, blockID, *vfs.dev, &vfs.priv); 
+bool Ext2FS::Operations::readBlock(const VFS::FileSystem &vfs, uint8_t *buf, size_t bufSize, uint32_t blockID){
+	bool r = doReadBlock(buf, bufSize, blockID, *vfs.dev, &vfs.priv); 
   if(!r){
-		return doReadBlock(buf, blockID, *vfs.dev, &vfs.priv);
+		return doReadBlock(buf, bufSize, blockID, *vfs.dev, &vfs.priv);
 	}
 	return r;
 }
