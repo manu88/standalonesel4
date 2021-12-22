@@ -27,6 +27,7 @@ OBJS = main.o\
 	PlatformExpert/PCIBlk.o\
 	PlatformExpert/Virtio.o\
 	VFS/VFS.o\
+	VFS/Ext2.o\
 	liballoc.o\
 
 

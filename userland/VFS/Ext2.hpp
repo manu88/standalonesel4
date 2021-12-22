@@ -1,5 +1,7 @@
 #pragma once
 #include <stdint.h>
+#include <cstddef>
+#include "../lib/expected.hpp"
 
 #define EXT2_SIGNATURE 0xEF53
 
@@ -96,3 +98,19 @@ typedef struct
 	uint16_t num_of_dirs;
 	uint8_t unused[14];
 } __attribute__((packed)) block_group_desc_t;
+
+
+struct BlockDevice;
+
+
+class Ext2FS{
+public:
+	struct Mountable{
+		Mountable(int = 0){}
+		ext2_priv_data priv;
+		BlockDevice* dev = nullptr;
+	};
+	using OptionalMountable = Expected<Mountable, bool>;
+	static OptionalMountable probe(BlockDevice& dev, size_t lbaStart);
+	static bool testRead(Mountable &);
+};
