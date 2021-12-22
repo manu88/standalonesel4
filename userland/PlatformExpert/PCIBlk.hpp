@@ -20,7 +20,7 @@ private:
   ssize_t blkReadSector(size_t sector, char* buf, size_t bufSize);
   void* blkCmd(int op, size_t sector, char* buf, size_t bufSize);
 
-  bool initializeDescRing(PlatformExpert &, const PCIDevice &);
+  bool initializeDescRing(PlatformExpert &);
   VirtioDevice _dev;
   struct vring rx_ring;
   /* R/T Descriptor Tail represents the next free slot to add

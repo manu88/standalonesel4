@@ -76,7 +76,6 @@ VMSpace::PhysicalAddressOrError VMSpace::mapPage(seL4_Word addr) {
       mapFirstSeg = false;
       containingPageNum-=1;
     }
-    kprintf("Will split at %zi an map %s segment\n", containingPageNum, mapFirstSeg? "First":"second");
     auto splitRes1 = resSlot.second.split(containingPageNum);
     if(!splitRes1.isValid()){
       kprintf("splitRes1 invalid\n");

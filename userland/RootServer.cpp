@@ -209,7 +209,7 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
       }
       char buf[512] = {0};
       auto readRet = _platExpert._pciblkDriver.read(paramOrErr.value.sector, buf, size);
-      if(readRet == size){
+      if((size_t) readRet == size){
         for(size_t i=0;i<size;i++){
           if(i%8==0){
             kprintf("\n");

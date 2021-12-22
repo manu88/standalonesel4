@@ -4,5 +4,5 @@
 struct BlockDevice{
     virtual ~BlockDevice(){}
 
-    virtual ssize_t read(size_t sector, char* buf, size_t bufSize) {return -1;}
+    virtual ssize_t read(size_t, char*, size_t) {return -1;}
 };

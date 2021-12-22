@@ -152,9 +152,8 @@ void PCIScanner::scan() {
         continue;
       }
       uint16_t deviceID = pciConfigReadWord(bus, slot, 0, 0x2);
-      CommandReg cmdReg;
-
-      cmdReg.value = pciConfigReadWord(bus, slot, 0, 0x4);
+//      CommandReg cmdReg;
+//      cmdReg.value = pciConfigReadWord(bus, slot, 0, 0x4);
 
       union StatusUnion{
         uint16_t v;

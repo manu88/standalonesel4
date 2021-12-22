@@ -77,12 +77,11 @@ bool PCIBlk::probe(const PCIDevice &dev) {
   return false;
 }
 
-bool PCIBlk::initializeDescRing(PlatformExpert &expert, const PCIDevice &dev) {
+bool PCIBlk::initializeDescRing(PlatformExpert &expert) {
     unsigned sizeVRing = vring_size(queueSize, VIRTIO_PCI_VRING_ALIGN);
     kprintf("PCIBlk::initializeDescRing: sizeVRing=%zi\n", sizeVRing);
     // 5126
     auto rx_ring_bufOrErr = expert.allocDMARange(sizeVRing);// dma_alloc_pin(dma_man, sizeVRing, 1, VIRTIO_PCI_VRING_ALIGN);
-    kprintf("allocDMARange returned err %s\n", seL4::errorStr(rx_ring_bufOrErr.error));
     auto rx_ring_buf = rx_ring_bufOrErr.value;
     if (!rx_ring_buf.phys) {
         kprintf("Failed to allocate rx_ring");
@@ -177,7 +176,7 @@ bool PCIBlk::addDevice(PlatformExpert &expert, const PCIDevice &dev) {
   }
   kprintf("Virtio blk has %i available queues, queueSize=%zi\n", numQueues,queueSize);
 
-  bool ret = initializeDescRing(expert, dev);
+  bool ret = initializeDescRing(expert);
   assert(ret);
 
   auto packetOrErr = expert.allocDMARange(sizeof(virtio_blk_req));
@@ -216,32 +215,27 @@ bool PCIBlk::addDevice(PlatformExpert &expert, const PCIDevice &dev) {
 
 
 ssize_t PCIBlk::read(size_t sector, char* buf, size_t bufSize){
-    assert(bufSize % VIRTIO_BLK_SECTOR_SIZE == 0);
-    if(bufSize <= VIRTIO_BLK_SECTOR_SIZE)
-    {
-        return blkReadSector(sector, buf, bufSize);
-    }
-    const size_t numSectors = bufSize / VIRTIO_BLK_SECTOR_SIZE;
-    ssize_t tot = 0;
-    for(size_t i=0;i <numSectors;i++)
-    {
-        ssize_t r = blkReadSector(sector+i, buf + (VIRTIO_BLK_SECTOR_SIZE*i), VIRTIO_BLK_SECTOR_SIZE);
-        if(r <= 0)
-        {
-            return r;
-        }
-        tot += r;
-    }
-    return tot;
+  assert(bufSize % VIRTIO_BLK_SECTOR_SIZE == 0);
+  if(bufSize <= VIRTIO_BLK_SECTOR_SIZE){
+      return blkReadSector(sector, buf, bufSize);
+  }
+  const size_t numSectors = bufSize / VIRTIO_BLK_SECTOR_SIZE;
+  ssize_t tot = 0;
+  for(size_t i=0;i <numSectors;i++){
+      ssize_t r = blkReadSector(sector+i, buf + (VIRTIO_BLK_SECTOR_SIZE*i), VIRTIO_BLK_SECTOR_SIZE);
+      if(r <= 0){
+          return r;
+      }
+      tot += r;
+  }
+  return tot;
 }
 
-void* PCIBlk::blkCmd(int op, size_t sector, char* buf, size_t bufSize)
-{
+void* PCIBlk::blkCmd(int op, size_t sector, char* buf, size_t bufSize){
   memset(_dev.headerReq, 0, sizeof(virtio_blk_req));
   _dev.headerReq->type = op;// VIRTIO_BLK_T_IN or VIRTIO_BLK_T_OUT 
   _dev.headerReq->sector = sector;
   _dev.headerReq->status = 12; // set to a random val
-
 
   assert(_dev.hdr_phys);
 
@@ -256,18 +250,14 @@ void* PCIBlk::blkCmd(int op, size_t sector, char* buf, size_t bufSize)
     readDMAPhys = dma_data.phys;// driver->i_cb.allocate_rx_buf(driver->cb_cookie, BUF_SIZE, &cookie);
     readDMAVirt = dma_data.virt;
   }
-  if (!readDMAPhys) 
-  {
-      return NULL;
+  if (!readDMAPhys) {
+    return NULL;
   }
-  if(op == VIRTIO_BLK_T_OUT)
-  {
-      memcpy(readDMAVirt, buf, bufSize);
-      //dev->headerReq->type |= VIRTIO_BLK_T_FLUSH;
-  }
-  else
-  {
-      memset(readDMAVirt, 0, bufSize);
+  if(op == VIRTIO_BLK_T_OUT){
+    memcpy(readDMAVirt, buf, bufSize);
+    //dev->headerReq->type |= VIRTIO_BLK_T_FLUSH;
+  } else{
+    memset(readDMAVirt, 0, bufSize);
   }
 
   assert(readDMAPhys % DMA_ALIGNMENT == 0);
@@ -280,8 +270,8 @@ void* PCIBlk::blkCmd(int op, size_t sector, char* buf, size_t bufSize)
 
   assert(footerPhys % DMA_ALIGNMENT == 0);
 
-  unsigned int rdt_data = (rdt + 1) % queueSize;
-  unsigned int rdt_footer = (rdt + 2) % queueSize;
+  uint16_t rdt_data = (rdt + 1) % queueSize;
+  uint16_t rdt_footer = (rdt + 2) % queueSize;
 
   rx_ring.desc[rdt] = (struct vring_desc) {
       .addr = _dev.hdr_phys,
@@ -290,7 +280,7 @@ void* PCIBlk::blkCmd(int op, size_t sector, char* buf, size_t bufSize)
       .next = rdt_data
   };
 
-  int dataFlag = VRING_DESC_F_NEXT;
+  uint16_t dataFlag = VRING_DESC_F_NEXT;
   if(op == VIRTIO_BLK_T_IN)
   {
       dataFlag |= VRING_DESC_F_WRITE;
@@ -317,9 +307,9 @@ void* PCIBlk::blkCmd(int op, size_t sector, char* buf, size_t bufSize)
   assert(queueID == 0);
   _dev.writeReg16(VIRTIO_PCI_QUEUE_NOTIFY, queueID);
   rdt = (rdt + 1) % queueSize;
-  seL4_Word sender = 0;
+  //seL4_Word sender = 0;
   //seL4_Wait(irqCap, &sender);
-  for(uint64_t t = 0; t< UINT16_MAX; t++){}
+  for(uint64_t t = 0; t< UINT16_MAX*64; t++){}
   return readDMAVirt;
 }
 

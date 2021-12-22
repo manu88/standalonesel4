@@ -8,7 +8,7 @@
 #include "klog.h"
 
 void Shell::init() {
-  buffer = reinterpret_cast<char *>(kmalloc(BufferSize));
+  buffer = reinterpret_cast<char*>(kmalloc(BufferSize));
   assert(buffer != nullptr);
   memset(buffer, 0, BufferSize);
 }
@@ -122,12 +122,12 @@ int Shell::processNewCommand(const string &cmd) {
       }
       auto args = cmd.substr(5);
       char *outArg = nullptr;
-      long sector = strtol(args.c_str(), &outArg, 10);
+      size_t sector = strtol(args.c_str(), &outArg, 10);
       if (outArg == nullptr) {
         kprintf("Missing sector arg\n");
         return -1;
       }
-      long size = strtol(outArg, nullptr, 10);
+      size_t size = strtol(outArg, nullptr, 10);
       auto responseOrErr = Syscall::perform::read(Thread::getCurrent()->endpoint, {sector, size});
       if(!responseOrErr){
         kprintf("Read error %i\n", responseOrErr.error);

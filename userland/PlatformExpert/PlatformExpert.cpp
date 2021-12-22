@@ -132,7 +132,7 @@ void PlatformExpert::print() const noexcept {
   for (const auto &dev : _pciScanner.getDevices()) {
     dev.print();
   }
-  for(const auto &dev: _devices){
+  for(const auto &_: _devices){
     kprintf("Got a registered device\n");
   }
 }
@@ -143,7 +143,7 @@ void PlatformExpert::tryAssociatePCIDrivers() {
     if (_pciblkDriver.probe(dev)) {
       kprintf("probing sucessful for device %s %s and driver %s\n",
               dev.vendorName(), dev.deviceName(), _pciblkDriver.getName());
-      bool ret = _pciblkDriver.addDevice(*this, dev);
+      _pciblkDriver.addDevice(*this, dev);
     }
   }
 }
