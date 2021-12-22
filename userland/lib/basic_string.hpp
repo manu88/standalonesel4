@@ -6,7 +6,7 @@
 #define kfree free
 #include <cstring>
 #else
-#include "../kmalloc.hpp"
+#include "../liballoc.h"
 #include "cstring.h"
 #endif
 #include <stddef.h>

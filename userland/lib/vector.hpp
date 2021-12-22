@@ -8,7 +8,7 @@
 #define krealloc realloc
 #define kfree free
 #else
-#include "../kmalloc.hpp"
+#include "../liballoc.h"
 #endif
 
 template <class Type> struct Iterator {

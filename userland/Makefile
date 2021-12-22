@@ -27,6 +27,7 @@ OBJS = main.o\
 	PlatformExpert/PCIBlk.o\
 	PlatformExpert/Virtio.o\
 	VFS.o\
+	liballoc.o\
 
 
 LIBS= -L./libsel4/lib/ -lsel4
