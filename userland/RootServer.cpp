@@ -82,6 +82,25 @@ void RootServer::run() {
     _comThOrErr.value->vmspace = &_vmspace;
   }
 #endif
+  auto timeThread = createThread([this](Thread &, void *) {
+    auto timerIRQ = _platExpert.getPitIRQ();
+    uint64_t c = 0;
+    while(true){
+      seL4_Wait(timerIRQ.notif, nullptr);
+      c++;
+      timerIRQ.ack();
+//      if(c%100 == 0){
+//          kprintf("One sec\n");
+//      }
+    }
+    return nullptr;
+  });
+  if (timeThread) {
+    timeThread.value->setName("Timer");
+    timeThread.value->start();
+    timeThread.value->vmspace = &_vmspace;
+  }
+
   auto testThread = createThread([this](Thread &, void *) {
     kprintf("TEST THREAD STARTED\n");
     while (1) {
