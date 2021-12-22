@@ -41,10 +41,10 @@ bool PIT::init(PlatformExpert &expert, ObjectFactory *factory){
 
     auto notifOrErr = factory->createNotification();
     if(!notifOrErr){
-        factory->releaseSlot(_irqCap);
+        factory->releaseSlot(irqCap);
         return false;
     }
-    _irqNotif = notifOrErr.value;
+    irqNotif = notifOrErr.value;
 
     return true;
 }
@@ -94,22 +94,10 @@ bool PIT::configure(uint8_t mode, uint64_t ns){
     if(!irqCapOrErr){
         return false;
     }
-    _irqCap = irqCapOrErr.value;
-    seL4_IRQHandler_Ack(_irqCap);
+    irqCap = irqCapOrErr.value;
+    seL4_IRQHandler_Ack(irqCap);
 
-
-    auto err = seL4_IRQHandler_SetNotification(irqCapOrErr.value, _irqNotif);
+    auto err = seL4_IRQHandler_SetNotification(irqCapOrErr.value, irqNotif);
     assert(err == seL4_NoError);
-    seL4_Word sender = 0;
-
     return true;
-    uint64_t c = 0;
-    while(1){
-        seL4_Wait(_irqNotif, &sender);
-        c++;
-        if(c%100 == 0){
-            kprintf("One sec\n");
-        }
-        seL4_IRQHandler_Ack(_irqCap);
-    }
 }

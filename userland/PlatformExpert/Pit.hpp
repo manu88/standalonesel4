@@ -16,10 +16,10 @@ class PIT{
 public:
     bool init(PlatformExpert &expert, ObjectFactory *factory);
     bool setTimeout(uint64_t ns, bool periodic);
+    seL4_SlotPos irqNotif = 0;
+    seL4_SlotPos irqCap = 0;
 private:
     bool configure(uint8_t mode, uint64_t ns);
     PlatformExpert *_expert = nullptr;
     seL4_SlotPos _portCap = 0;
-    seL4_SlotPos _irqCap = 0;
-    seL4_SlotPos _irqNotif = 0;
 };

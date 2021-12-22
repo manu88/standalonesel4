@@ -16,9 +16,18 @@ public:
     void* virt = nullptr;
     seL4_Word phys = 0;
   };
-
+  struct IRQHandle{
+    IRQHandle(seL4_SlotPos notif = 0, seL4_SlotPos irqCap = 0):
+    notif(notif), irqCap(irqCap)
+    {}
+    seL4_SlotPos notif = 0;
+    seL4_SlotPos irqCap = 0;
+    seL4_Error ack();
+  };
+  using IRQHandleOrError = Expected<IRQHandle, seL4_Error>;
   using SlotOrError = Expected<seL4_SlotPos, seL4_Error>;
   using DMARangeOrError = Expected<DMARange, seL4_Error>;
+  
   bool init(ObjectFactory *factory, PageTable* pt);
   void print() const noexcept;
 
@@ -29,7 +38,7 @@ public:
   SlotOrError getMSIHandle(const PCIDevice& dev, seL4_Word handle, seL4_Word vector);
   SlotOrError getIRQHandle(const PCIDevice& dev);
   SlotOrError getIRQHandle(int irqLine);
-  SlotOrError getIOAPICIRQHandle(const PCIDevice& dev);
+  IRQHandleOrError getIOAPICIRQHandle(const PCIDevice& dev);
   SlotOrError getIOAPICIRQHandle(seL4_Word ioapic, seL4_Word vector, seL4_Word pin);
 
   DMARangeOrError allocDMARange(size_t size);
@@ -39,6 +48,10 @@ public:
 
   const vector<BlockDevice*>& getBlockDevices() const noexcept{
     return _devices;
+  }
+
+  IRQHandle getPitIRQ() const noexcept{
+    return IRQHandle(_pit.irqNotif, _pit.irqCap);
   }
 
   seL4_Error doPowerOff();

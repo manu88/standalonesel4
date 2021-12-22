@@ -9,6 +9,10 @@
 #include "../BlockDevice.hpp"
 #include "../klog.h"
 
+seL4_Error PlatformExpert::IRQHandle::ack(){
+  return seL4_IRQHandler_Ack(irqCap);
+}
+
 bool PlatformExpert::init(ObjectFactory *factory, PageTable* pt) {
   _factory = factory;
   _pt = pt;
@@ -84,10 +88,10 @@ PlatformExpert::SlotOrError PlatformExpert::getIOAPICIRQHandle(seL4_Word ioapic,
   }
   return success<seL4_SlotPos, seL4_Error>(notifOrErr.value);
 }
-PlatformExpert::SlotOrError PlatformExpert::getIOAPICIRQHandle(const PCIDevice& dev){
+PlatformExpert::IRQHandleOrError PlatformExpert::getIOAPICIRQHandle(const PCIDevice& dev){
   auto slotOrErr = _factory->getFreeSlot();
   if (!slotOrErr) {
-    return slotOrErr;
+    return unexpected<PlatformExpert::IRQHandle, seL4_Error>(slotOrErr.error);
   }
 	enum { IRQ_EDGE = 0, IRQ_LEVEL = 1 };
 	enum { IRQ_HIGH = 0, IRQ_LOW = 1 };
@@ -98,20 +102,20 @@ PlatformExpert::SlotOrError PlatformExpert::getIOAPICIRQHandle(const PCIDevice& 
   auto err = seL4_IRQControl_GetIOAPIC(seL4_CapIRQControl, seL4_CapInitThreadCNode, slotOrErr.value, seL4_WordBits, ioapic, dev.irqLine, level, polarity, vector);
   if (err != seL4_NoError) {
     _factory->releaseSlot(slotOrErr.value);
-    return unexpected<seL4_SlotPos, seL4_Error>(err);
+    return unexpected<PlatformExpert::IRQHandle, seL4_Error>(err);
   }
   auto notifOrErr = _factory->createNotification();
   if(!notifOrErr){
     _factory->releaseSlot(slotOrErr.value);
-    return unexpected<seL4_SlotPos, seL4_Error>(notifOrErr.error);
+    return unexpected<PlatformExpert::IRQHandle, seL4_Error>(notifOrErr.error);
   }
   err = seL4_IRQHandler_SetNotification(slotOrErr.value, notifOrErr.value);
   if( err != seL4_NoError){
     _factory->releaseSlot(slotOrErr.value);
     _factory->releaseObject(notifOrErr.value);
-    return unexpected<seL4_SlotPos, seL4_Error>(notifOrErr.error);
+    return unexpected<PlatformExpert::IRQHandle, seL4_Error>(notifOrErr.error);
   }
-  return success<seL4_SlotPos, seL4_Error>(notifOrErr.value);
+  return success<PlatformExpert::IRQHandle, seL4_Error>(PlatformExpert::IRQHandle(notifOrErr.value,slotOrErr.value));
 }
 
 PlatformExpert::SlotOrError PlatformExpert::getIRQHandle(int irqLine){
