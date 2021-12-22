@@ -60,18 +60,37 @@ bool VFS::mount(const VFS::FileSystem*fs, const char* path){
 }
 
 bool VFS::testRead(){
-  inode_t ino;
-  if(!_rootFS->read(&ino, 2)){
-    kprintf("VFS::testRead error getting superblock\n");
-  }
-  kprintf("VFS::testRead OK\n");
+  return enumInodeDir(2, [this](const char* name, uint32_t inodeID){
+    kprintf("Entry '%s' inode id = %u\n", name, inodeID);
+    if(inodeID == 2){
+      return; 
+    }
+    if(strcmp(name, ".") == 0){
+      return;
+    }
+    if(strcmp(name, "..") == 0){
+      return;
+    }
+    enumInodeDir(inodeID, [](const char* name, uint32_t inodeID){
+      if(strcmp(name, ".") == 0){
+        return;
+      }
+      if(strcmp(name, "..") == 0){
+        return;
+      }
+      kprintf("\tEntry '%s' inode id = %u\n", name, inodeID);
+    });
+  });
+}
 
+bool VFS::enumInodeDir(uint32_t inodeID, std::function<void(const char*, uint32_t inodeID)> entryCallback){
+  inode_t ino;
+  if(!_rootFS->read(&ino, inodeID)){
+    return false;
+  }
 	if(!ino.isDir()){
-		kprintf("FATAL: Root directory is not a directory!\n");
 		return false;
 	}
-  kprintf("Root directory IS a directory!\n");
-
   char tmpName[256] = "";
   for(int i = 0;i < 12; i++){
 		uint32_t blockID = ino.dbp[i];
@@ -85,11 +104,12 @@ bool VFS::testRead(){
       if(dir->namelength < 255){
         memcpy(tmpName, &dir->reserved+1, dir->namelength);
         tmpName[dir->namelength] = 0;
-        kprintf("Got file '%s'\n", tmpName);
+        entryCallback(tmpName, dir->inode);
       }
       dir = (ext2_dir *)((uint64_t)dir + dir->size);
       ptrdiff_t dif = (char*) dir - (char*) buf;
       if( dif >= _rootFS->priv.blocksize){
+        kfree(buf);
         break;
       }
     }

@@ -33,6 +33,84 @@ extern "C" char *strcpy(char *dest,  char const*src)
     return save;
 }
 
+extern "C" int strcmp(const char *X, const char *Y)
+{
+    while (*X)
+    {
+        // if characters differ, or end of the second string is reached
+        if (*X != *Y) {
+            break;
+        }
+ 
+        // move to the next pair of characters
+        X++;
+        Y++;
+    }
+ 
+    // return the ASCII difference after converting `char*` to `unsigned char*`
+    return *(const unsigned char*)X - *(const unsigned char*)Y;
+}
+
+static bool is_delim(char c, char *delim)
+{
+  while(*delim != '\0')
+  {
+    if(c == *delim)
+      return true;
+    delim++;
+  }
+  return false;
+}
+
+extern "C" char *strtok(char *s, char *delim)
+{
+  static char *p; // start of the next search 
+  if(!s)
+  {
+    s = p;
+  }
+  if(!s)
+  {
+    // user is bad user 
+    return NULL;
+  }
+
+  // handle beginning of the string containing delims
+  while(1)
+  {
+    if(is_delim(*s, delim))
+    {
+      s++;
+      continue;
+    }
+    if(*s == '\0')
+    {
+      return NULL; // we've reached the end of the string
+    }
+    // now, we've hit a regular character. Let's exit the
+    // loop, and we'd need to give the caller a string
+    // that starts here.
+    break;
+  }
+
+  char *ret = s;
+  while(1)
+  {
+    if(*s == '\0')
+    {
+      p = s; // next exec will return NULL
+      return ret;
+    }
+    if(is_delim(*s, delim))
+    {
+      *s = '\0';
+      p = s + 1;
+      return ret;
+    }
+    s++;
+  }
+}
+
 extern "C" void *memcpy(void *dest, const void *src, size_t n) {
   for (size_t i = 0; i < n; i++) {
     ((char *)dest)[i] = ((char *)src)[i];

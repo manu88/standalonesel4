@@ -2,7 +2,7 @@
 #include "ext2_defs.h"
 #include "../lib/vector.hpp"
 #include <sys/types.h>
-
+#include <functional>
 
 #define INODE_TYPE_FIFO 0x1000
 #define INODE_TYPE_CHAR_DEV 0x2000
@@ -75,6 +75,7 @@ public:
     }
 
     bool testRead();
+    bool enumInodeDir(uint32_t inodeID, std::function<void(const char*, uint32_t inodeID)> entryCallback);
 
 private:
     bool testPartition(BlockDevice& dev, const PartitionTableEntry* ent);
