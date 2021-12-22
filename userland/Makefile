@@ -26,7 +26,7 @@ OBJS = main.o\
 	PlatformExpert/pciDevices.o\
 	PlatformExpert/PCIBlk.o\
 	PlatformExpert/Virtio.o\
-	VFS.o\
+	VFS/VFS.o\
 	liballoc.o\
 
 

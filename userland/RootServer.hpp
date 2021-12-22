@@ -5,7 +5,7 @@
 #include "Shell.hpp"
 #include "Thread.hpp"
 #include "VMSpace.hpp"
-#include "VFS.hpp"
+#include "VFS/VFS.hpp"
 #include "lib/expected.hpp"
 #include "lib/optional.hpp"
 #include "lib/vector.hpp"

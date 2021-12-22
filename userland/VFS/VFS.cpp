@@ -1,8 +1,8 @@
 #include "VFS.hpp"
-#include "klog.h"
+#include "../klog.h"
 #include "MBR.h"
-#include "BlockDevice.hpp"
-#include "liballoc.h"
+#include "../BlockDevice.hpp"
+#include "../liballoc.h"
 #include "Ext2.hpp"
 #include <cstring>
 
