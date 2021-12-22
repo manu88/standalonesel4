@@ -1,12 +1,13 @@
 ## Sel4 standalone test
 This repo is a test for building a seL4 rootserver without using the toolchain and other librairies offered by seL4.
 
-The why and the outcome of this experiment remains - even to the writter -  unknown :).
+## What's working
+- ext2
+- timer
+- thread
+- paging support
 
-Maybe for science purposes.
-
-
-# steps
+## steps
 ```bash
 make update
 make config
