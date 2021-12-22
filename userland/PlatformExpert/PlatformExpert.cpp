@@ -13,6 +13,10 @@ bool PlatformExpert::init(ObjectFactory *factory, PageTable* pt) {
   _factory = factory;
   _pt = pt;
   kprintf("PlatformExpert::init for x86_64\n");
+  kprintf("PlatformExpert::init Pit\n");
+  assert(_pit.init(*this, _factory));
+#define IRQS_PER_SECOND 100
+  assert(_pit.setTimeout(NS_IN_S /IRQS_PER_SECOND, true));
   kprintf("Issue PCI Config range req\n");
 
   auto pciConfigAddressSlotOrErr =
@@ -27,6 +31,10 @@ bool PlatformExpert::init(ObjectFactory *factory, PageTable* pt) {
   print();
   tryAssociatePCIDrivers();
   return true;
+}
+
+void PlatformExpert::dropPortRange(seL4_Word cap){
+  _factory->releaseSlot(cap);
 }
 
 PlatformExpert::SlotOrError PlatformExpert::issuePortRangeWithSize(seL4_Word port, size_t range){
@@ -48,6 +56,35 @@ PlatformExpert::issuePortRange(seL4_Word first_port, seL4_Word last_port) {
   return slotOrErr;
 }
 
+PlatformExpert::SlotOrError PlatformExpert::getIOAPICIRQHandle(seL4_Word ioapic, seL4_Word vector, seL4_Word pin){
+  auto slotOrErr = _factory->getFreeSlot();
+  if (!slotOrErr) {
+    return slotOrErr;
+  }
+	enum { IRQ_EDGE = 0, IRQ_LEVEL = 1 };
+	enum { IRQ_HIGH = 0, IRQ_LOW = 1 };
+  seL4_Word level    = (pin < 16) ? IRQ_EDGE : IRQ_LEVEL;
+	seL4_Word polarity = (pin < 16) ? IRQ_HIGH : IRQ_LOW;
+  auto err = seL4_IRQControl_GetIOAPIC(seL4_CapIRQControl, seL4_CapInitThreadCNode, slotOrErr.value, seL4_WordBits, ioapic, pin, level, polarity, vector);
+  if (err != seL4_NoError) {
+    _factory->releaseSlot(slotOrErr.value);
+    return unexpected<seL4_SlotPos, seL4_Error>(err);
+  }
+  return slotOrErr;
+  
+  auto notifOrErr = _factory->createNotification();
+  if(!notifOrErr){
+    _factory->releaseSlot(slotOrErr.value);
+    return unexpected<seL4_SlotPos, seL4_Error>(notifOrErr.error);
+  }
+  err = seL4_IRQHandler_SetNotification(slotOrErr.value, notifOrErr.value);
+  if( err != seL4_NoError){
+    _factory->releaseSlot(slotOrErr.value);
+    _factory->releaseObject(notifOrErr.value);
+    return unexpected<seL4_SlotPos, seL4_Error>(notifOrErr.error);
+  }
+  return success<seL4_SlotPos, seL4_Error>(notifOrErr.value);
+}
 PlatformExpert::SlotOrError PlatformExpert::getIOAPICIRQHandle(const PCIDevice& dev){
   auto slotOrErr = _factory->getFreeSlot();
   if (!slotOrErr) {
@@ -78,14 +115,12 @@ PlatformExpert::SlotOrError PlatformExpert::getIOAPICIRQHandle(const PCIDevice& 
   return success<seL4_SlotPos, seL4_Error>(notifOrErr.value);
 }
 
-PlatformExpert::SlotOrError PlatformExpert::getIRQHandle(const PCIDevice& dev){
+PlatformExpert::SlotOrError PlatformExpert::getIRQHandle(int irqLine){
   auto slotOrErr = _factory->getFreeSlot();
   if (!slotOrErr) {
     return slotOrErr;
   }
-  kprintf("seL4_IRQControl_Get in \n");
-  auto err = seL4_IRQControl_Get(seL4_CapIRQControl, dev.irqLine, seL4_CapInitThreadCNode, slotOrErr.value, seL4_WordBits);
-  kprintf("seL4_IRQControl_Get out\n");
+  auto err = seL4_IRQControl_Get(seL4_CapIRQControl, irqLine, seL4_CapInitThreadCNode, slotOrErr.value, seL4_WordBits);
   if (err != seL4_NoError) {
     _factory->releaseSlot(slotOrErr.value);
     return unexpected<seL4_SlotPos, seL4_Error>(err);
@@ -102,6 +137,10 @@ PlatformExpert::SlotOrError PlatformExpert::getIRQHandle(const PCIDevice& dev){
     return unexpected<seL4_SlotPos, seL4_Error>(notifOrErr.error);
   }
   return success<seL4_SlotPos, seL4_Error>(notifOrErr.value);
+}
+
+PlatformExpert::SlotOrError PlatformExpert::getIRQHandle(const PCIDevice& dev){
+  return getIRQHandle(dev.irqLine);
 }
 
 PlatformExpert::SlotOrError PlatformExpert::getMSIHandle(const PCIDevice& dev, seL4_Word handle, seL4_Word vector){

@@ -3,6 +3,7 @@
 #include "../lib/vector.hpp"
 #include "PCIBlk.hpp"
 #include "PCIScanner.hpp"
+#include "Pit.hpp"
 
 class ObjectFactory;
 class PageTable;
@@ -23,10 +24,13 @@ public:
 
   SlotOrError issuePortRange(seL4_Word first_port, seL4_Word last_port);
   SlotOrError issuePortRangeWithSize(seL4_Word port, size_t range);
+  void dropPortRange(seL4_Word cap);
 
   SlotOrError getMSIHandle(const PCIDevice& dev, seL4_Word handle, seL4_Word vector);
   SlotOrError getIRQHandle(const PCIDevice& dev);
+  SlotOrError getIRQHandle(int irqLine);
   SlotOrError getIOAPICIRQHandle(const PCIDevice& dev);
+  SlotOrError getIOAPICIRQHandle(seL4_Word ioapic, seL4_Word vector, seL4_Word pin);
 
   DMARangeOrError allocDMARange(size_t size);
   void releaseDMARange(DMARange&);
@@ -42,6 +46,7 @@ public:
 private:
   void tryAssociatePCIDrivers();
   PCIScanner _pciScanner;
+  PIT _pit;
   ObjectFactory *_factory = nullptr;
   PageTable* _pt = nullptr;
 
