@@ -309,7 +309,7 @@ void* PCIBlk::blkCmd(int op, size_t sector, char* buf, size_t bufSize){
   rdt = (rdt + 1) % queueSize;
   //seL4_Word sender = 0;
   //seL4_Wait(irqCap, &sender);
-  for(uint64_t t = 0; t< UINT16_MAX*64; t++){}
+  for(uint64_t t = 0; t< UINT16_MAX*2; t++){}
   return readDMAVirt;
 }
 
