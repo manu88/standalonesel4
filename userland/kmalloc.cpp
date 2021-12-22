@@ -50,10 +50,12 @@ void* liballoc_alloc(size_t numPages){
   kprintf("liballoc_alloc for %zi pages, current index is at %zi\n", numPages, indexInMemPool);
   size_t index = indexInMemPool;
   indexInMemPool += numPages * PAGE_SIZE;
+  assert(indexInMemPool<=sizeMemPool && "time to manage memory chunks in liballoc :D");
   return (char*)startMemPool + index;
 }
 
 int liballoc_free(void*,size_t){
+  kprintf("liballoc_free unhandled!\n");
   return 0;
 }
 
