@@ -6,6 +6,18 @@
 
 
 Ext2FS::OptionalMountable Ext2FS::probe(BlockDevice& dev, size_t lbaStart){
+  auto mountPointOrErr = doProbe(dev, lbaStart);
+  if(!mountPointOrErr){
+    kprintf("ext2_probe error \n");
+    return unexpected<Ext2FS::Mountable, bool>(false);
+  }
+  if(testRead(mountPointOrErr.value)) {
+    return mountPointOrErr;
+  }
+  return unexpected<Ext2FS::Mountable, bool>(false);
+}
+
+Ext2FS::OptionalMountable Ext2FS::doProbe(BlockDevice& dev, size_t lbaStart){
   uint8_t *buf = (uint8_t *)kmalloc(1024);
   ssize_t ret = dev.read(lbaStart + 2, (char*) buf, 512);
   if(ret!= 512){

@@ -110,7 +110,10 @@ public:
 		ext2_priv_data priv;
 		BlockDevice* dev = nullptr;
 	};
+
 	using OptionalMountable = Expected<Mountable, bool>;
 	static OptionalMountable probe(BlockDevice& dev, size_t lbaStart);
+private:
+	static OptionalMountable doProbe(BlockDevice& dev, size_t lbaStart);
 	static bool testRead(Mountable &);
 };

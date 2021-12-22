@@ -16,7 +16,7 @@
 #pragma once
 #include <stdint.h>
 
-typedef struct 
+typedef struct _PartitionTableEntry
 {
     uint8_t active; // 0=no, 0x80 = bootable
     uint8_t startingHead;

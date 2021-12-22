@@ -39,6 +39,7 @@ void RootServer::lateInit() {
   for(auto dev: _platExpert.getBlockDevices()){
     _vfs.inpectDev(*dev);
   }
+  kprintf("Got %zi mountable partition(s)\n", _vfs.getMountables().size());
 
   kprintf("Test getting COM1\n");
   auto com1SlotOrErr = _platExpert.issuePortRangeWithSize(0x3F8, 8);

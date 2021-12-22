@@ -11,24 +11,17 @@ bool VFS::init(){
     return true;
 }
 
-static bool testPartition(BlockDevice& dev, const PartitionTableEntry* ent){
+bool VFS::testPartition(BlockDevice& dev, const PartitionTableEntry* ent){
   if(ent->active == 0 && ent->systemID == 0) {
     kprintf("\t-->Empty partition table\n");
     return false;
   }
   kprintf("\t-->active %X systemID %X num sectors %d lba start %d start sector %X\n", ent->active, ent->systemID, ent->numSectors, ent->lbaStart, ent->startSector);
   auto mountPointOrErr = Ext2FS::probe(dev, ent->lbaStart);
-  if(!mountPointOrErr){
-    kprintf("ext2_probe error \n");
-    return false;
+  if(mountPointOrErr){
+    _mountables.push_back(mountPointOrErr.value);
   }
-  if(Ext2FS::testRead(mountPointOrErr.value)) {
-    kprintf("[VFSMount] ext2\n");
-      return true;
-  }
-
-  kprintf("ext2_probe error \n");
-  return false;
+  return mountPointOrErr.error;
 }
 
 bool VFS::inpectDev(BlockDevice& dev){
