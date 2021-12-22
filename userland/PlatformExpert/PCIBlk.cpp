@@ -192,11 +192,13 @@ bool PCIBlk::addDevice(PlatformExpert &expert, const PCIDevice &dev) {
   _dev.addStatus(VIRTIO_CONFIG_S_DRIVER_OK);
 
 
-  auto irqCapOrErr = expert.getIOAPICIRQHandle(dev);
-  if(!irqCapOrErr){
-    kprintf("Error getting irq cap from MSI: %s\n", seL4::errorStr(irqCapOrErr.error));
+  auto irqHandleOrErr = expert.getIOAPICIRQHandle(dev);
+  if(!irqHandleOrErr){
+    kprintf("Error getting irq cap from MSI: %s\n", seL4::errorStr(irqHandleOrErr.error));
   }else{
-    irqCap = irqCapOrErr.value;
+    irqCap = irqHandleOrErr.value.irqCap;
+    irqNotif = irqHandleOrErr.value.notif;
+    seL4_IRQHandler_Ack(irqCap);
   }
   expert.registerBlockDevice(this);
   return true;
@@ -296,8 +298,10 @@ void* PCIBlk::blkCmd(int op, size_t sector, char* buf, size_t bufSize){
   assert(queueID == 0);
   _dev.writeReg16(VIRTIO_PCI_QUEUE_NOTIFY, queueID);
   rdt = (rdt + 1) % queueSize;
-  //seL4_Word sender = 0;
-  //seL4_Wait(irqCap, &sender);
+//  seL4_Word sender = 0;
+//  seL4_Wait(irqNotif, &sender);
+//  seL4_IRQHandler_Ack(irqCap);
+//  kprintf("Did wait\n");
   for(uint64_t t = 0; t< UINT16_MAX*2; t++){}
   return readDMAVirt;
 }

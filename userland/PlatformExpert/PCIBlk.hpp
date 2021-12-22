@@ -31,6 +31,7 @@ private:
   PlatformExpert *_expert = nullptr; // TEMP
   enum {DMA_ALIGNMENT = 16};
   seL4_Word irqCap = 0;
+  seL4_Word irqNotif = 0;
 
   void* readDMAVirt = nullptr;
   seL4_Word readDMAPhys = 0;
