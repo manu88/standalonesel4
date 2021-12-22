@@ -64,7 +64,7 @@ setPitMode(seL4_SlotPos portCap, uint8_t channel, uint8_t mode){
 
 bool PIT::configure(uint8_t mode, uint64_t ns){
     if (ns > PIT_MAX_NS || ns < PIT_MIN_NS) {
-        kprintf("ns invalid for programming PIT %X <= %X <= %X\n",
+        kprintf("ns invalid for programming PIT %zu <= %zu <= %zu\n",
                 (uint64_t)PIT_MIN_NS, ns, (uint64_t)PIT_MAX_NS);
         return false;
     }

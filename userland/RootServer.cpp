@@ -64,6 +64,14 @@ RootServer::createThread(Thread::EntryPoint entryPoint) {
   return ret;
 }
 
+void RootServer::onTimerTick(){
+  // called from timer thread!!
+  ellapsedTime++;
+  if(ellapsedTime%100 == 0){
+//    kprintf("One sec %zu\n", ellapsedTime);
+  }
+}
+
 void RootServer::run() {
 #ifdef ARCH_X86_64
   auto _comThOrErr = createThread([this](Thread &, void *) {
@@ -84,14 +92,10 @@ void RootServer::run() {
 #endif
   auto timeThread = createThread([this](Thread &, void *) {
     auto timerIRQ = _platExpert.getPitIRQ();
-    uint64_t c = 0;
     while(true){
       seL4_Wait(timerIRQ.notif, nullptr);
-      c++;
+      onTimerTick();
       timerIRQ.ack();
-//      if(c%100 == 0){
-//          kprintf("One sec\n");
-//      }
     }
     return nullptr;
   });
@@ -243,6 +247,12 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
       kprintf("\n");
       seL4_SetMR(1, readRet);
       seL4_Reply(msgInfo);
+    }
+  } break;
+  case Syscall::ID::Sleep:{
+    auto paramOrErr = Syscall::SleepRequest::decode(msgInfo);
+    if (paramOrErr) {
+      kprintf("Request to sleep %i ns\n", paramOrErr.value.ns);
     }
   } break;
   case Syscall::ID::Debug: {

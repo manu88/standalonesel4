@@ -2,6 +2,7 @@
 #include "lib/expected.hpp"
 #include "sel4.hpp"
 #include <stddef.h>
+#include <stdint.h>
 #include <sys/types.h> // size_t
 
 namespace Syscall {
@@ -9,6 +10,7 @@ namespace Syscall {
 enum class ID : seL4_Word {
   Unknown,
   Read,
+  Sleep,
   Debug,
   KMalloc,
   KFree,
@@ -33,6 +35,20 @@ struct BaseResponse {
   static Expected<BaseResponse, bool> decode(const seL4_MessageInfo_t &) {
     return success<BaseResponse, bool>(BaseResponse());
   }
+};
+
+/* *** *** ***  */
+
+struct SleepRequest : BaseRequest {
+  SleepRequest(uint64_t ns) : ns(ns) {}
+  size_t getNumMsgRegisters() const noexcept final { return 1; }
+  seL4_Word getMsgRegister(size_t) const noexcept final {
+    return (seL4_Word)ns;
+  }
+  bool hasResponse() const noexcept final { return true; }
+  uint64_t ns;
+
+  static Expected<SleepRequest, bool> decode(const seL4_MessageInfo_t &);
 };
 
 /* *** *** ***  */
@@ -176,6 +192,11 @@ namespace perform {
 inline Expected<ReadResponse, bool> read(seL4_Word endpoint,
                                                const ReadRequest &r) {
   return performBase<ReadRequest, ReadResponse>(endpoint, ID::Read, r);
+}
+
+inline Expected<BaseResponse, bool> sleep(seL4_Word endpoint,
+                                               const SleepRequest &r) {
+  return performBase<SleepRequest, BaseResponse>(endpoint, ID::Sleep, r);
 }
 
 inline Expected<KMallocResponse, bool> kmalloc(seL4_Word endpoint,

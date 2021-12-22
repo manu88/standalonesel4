@@ -43,6 +43,9 @@ private:
   void reservePages();
   void testPt();
 
+  void onTimerTick();
+
+  uint64_t ellapsedTime = 0;
   ThreadTable _threads;
   Shell _shell;
   seL4_CPtr _com1port;

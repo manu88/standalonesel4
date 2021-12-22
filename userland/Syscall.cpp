@@ -10,6 +10,10 @@ Syscall::DebugRequest::decode(const seL4_MessageInfo_t &info) {
       DebugRequest((DebugRequest::Operation)seL4_GetMR(1)));
 }
 
+/*static*/ Expected<Syscall::SleepRequest, bool> Syscall::SleepRequest::decode(const seL4_MessageInfo_t &){
+  return success<Syscall::SleepRequest, bool>(seL4_GetMR(1));
+}
+
 /*static*/ Expected<Syscall::KMallocRequest, bool>
 Syscall::KMallocRequest::decode(const seL4_MessageInfo_t &info) {
   if (seL4_MessageInfo_get_length(info) < 2) {
@@ -114,3 +118,7 @@ Syscall::performBase<Syscall::ThreadRequest>(seL4_Word endpoint, Syscall::ID id,
 template Expected<Syscall::ReadResponse, bool>
 Syscall::performBase<Syscall::ReadRequest>(seL4_Word endpoint, Syscall::ID id,
                                              const Syscall::ReadRequest &b);
+
+template Expected<Syscall::BaseResponse, bool>
+Syscall::performBase<Syscall::SleepRequest>(seL4_Word endpoint, Syscall::ID id,
+                                             const Syscall::SleepRequest &b);

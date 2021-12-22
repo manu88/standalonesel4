@@ -6,6 +6,7 @@
 #include "sel4.hpp"
 #include <stdlib.h>
 #include "klog.h"
+#include "PlatformExpert/Pit.hpp"
 
 void Shell::init() {
   buffer = reinterpret_cast<char*>(kmalloc(BufferSize));
@@ -135,6 +136,18 @@ int Shell::processNewCommand(const string &cmd) {
       }
       kprintf("Did read %zi bytes\n", responseOrErr.value.resp);
       return responseOrErr.value.resp;
+  } else if (cmd.starts_with("sleep")){
+    if (cmd.size() < 7) {
+      return -1;
+    }
+    auto args = cmd.substr(6);
+    long sec = strtol(args.c_str(), NULL, 10);
+    if(sec){
+      long ns = sec * NS_IN_S;
+      kprintf("Sleep for %i sec -> %i ns\n", sec, ns);
+      Syscall::perform::sleep(Thread::getCurrent()->endpoint, ns);
+      return 0;
+    }
   } else if (cmd.starts_with("thread")) {
     if (cmd.size() < 8) {
       return -1;
