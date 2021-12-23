@@ -1,10 +1,10 @@
 #include "RootServer.hpp"
 #include "InitialUntypedPool.hpp"
 #include "Syscall.hpp"
+#include "klog.h"
 #include "kmalloc.hpp"
 #include "runtime.h"
 #include <sel4/arch/mapping.h> // seL4_MappingFailedLookupLevel
-#include "klog.h"
 
 RootServer::RootServer()
     : _pt(_untypedPool), _vmspace(VMSpace::RootServerLayout::ReservedVaddr +
@@ -36,11 +36,11 @@ void RootServer::lateInit() {
   assert(_platExpert.init(&_factory, &_pt));
   _vfs.init();
 
-  for(auto dev: _platExpert.getBlockDevices()){
+  for (auto dev : _platExpert.getBlockDevices()) {
     _vfs.inpectDev(*dev);
   }
   kprintf("Got %zi mountable partition(s)\n", _vfs.getMountables().size());
-  if(_vfs.getMountables().size() > 0){
+  if (_vfs.getMountables().size() > 0) {
     _vfs.mount(&_vfs.getMountables()[0], "/");
   }
   kprintf("Test getting COM1\n");
@@ -49,6 +49,7 @@ void RootServer::lateInit() {
 
   _com1port = com1SlotOrErr.value;
   _shell.init();
+  exec();
 }
 
 Expected<std::shared_ptr<Thread>, seL4_Error>
@@ -63,13 +64,15 @@ RootServer::createThread(Thread::EntryPoint entryPoint) {
   return ret;
 }
 
-void RootServer::onTimerTick(){
+void RootServer::onTimerTick() {
   // called from timer thread!!
   ellapsedTime++;
-  if(ellapsedTime%100 == 0){
-//    kprintf("One sec %zu\n", ellapsedTime);
+  if (ellapsedTime % 100 == 0) {
+    //    kprintf("One sec %zu\n", ellapsedTime);
   }
 }
+
+void RootServer::exec() {}
 
 void RootServer::run() {
 #ifdef ARCH_X86_64
@@ -91,7 +94,7 @@ void RootServer::run() {
 #endif
   auto timeThread = createThread([this](Thread &, void *) {
     auto timerIRQ = _platExpert.getPitIRQ();
-    while(true){
+    while (true) {
       seL4_Wait(timerIRQ.notif, nullptr);
       onTimerTick();
       timerIRQ.ack();
@@ -161,7 +164,6 @@ void RootServer::handleVMFault(const seL4_MessageInfo_t &msgInfo,
   const seL4_Word isPrefetch = seL4_GetMR(seL4_VMFault_PrefetchFault);
   const seL4_Word faultStatusRegister = seL4_GetMR(seL4_VMFault_FSR);
 
-
   typedef struct {
     uint8_t present : 1; // P: When set, the page fault was caused by a
                          // page-protection violation. When not set, it was
@@ -224,27 +226,31 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
   assert(seL4_MessageInfo_get_length(msgInfo) > 0);
   seL4_Word syscallID = seL4_GetMR(0);
   switch ((Syscall::ID)syscallID) {
-  case Syscall::ID::Read:{
+  case Syscall::ID::Read: {
     auto paramOrErr = Syscall::ReadRequest::decode(msgInfo);
     if (paramOrErr) {
-      kprintf("Read request inode %zi arg %zi\n", paramOrErr.value.sector, paramOrErr.value.size);
-    if(paramOrErr.value.sector == 2){
-      _vfs.testRead();
-    }else{
-      _vfs.readFile(paramOrErr.value.sector, [paramOrErr](size_t pos, size_t sizeToCopy, size_t size, const uint8_t* data){
-          //kprintf("%zi/%zi:'%s'\n", pos, size, (char*) data);
-          kprintf("0X%X/0X%X -> size=0X%X\n", pos, size, sizeToCopy);
-          if(paramOrErr.value.size){
-            kprintf("%s", (const char*)data);
-          }
-          return true;
-        });
-    }
+      kprintf("Read request inode %zi arg %zi\n", paramOrErr.value.sector,
+              paramOrErr.value.size);
+      if (paramOrErr.value.sector == 2) {
+        _vfs.testRead();
+      } else {
+        _vfs.readFile(paramOrErr.value.sector,
+                      [paramOrErr](size_t pos, size_t sizeToCopy, size_t size,
+                                   const uint8_t *data) {
+                        // kprintf("%zi/%zi:'%s'\n", pos, size, (char*) data);
+                        kprintf("0X%X/0X%X -> size=0X%X\n", pos, size,
+                                sizeToCopy);
+                        if (paramOrErr.value.size) {
+                          kprintf("%s", (const char *)data);
+                        }
+                        return true;
+                      });
+      }
       seL4_SetMR(1, 0);
       seL4_Reply(msgInfo);
     }
   } break;
-  case Syscall::ID::Sleep:{
+  case Syscall::ID::Sleep: {
     auto paramOrErr = Syscall::SleepRequest::decode(msgInfo);
     if (paramOrErr) {
       kprintf("Request to sleep %i ms\n", paramOrErr.value.ms);

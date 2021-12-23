@@ -1,8 +1,8 @@
 #include "PageTable.hpp"
+#include "klog.h"
 #include "runtime.h"
 #include "sel4.hpp"
 #include <sel4/arch/mapping.h> // seL4_MappingFailedLookupLevel
-#include "klog.h"
 
 //#ifdef ARCH_X86_64
 PageTable::PageCapOrError PageTable::mapPage(seL4_Word vaddr,
@@ -89,7 +89,7 @@ void PageTable::init(seL4_Word vaddr) {
   assert(error == seL4_NoError);
 }
 
-#if 0 //defined(ARCH_ARM)
+#if 0 // defined(ARCH_ARM)
 
 void PageTable::init(seL4_Word vaddr) {}
 

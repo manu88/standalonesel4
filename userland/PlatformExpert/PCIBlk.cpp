@@ -1,16 +1,15 @@
-#include "../Thread.hpp"
 #include "PCIBlk.hpp"
+#include "../Platform.hpp"
+#include "../Thread.hpp"
+#include "../klog.h"
 #include "../runtime.h"
 #include "../sel4.hpp"
-#include "../Platform.hpp"
 #include "PCIScanner.hpp"
 #include "PlatformExpert.hpp"
-#include "../klog.h"
 
-
-#define VIRTIO_BLK_S_OK       0
-#define VIRTIO_BLK_S_IOERR    1
-#define VIRTIO_BLK_S_UNSUPP   2
+#define VIRTIO_BLK_S_OK 0
+#define VIRTIO_BLK_S_IOERR 1
+#define VIRTIO_BLK_S_UNSUPP 2
 #define VIRTIO_BLK_REQ_FOOTER_SIZE 1
 #define VIRTIO_BLK_SECTOR_SIZE 512
 #define VIRTIO_BLK_REQ_HEADER_SIZE 16
@@ -60,11 +59,12 @@ static void virtio_check_capabilities(uint32_t *device, uint32_t *request,
     if (*device & caps[i].bit) {
       if (caps[i].support) {
         *request |= caps[i].bit;
-      } 
-//      else {
-//        kprintf("virtio supports unsupported option %s (%s)\n", caps[i].name,
-//                caps[i].help);
-//      }
+      }
+      //      else {
+      //        kprintf("virtio supports unsupported option %s (%s)\n",
+      //        caps[i].name,
+      //                caps[i].help);
+      //      }
     }
     *device &= ~caps[i].bit;
   }
@@ -79,25 +79,28 @@ bool PCIBlk::probe(const PCIDevice &dev) {
 }
 
 bool PCIBlk::initializeDescRing(PlatformExpert &expert) {
-    unsigned sizeVRing = vring_size(queueSize, VIRTIO_PCI_VRING_ALIGN);
-    // 5126
-    auto rx_ring_bufOrErr = expert.allocDMARange(sizeVRing);// dma_alloc_pin(dma_man, sizeVRing, 1, VIRTIO_PCI_VRING_ALIGN);
-    auto rx_ring_buf = rx_ring_bufOrErr.value;
-    if (!rx_ring_buf.phys) {
-        kprintf("Failed to allocate rx_ring");
-        return false;
-    }
-    memset(rx_ring_buf.virt, 0, vring_size(queueSize, VIRTIO_PCI_VRING_ALIGN));
-    vring_init(&rx_ring, queueSize, (void*) rx_ring_buf.virt, VIRTIO_PCI_VRING_ALIGN);
+  unsigned sizeVRing = vring_size(queueSize, VIRTIO_PCI_VRING_ALIGN);
+  // 5126
+  auto rx_ring_bufOrErr =
+      expert.allocDMARange(sizeVRing); // dma_alloc_pin(dma_man, sizeVRing, 1,
+                                       // VIRTIO_PCI_VRING_ALIGN);
+  auto rx_ring_buf = rx_ring_bufOrErr.value;
+  if (!rx_ring_buf.phys) {
+    kprintf("Failed to allocate rx_ring");
+    return false;
+  }
+  memset(rx_ring_buf.virt, 0, vring_size(queueSize, VIRTIO_PCI_VRING_ALIGN));
+  vring_init(&rx_ring, queueSize, (void *)rx_ring_buf.virt,
+             VIRTIO_PCI_VRING_ALIGN);
 
-    rx_ring_phys = rx_ring_buf.phys;
-    assert(rx_ring_phys % PAGE_SIZE == 0);
+  rx_ring_phys = rx_ring_buf.phys;
+  assert(rx_ring_phys % PAGE_SIZE == 0);
 
-    //dev->rdh = 0;
-    rdt = 0;
-    //dev->ruh = 0;
+  // dev->rdh = 0;
+  rdt = 0;
+  // dev->ruh = 0;
 
-    return true;
+  return true;
 }
 
 bool PCIBlk::addDevice(PlatformExpert &expert, const PCIDevice &dev) {
@@ -173,14 +176,15 @@ bool PCIBlk::addDevice(PlatformExpert &expert, const PCIDevice &dev) {
   assert(ret);
 
   auto packetOrErr = expert.allocDMARange(sizeof(virtio_blk_req));
-  if(!packetOrErr){
-    kprintf("Error getting dma memory for request %s\n", seL4::errorStr(packetOrErr.error));
+  if (!packetOrErr) {
+    kprintf("Error getting dma memory for request %s\n",
+            seL4::errorStr(packetOrErr.error));
   }
   memset(packetOrErr.value.virt, 0, sizeof(virtio_blk_req));
 
   _dev.hdr_phys = packetOrErr.value.phys;
   assert(_dev.hdr_phys);
-  _dev.headerReq = (virtio_blk_req*) packetOrErr.value.virt;
+  _dev.headerReq = (virtio_blk_req *)packetOrErr.value.virt;
   assert(_dev.headerReq != nullptr);
 
   assert(rx_ring_phys);
@@ -192,11 +196,14 @@ bool PCIBlk::addDevice(PlatformExpert &expert, const PCIDevice &dev) {
   _dev.addStatus(VIRTIO_CONFIG_S_DRIVER_OK);
 
   dev.print();
-#define VIRTIO_MSI_CONFIG_VECTOR        20
-  auto irqHandleOrErr = _expert->getIOAPICIRQHandle(0, 10, dev.irqLine);//getIRQHandle(dev.irqPin);//.getIOAPICIRQHandle(dev);
-  if(!irqHandleOrErr){
-    kprintf("Error getting irq cap from IOAPIC: %s\n", seL4::errorStr(irqHandleOrErr.error));
-  }else{
+#define VIRTIO_MSI_CONFIG_VECTOR 20
+  auto irqHandleOrErr = _expert->getIOAPICIRQHandle(
+      0, 10,
+      dev.irqLine); // getIRQHandle(dev.irqPin);//.getIOAPICIRQHandle(dev);
+  if (!irqHandleOrErr) {
+    kprintf("Error getting irq cap from IOAPIC: %s\n",
+            seL4::errorStr(irqHandleOrErr.error));
+  } else {
     irqCap = irqHandleOrErr.value.irqCap;
     irqNotif = irqHandleOrErr.value.notif;
     seL4_IRQHandler_Ack(irqCap);
@@ -205,59 +212,59 @@ bool PCIBlk::addDevice(PlatformExpert &expert, const PCIDevice &dev) {
   return true;
 }
 
-
-ssize_t PCIBlk::read(size_t sector, char* buf, size_t bufSize){
+ssize_t PCIBlk::read(size_t sector, char *buf, size_t bufSize) {
   assert(bufSize % VIRTIO_BLK_SECTOR_SIZE == 0);
-  if(bufSize <= VIRTIO_BLK_SECTOR_SIZE){
-      return blkReadSector(sector, buf, bufSize);
+  if (bufSize <= VIRTIO_BLK_SECTOR_SIZE) {
+    return blkReadSector(sector, buf, bufSize);
   }
   const size_t numSectors = bufSize / VIRTIO_BLK_SECTOR_SIZE;
   ssize_t tot = 0;
-  for(size_t i=0;i <numSectors;i++){
-      ssize_t r = blkReadSector(sector+i, buf + (VIRTIO_BLK_SECTOR_SIZE*i), VIRTIO_BLK_SECTOR_SIZE);
-      if(r <= 0){
-          return r;
-      }
-      tot += r;
+  for (size_t i = 0; i < numSectors; i++) {
+    ssize_t r = blkReadSector(sector + i, buf + (VIRTIO_BLK_SECTOR_SIZE * i),
+                              VIRTIO_BLK_SECTOR_SIZE);
+    if (r <= 0) {
+      return r;
+    }
+    tot += r;
   }
   return tot;
 }
 
-void* PCIBlk::blkCmd(int op, size_t sector, char* buf, size_t bufSize){
+void *PCIBlk::blkCmd(int op, size_t sector, char *buf, size_t bufSize) {
   memset(_dev.headerReq, 0, sizeof(virtio_blk_req));
-  _dev.headerReq->type = op;// VIRTIO_BLK_T_IN or VIRTIO_BLK_T_OUT 
+  _dev.headerReq->type = op; // VIRTIO_BLK_T_IN or VIRTIO_BLK_T_OUT
   _dev.headerReq->sector = sector;
   _dev.headerReq->status = 12; // set to a random val
 
   assert(_dev.hdr_phys);
 
   /* request a buffer */
-  if(!readDMAPhys){
+  if (!readDMAPhys) {
     auto dmaDataOrErr = _expert->allocDMARange(bufSize);
-    if(!dmaDataOrErr){
+    if (!dmaDataOrErr) {
       return NULL;
     }
     auto dma_data = dmaDataOrErr.value;
 
-    readDMAPhys = dma_data.phys;// driver->i_cb.allocate_rx_buf(driver->cb_cookie, BUF_SIZE, &cookie);
+    readDMAPhys = dma_data.phys; // driver->i_cb.allocate_rx_buf(driver->cb_cookie,
+                                 // BUF_SIZE, &cookie);
     readDMAVirt = dma_data.virt;
   }
   if (!readDMAPhys) {
     return NULL;
   }
-  if(op == VIRTIO_BLK_T_OUT){
+  if (op == VIRTIO_BLK_T_OUT) {
     memcpy(readDMAVirt, buf, bufSize);
-    //dev->headerReq->type |= VIRTIO_BLK_T_FLUSH;
-  } else{
+    // dev->headerReq->type |= VIRTIO_BLK_T_FLUSH;
+  } else {
     memset(readDMAVirt, 0, bufSize);
   }
 
   assert(readDMAPhys % DMA_ALIGNMENT == 0);
 
   uintptr_t footerPhys = _dev.hdr_phys + VIRTIO_BLK_REQ_HEADER_SIZE;
-  if(footerPhys % DMA_ALIGNMENT !=0)
-  {
-      footerPhys += DMA_ALIGNMENT - footerPhys % DMA_ALIGNMENT;
+  if (footerPhys % DMA_ALIGNMENT != 0) {
+    footerPhys += DMA_ALIGNMENT - footerPhys % DMA_ALIGNMENT;
   }
 
   assert(footerPhys % DMA_ALIGNMENT == 0);
@@ -265,31 +272,22 @@ void* PCIBlk::blkCmd(int op, size_t sector, char* buf, size_t bufSize){
   uint16_t rdt_data = (rdt + 1) % queueSize;
   uint16_t rdt_footer = (rdt + 2) % queueSize;
 
-  rx_ring.desc[rdt] = (struct vring_desc) {
-      .addr = _dev.hdr_phys,
-      .len = VIRTIO_BLK_REQ_HEADER_SIZE,
-      .flags = VRING_DESC_F_NEXT,
-      .next = rdt_data
-  };
+  rx_ring.desc[rdt] = (struct vring_desc){.addr = _dev.hdr_phys,
+                                          .len = VIRTIO_BLK_REQ_HEADER_SIZE,
+                                          .flags = VRING_DESC_F_NEXT,
+                                          .next = rdt_data};
 
   uint16_t dataFlag = VRING_DESC_F_NEXT;
-  if(op == VIRTIO_BLK_T_IN)
-  {
-      dataFlag |= VRING_DESC_F_WRITE;
+  if (op == VIRTIO_BLK_T_IN) {
+    dataFlag |= VRING_DESC_F_WRITE;
   }
-  rx_ring.desc[rdt_data] = (struct vring_desc) {
-      .addr = readDMAPhys,
-      .len = VIRTIO_BLK_SECTOR_SIZE,
-      .flags = dataFlag,
-      .next = rdt_footer
-  };
+  rx_ring.desc[rdt_data] = (struct vring_desc){.addr = readDMAPhys,
+                                               .len = VIRTIO_BLK_SECTOR_SIZE,
+                                               .flags = dataFlag,
+                                               .next = rdt_footer};
 
-  rx_ring.desc[rdt_footer] = (struct vring_desc) {
-      .addr = footerPhys,
-      .len = 1,
-      .flags = VRING_DESC_F_WRITE,
-      .next = 0
-  };
+  rx_ring.desc[rdt_footer] = (struct vring_desc){
+      .addr = footerPhys, .len = 1, .flags = VRING_DESC_F_WRITE, .next = 0};
 
   rx_ring.avail->ring[rx_ring.avail->idx % queueSize] = rdt;
 
@@ -305,56 +303,53 @@ void* PCIBlk::blkCmd(int op, size_t sector, char* buf, size_t bufSize){
   auto r = _dev.readReg8(VIRTIO_PCI_ISR);
   kprintf("Got resp 0X%X\n", r);
 #endif
-  for(uint64_t t = 0; t< UINT16_MAX*2; t++){}
+  for (uint64_t t = 0; t < UINT16_MAX * 2; t++) {
+  }
   return readDMAVirt;
 }
 
-ssize_t PCIBlk::blkReadSector(size_t sector, char* buf, size_t bufSize)
-{
+ssize_t PCIBlk::blkReadSector(size_t sector, char *buf, size_t bufSize) {
   assert(rx_ring.used);
   int i = rx_ring.used->idx % queueSize;
-  void* dma_virt = blkCmd(VIRTIO_BLK_T_IN, sector, buf, bufSize);
-  if(!dma_virt){
+  void *dma_virt = blkCmd(VIRTIO_BLK_T_IN, sector, buf, bufSize);
+  if (!dma_virt) {
     return -1;
   }
-  //blk_debug(dev);
-  virtio_blk_req *req = _dev.headerReq;// .rx_ring.desc[desc1].addr;
-  if(req->status != VIRTIO_BLK_S_OK)
-  {
-      kprintf("Error status not OK %i\n", req->status);
-      //dma_unpin_free(&dev->dma_man, dma_virt, bufSize);        
-      return -1;
+  // blk_debug(dev);
+  virtio_blk_req *req = _dev.headerReq; // .rx_ring.desc[desc1].addr;
+  if (req->status != VIRTIO_BLK_S_OK) {
+    kprintf("Error status not OK %i\n", req->status);
+    // dma_unpin_free(&dev->dma_man, dma_virt, bufSize);
+    return -1;
   }
 
   uint32_t desc1 = rx_ring.used->ring[i].id % queueSize;
   uint32_t desc2 = 0;
   uint32_t desc3 = 0;
 
-  if(!(rx_ring.desc[desc1].flags & VRING_DESC_F_NEXT))
-  {
-      kprintf("desc1 (%i) is missing the Next desc flag!\n", desc1);
-      return -1;
+  if (!(rx_ring.desc[desc1].flags & VRING_DESC_F_NEXT)) {
+    kprintf("desc1 (%i) is missing the Next desc flag!\n", desc1);
+    return -1;
   }
   desc2 = rx_ring.desc[desc1].next % queueSize;
 
-  if(!(rx_ring.desc[desc2].flags & VRING_DESC_F_NEXT))
-  {
-      kprintf("desc2 (%i) is missing the Next desc flag!\n", desc2);
-      kprintf("Desc1 is %i\n", desc1);
-      return -1;
+  if (!(rx_ring.desc[desc2].flags & VRING_DESC_F_NEXT)) {
+    kprintf("desc2 (%i) is missing the Next desc flag!\n", desc2);
+    kprintf("Desc1 is %i\n", desc1);
+    return -1;
   }
 
   desc3 = rx_ring.desc[desc2].next % queueSize;
-  if(rx_ring.desc[desc2].len != VIRTIO_BLK_SECTOR_SIZE)
-  {
-      kprintf("desc2' (%i) size is not VIRTIO_BLK_SECTOR_SIZE but %i\n", desc3, rx_ring.desc[desc2].len);
-      return -1;
+  if (rx_ring.desc[desc2].len != VIRTIO_BLK_SECTOR_SIZE) {
+    kprintf("desc2' (%i) size is not VIRTIO_BLK_SECTOR_SIZE but %i\n", desc3,
+            rx_ring.desc[desc2].len);
+    return -1;
   }
 
-  if(rx_ring.desc[desc3].len != VIRTIO_BLK_REQ_FOOTER_SIZE)
-  {
-      kprintf("desc3' size is not VIRTIO_BLK_REQ_FOOTER_SIZE but %i\n", rx_ring.desc[desc3].len);
-      return -1;
+  if (rx_ring.desc[desc3].len != VIRTIO_BLK_REQ_FOOTER_SIZE) {
+    kprintf("desc3' size is not VIRTIO_BLK_REQ_FOOTER_SIZE but %i\n",
+            rx_ring.desc[desc3].len);
+    return -1;
   }
   memcpy(buf, dma_virt, bufSize);
 

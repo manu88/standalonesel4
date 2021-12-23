@@ -1,5 +1,5 @@
-#include "runtime.h"
 #include "klog.h"
+#include "runtime.h"
 
 namespace std {
 void __throw_bad_function_call() {

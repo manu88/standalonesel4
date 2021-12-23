@@ -24,7 +24,7 @@ struct VMSpace {
   { AddressTables = 0x8000000000,
     ReservedVaddr = 0x8000001000, // size is KmallocReservedPages pages
   };
-  enum class MemoryType{
+  enum class MemoryType {
     Regular, // XXX find a better name :D
     IPC,
     DMA,
@@ -60,7 +60,7 @@ struct VMSpace {
     size_t numPages = 0;
     seL4_CapRights_t rights = seL4_ReadWrite;
     seL4_CPtr pageCap = 0;
-    MemoryType type  = MemoryType::Regular;
+    MemoryType type = MemoryType::Regular;
 
     bool inRange(seL4_Word addr) const noexcept {
       return addr >= vaddr && addr < (vaddr + numPages * PAGE_SIZE);
@@ -73,8 +73,7 @@ struct VMSpace {
     }
     bool operator!=(const Reservation &rhs) { return !(*this == rhs); }
 
-
-    PhysicalAddressOrError getPhysicalAddr() const noexcept{
+    PhysicalAddressOrError getPhysicalAddr() const noexcept {
       return getPhysicalAddr(pageCap);
     }
     static PhysicalAddressOrError getPhysicalAddr(seL4_Word);

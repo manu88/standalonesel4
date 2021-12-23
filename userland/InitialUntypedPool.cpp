@@ -1,7 +1,7 @@
 #include "InitialUntypedPool.hpp"
+#include "klog.h"
 #include "runtime.h"
 #include "sel4.hpp"
-#include "klog.h"
 
 /* a very simple allocation function that iterates through the untypeds in boot
    info until a retype succeeds */

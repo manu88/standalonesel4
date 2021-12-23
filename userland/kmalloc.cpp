@@ -7,11 +7,10 @@
 #include "mutex.h"
 #include "runtime.h"
 #endif
-#include <stddef.h>
-#include "klog.h"
 #include "Platform.hpp"
-#include "liballoc.h"
 #include "klog.h"
+#include "liballoc.h"
+#include <stddef.h>
 #include <sys/types.h>
 extern "C" {
 
@@ -22,9 +21,9 @@ static int hasMemoryPool = 0;
 static seL4_CPtr _mutexNotif = 0;
 static sync_mutex_t _lock = {};
 
-typedef struct{
+typedef struct {
   ssize_t index;
-  size_t numPages; 
+  size_t numPages;
 } Chunk;
 #define NUM_OF_CHINKS 16
 static Chunk chunks[NUM_OF_CHINKS];
@@ -40,41 +39,38 @@ void setMemoryPool(void *start, size_t size, seL4_CPtr mutexNotif) {
     assert(0);
   }
 
-  for(size_t i=0;i<NUM_OF_CHINKS;i++){
+  for (size_t i = 0; i < NUM_OF_CHINKS; i++) {
     chunks[i].index = -1;
     chunks[i].numPages = 0;
   }
 }
 
-int liballoc_lock(){
+int liballoc_lock() {
   assert(hasMemoryPool);
   sync_mutex_lock(&_lock);
   return 0;
 }
 
-int liballoc_unlock(){
+int liballoc_unlock() {
   assert(hasMemoryPool);
   sync_mutex_unlock(&_lock);
   return 0;
 }
 
-static void printChunks(){
+static void printChunks() {
   kprintf("--> chunks (%zi slots)\n", NUM_OF_CHINKS);
-  for(size_t i=0;i<NUM_OF_CHINKS;i++){
-    if(chunks[i].index != -1){
-      kprintf("%i: 0X%X %i\n",i , chunks[i].index, chunks[i].numPages);
+  for (size_t i = 0; i < NUM_OF_CHINKS; i++) {
+    if (chunks[i].index != -1) {
+      kprintf("%i: 0X%X %i\n", i, chunks[i].index, chunks[i].numPages);
     }
   }
   kprintf("<-- chunks\n");
 }
 
-
-void kmallocPrintStats(){
-  printChunks();
-}
-static ssize_t tryFindChunk(size_t size){
-  for(size_t i=0;i<NUM_OF_CHINKS;i++){
-    if(chunks[i].index != -1 && size <= chunks[i].numPages){
+void kmallocPrintStats() { printChunks(); }
+static ssize_t tryFindChunk(size_t size) {
+  for (size_t i = 0; i < NUM_OF_CHINKS; i++) {
+    if (chunks[i].index != -1 && size <= chunks[i].numPages) {
       auto index = chunks[i].index;
       chunks[i].index = -1;
       chunks[i].numPages = 0;
@@ -84,25 +80,27 @@ static ssize_t tryFindChunk(size_t size){
   return -1;
 }
 
-void* liballoc_alloc(size_t numPages){
+void *liballoc_alloc(size_t numPages) {
   assert(hasMemoryPool);
   ssize_t potentialIndex = tryFindChunk(numPages);
-  if(potentialIndex != -1){
-    return (char*)startMemPool + potentialIndex;
+  if (potentialIndex != -1) {
+    return (char *)startMemPool + potentialIndex;
   }
   size_t index = indexInMemPool;
   indexInMemPool += numPages * PAGE_SIZE;
-  if(indexInMemPool > sizeMemPool){
-    kprintf("indexInMemPool=%zu sizeMemPool=%zu\n", indexInMemPool, sizeMemPool);
+  if (indexInMemPool > sizeMemPool) {
+    kprintf("indexInMemPool=%zu sizeMemPool=%zu\n", indexInMemPool,
+            sizeMemPool);
   }
-  assert(indexInMemPool<=sizeMemPool && "time to manage memory chunks in liballoc :D");
-  return (char*)startMemPool + index;
+  assert(indexInMemPool <= sizeMemPool &&
+         "time to manage memory chunks in liballoc :D");
+  return (char *)startMemPool + index;
 }
 
-static bool tryInsertChunk(size_t pos, size_t size){
-  for(size_t i=0;i<NUM_OF_CHINKS;i++){
-    if(chunks[i].index == -1){
-      chunks[i].index = (ssize_t) pos;
+static bool tryInsertChunk(size_t pos, size_t size) {
+  for (size_t i = 0; i < NUM_OF_CHINKS; i++) {
+    if (chunks[i].index == -1) {
+      chunks[i].index = (ssize_t)pos;
       chunks[i].numPages = size;
       return true;
     }
@@ -110,16 +108,17 @@ static bool tryInsertChunk(size_t pos, size_t size){
   return false;
 }
 
-int liballoc_free(void* ptr, size_t size){
-  size_t pos = (size_t) ptr - (size_t) startMemPool;
+int liballoc_free(void *ptr, size_t size) {
+  size_t pos = (size_t)ptr - (size_t)startMemPool;
   size_t sizeInBytes = size * PAGE_SIZE;
-  if(indexInMemPool - sizeInBytes == pos){
+  if (indexInMemPool - sizeInBytes == pos) {
     indexInMemPool -= sizeInBytes;
-  }else{
+  } else {
     bool found = tryInsertChunk(pos, size);
-    if(!found){
-      kprintf("liballoc_free ptr=0X%X size=%zi\n",ptr, size);
-      kprintf("pos = 0X%X current = 0X%X start = 0X%X\n", pos, indexInMemPool,((size_t) startMemPool));
+    if (!found) {
+      kprintf("liballoc_free ptr=0X%X size=%zi\n", ptr, size);
+      kprintf("pos = 0X%X current = 0X%X start = 0X%X\n", pos, indexInMemPool,
+              ((size_t)startMemPool));
       kprintf("liballoc_free should stash freed\n");
       assert(0);
     }
@@ -130,7 +129,7 @@ int liballoc_free(void* ptr, size_t size){
 extern size_t kmalloced;
 size_t getTotalKMallocated() {
   sync_mutex_lock(&_lock);
-  auto r =  kmalloced;
+  auto r = kmalloced;
   sync_mutex_unlock(&_lock);
   return r;
 }
@@ -150,7 +149,7 @@ void *operator new[](size_t size) {
 
 void operator delete(void *p) { kfree(p); }
 
-void operator delete(void *p, std::size_t ) { kfree(p); }
+void operator delete(void *p, std::size_t) { kfree(p); }
 
 void operator delete[](void *p) { kfree(p); }
 

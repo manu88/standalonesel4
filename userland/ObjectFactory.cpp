@@ -2,8 +2,8 @@
 #include "InitialUntypedPool.hpp"
 #include "PageTable.hpp"
 #include "VMSpace.hpp"
-#include "runtime.h"
 #include "klog.h"
+#include "runtime.h"
 
 ObjectFactory::ObjectFactory(InitialUntypedPool &untypedPool, PageTable &pt,
                              VMSpace &vm)
@@ -119,7 +119,7 @@ ObjectFactory::SlotOrError ObjectFactory::getFreeSlot() {
   return _untypedPool.getFreeSlot();
 }
 
-void ObjectFactory::releaseObject(seL4_CPtr){
+void ObjectFactory::releaseObject(seL4_CPtr) {
   kprintf("ObjectFactory::releaseObject does currently nothing\n");
 }
 

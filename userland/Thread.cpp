@@ -1,8 +1,8 @@
 #include "Thread.hpp"
 #include "Platform.hpp"
+#include "klog.h"
 #include "runtime.h"
 #include <cstddef>
-#include "klog.h"
 
 /*static*/ Thread Thread::main = Thread(seL4_CapInitThreadTCB, nullptr);
 

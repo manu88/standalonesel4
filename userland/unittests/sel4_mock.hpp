@@ -1,6 +1,6 @@
 #pragma once
-#include <stddef.h>
 #include <cstdio>
+#include <stddef.h>
 
 typedef size_t seL4_Word;
 typedef size_t seL4_CPtr;
@@ -23,7 +23,7 @@ struct seL4_CapRights_t {
 #define seL4_ReadWrite seL4_CapRights_t()
 #define kprintf printf
 
-static inline int sync_mutex_init(sync_mutex_t* , seL4_Word ){return 0;}
+static inline int sync_mutex_init(sync_mutex_t *, seL4_Word) { return 0; }
 
-static inline int sync_mutex_lock(sync_mutex_t*){return 0;}
-static inline int sync_mutex_unlock(sync_mutex_t*){return 0;}
+static inline int sync_mutex_lock(sync_mutex_t *) { return 0; }
+static inline int sync_mutex_unlock(sync_mutex_t *) { return 0; }

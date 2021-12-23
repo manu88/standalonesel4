@@ -43,7 +43,7 @@ uint16_t VirtioDevice::readReg16(uint16_t port) {
   return r.result;
 }
 
-uint8_t VirtioDevice::readReg8(uint16_t port){
+uint8_t VirtioDevice::readReg8(uint16_t port) {
   auto r = seL4_X86_IOPort_In8(base0cap, iobase0 + port);
   return r.result;
 }

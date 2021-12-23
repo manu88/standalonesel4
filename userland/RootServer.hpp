@@ -30,6 +30,7 @@ public:
   void earlyInit(); // kmalloc/kfree/new/delete are setup here!
   void lateInit();
   void run();
+  void exec();
 
 private:
   void processSyscall(const seL4_MessageInfo_t &msgInfo, Thread &caller);

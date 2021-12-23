@@ -1,7 +1,7 @@
 #include "PCIScanner.hpp"
+#include "../klog.h"
 #include "../runtime.h"
 #include "pciDevices.h"
-#include "../klog.h"
 
 union CommandReg {
   uint16_t value;
@@ -105,7 +105,8 @@ void PCIDevice::print() const {
   kprintf(" memorySpace: 0X%X\n", cmd.memorySpace);
   kprintf(" busMaster: 0X%X\n", cmd.busMaster);
   kprintf(" specialCycles: 0X%X\n", cmd.specialCycles);
-  kprintf(" memoryWriteAndInvalidateEnable: 0X%X\n", cmd.memoryWriteAndInvalidateEnable);
+  kprintf(" memoryWriteAndInvalidateEnable: 0X%X\n",
+          cmd.memoryWriteAndInvalidateEnable);
   kprintf(" VGAPaletteSnoop: 0X%X\n", cmd.VGAPaletteSnoop);
   kprintf(" parityErrorResponse: 0X%X\n", cmd.parityErrorResponse);
   kprintf(" SERREnable: 0X%X\n", cmd.SERREnable);
@@ -164,14 +165,14 @@ void PCIScanner::scan() {
       }
       uint16_t deviceID = pciConfigReadWord(bus, slot, 0, 0x2);
 
-      union CommandRegisterUnion{
+      union CommandRegisterUnion {
         uint16_t v;
         PCIDevice::CommandRegister cmd;
       };
       CommandRegisterUnion cmd;
       cmd.v = pciConfigReadWord(bus, slot, 0, 0x4);
 
-      union StatusUnion{
+      union StatusUnion {
         uint16_t v;
         PCIDevice::StatusRegister status;
       };
@@ -189,9 +190,9 @@ void PCIScanner::scan() {
       auto subSystemVendorID = pciConfigReadWord(bus, slot, 0, 0x2C);
       auto subSystemID = pciConfigReadWord(bus, slot, 0, 0x2E);
 
-      union InterLineAndPin{
+      union InterLineAndPin {
         uint16_t v;
-        struct F{
+        struct F {
           uint8_t line;
           uint8_t pin;
         } fields;
@@ -199,8 +200,8 @@ void PCIScanner::scan() {
       InterLineAndPin interLineAndPin;
       interLineAndPin.v = pciConfigReadWord(bus, slot, 0, 0X3C);
 
-      PCIDevice dev = {.bus = (uint8_t) bus,
-                       .slot = (uint8_t) slot,
+      PCIDevice dev = {.bus = (uint8_t)bus,
+                       .slot = (uint8_t)slot,
                        .fun = 0,
                        .vendorID = vendorID,
                        .deviceID = deviceID,
@@ -395,8 +396,8 @@ void PCIScanner::readIOConfig(PCIDevice::IOConfig &cfg, uint8_t bus,
     uint32_t cfg_base_addr =
         readReg32(bus, dev, fun, PCI_BASE_ADDRESS_0 + (i * 4));
 
-    if (cfg_base_addr == 0){
-    /* no device here. */
+    if (cfg_base_addr == 0) {
+      /* no device here. */
       continue;
     }
 
