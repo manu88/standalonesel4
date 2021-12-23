@@ -5,59 +5,6 @@
 #include <cstring>
 #include "../runtime.h"
 
-char** VFSSplitPath(const char* _path, size_t* numSegs)
-{
-  char delim[] = "/";
-
-  char* path = strdup(_path);
-  char *ptr = strtok(path, delim);
-  size_t num = 0;
-
-  char** segments = NULL;
-  while(ptr != NULL){
-    segments = (char**) krealloc(segments, (num+1)*sizeof(char*));
-    assert(segments);
-    segments[num] = strdup(ptr);
-    num++;
-		ptr = strtok(NULL, delim);        
-	}
-  *numSegs = num;
-  kfree(path);
-  return segments;
-}
-
-static inode_t * getInodeNamed(const VFS::FileSystem &fs, inode_t* inode, const char* path){
-  for(int i = 0;i < 12; i++){
-    uint32_t b = inode->dbp[i];
-    if(b == 0){
-      break;
-    }
-    uint8_t* blockData = (uint8_t*) kmalloc(4096);
-    if(!fs.readBlock(blockData, 4096, b)){
-        return NULL;
-    }
-    ext2_dir* dir = (ext2_dir*) blockData;
-
-    char tmpName[256] = "";
-    while(dir->inode != 0) {
-      memcpy(tmpName, &dir->reserved+1, dir->namelength);
-      tmpName[dir->namelength] = 0;
-
-      if(strcmp(tmpName, path) == 0){
-          fs.read(inode, dir->inode);
-          return inode;
-      }
-      dir = (ext2_dir *)((uint64_t)dir + dir->size);
-      ptrdiff_t dif = (char*) dir - (char*) blockData;
-      if( dif >= fs.priv.blocksize){
-          return NULL;
-      }
-    }
-  }
-  return NULL;
-}
-
-
 static bool doReadBlock(uint8_t *buf, size_t bufSize, uint32_t block, BlockDevice& dev, const ext2_priv_data *priv){
 	uint32_t sectors_per_block = priv->sectors_per_block;
 	if(!sectors_per_block){
@@ -90,7 +37,6 @@ bool Ext2FS::Operations::read(const VFS::FileSystem &fs, inode_t *inode_buf, uin
 
   size_t blockBufSize = 4096;
   uint8_t* blockBuf = (uint8_t*) kmalloc(blockBufSize);
-
   if(blockBuf == NULL){
       return false;
   }
@@ -132,53 +78,6 @@ bool Ext2FS::Operations::readBlock(const VFS::FileSystem &vfs, uint8_t *buf, siz
 		return doReadBlock(buf, bufSize, blockID, *vfs.dev, &vfs.priv);
 	}
 	return r;
-}
-
-//static inode_t * _GetInodeForPath(VFSFileSystem* fs, const char* path)
-bool Ext2FS::Operations::getInodeForPath(const VFS::FileSystem &fs, const char* path, inode_t* ino)
-{
-  if(!read(fs, ino, 2)){
-      return false;
-  }
-
-  if(strcmp(path, "/") == 0){
-      return true;
-  }
-
-  inode_t* currentInode = ino;
-
-  size_t numSegs = 0;
-  char** paths = VFSSplitPath(path, &numSegs);
-  if(paths == NULL)
-  {
-      return NULL;
-  }
-  for(size_t i = 0;i<numSegs;++i)
-  {
-      inode_t* nextInode = getInodeNamed(fs, currentInode, paths[i]);
-      if(nextInode)
-      {
-          // not last and not a dir!
-          if(i < numSegs-1 && (nextInode->type & 0xF000) != INODE_TYPE_DIRECTORY)
-          {
-              currentInode = NULL;
-              goto cleanup;
-          }
-          currentInode = nextInode;
-      }
-      else
-      {
-          currentInode = NULL;
-          goto cleanup;
-      }   
-  }
-
-cleanup:
-  for(size_t i = 0;i<numSegs;++i){
-      kfree(paths[i]);
-  }
-  kfree(paths);
-  return currentInode;
 }
 
 Ext2FS::OptionalFileSystem Ext2FS::probe(BlockDevice& dev, size_t lbaStart){
