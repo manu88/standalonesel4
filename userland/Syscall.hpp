@@ -40,13 +40,13 @@ struct BaseResponse {
 /* *** *** ***  */
 
 struct SleepRequest : BaseRequest {
-  SleepRequest(uint64_t ns) : ns(ns) {}
+  SleepRequest(uint64_t ms) : ms(ms) {}
   size_t getNumMsgRegisters() const noexcept final { return 1; }
   seL4_Word getMsgRegister(size_t) const noexcept final {
-    return (seL4_Word)ns;
+    return (seL4_Word)ms;
   }
   bool hasResponse() const noexcept final { return true; }
-  uint64_t ns;
+  uint64_t ms;
 
   static Expected<SleepRequest, bool> decode(const seL4_MessageInfo_t &);
 };

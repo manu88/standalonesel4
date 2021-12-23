@@ -143,9 +143,9 @@ int Shell::processNewCommand(const string &cmd) {
     auto args = cmd.substr(6);
     long sec = strtol(args.c_str(), NULL, 10);
     if(sec){
-      long ns = sec * NS_IN_S;
-      kprintf("Sleep for %i sec -> %i ns\n", sec, ns);
-      Syscall::perform::sleep(Thread::getCurrent()->endpoint, ns);
+      long ms = sec * MS_IN_S;
+      kprintf("Sleep for %i sec -> %i ms\n", sec, ms);
+      Syscall::perform::sleep(Thread::getCurrent()->endpoint, ms);
       return 0;
     }
   } else if (cmd.starts_with("thread")) {

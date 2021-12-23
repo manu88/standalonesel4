@@ -252,7 +252,7 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
   case Syscall::ID::Sleep:{
     auto paramOrErr = Syscall::SleepRequest::decode(msgInfo);
     if (paramOrErr) {
-      kprintf("Request to sleep %i ns\n", paramOrErr.value.ns);
+      kprintf("Request to sleep %i ms\n", paramOrErr.value.ms);
     }
   } break;
   case Syscall::ID::Debug: {
