@@ -17,6 +17,8 @@
 
 #define VIRTIO_PCI_QUEUE_NOTIFY                16
 
+#define VIRTIO_PCI_ISR			19
+
 typedef struct 
 {
 #define VIRTIO_BLK_T_IN       0
@@ -45,6 +47,7 @@ struct VirtioDevice {
 
   uint32_t readReg32(uint16_t port);
   uint16_t readReg16(uint16_t port);
+  uint8_t  readReg8(uint16_t port);
 
 
   /* preallocated header. Since we do not actually use any features
