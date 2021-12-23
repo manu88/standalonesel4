@@ -30,20 +30,35 @@ struct PCIDevice {
     bool base_addr_64H[6];
   };
 
+  struct CommandRegister{
+    uint8_t _reserved2:2;
+    uint8_t interruptDisable:1; // If set to 1 the assertion of the devices INTx# signal is disabled; otherwise, assertion of the signal is enabled. 
+    uint8_t fastBackToBackEnable:1; // If set to 1 indicates a device is allowed to generate fast back-to-back transactions; otherwise, fast back-to-back transactions are only allowed to the same agent. 
+    uint8_t SERREnable:1; //If set to 1 the SERR# driver is enabled; otherwise, the driver is disabled. 
+    uint8_t _reserved:1;
+    uint8_t parityErrorResponse:1; // If set to 1 the device will take its normal action when a parity error is detected; otherwise, when an error is detected, the device will set bit 15 of the Status register (Detected Parity Error Status Bit), but will not assert the PERR# (Parity Error) pin and will continue operation as normal. 
+    uint8_t VGAPaletteSnoop:1; // If set to 1 the device does not respond to palette register writes and will snoop the data; otherwise, the device will trate palette write accesses like all other accesses. 
+    uint8_t memoryWriteAndInvalidateEnable:1; // If set to 1 the device can generate the Memory Write and Invalidate command; otherwise, the Memory Write command must be used. 
+    uint8_t specialCycles:1; // If set to 1 the device can monitor Special Cycle operations; otherwise, the device will ignore them. 
+    uint8_t busMaster:1; // If set to 1 the device can behave as a bus master; otherwise, the device can not generate PCI accesses. 
+    uint8_t memorySpace:1; // If set to 1 the device can respond to Memory Space accesses; otherwise, the device's response is disabled. 
+    uint8_t ioSpace:1; //  If set to 1 the device can respond to I/O Space accesses; otherwise, the device's response is disabled. 
+  };
+
   struct StatusRegister{
-    uint8_t _reserved:2;
-    uint8_t interruptStatus:1; // Interrupt Status - Represents the state of the device's INTx# signal. If set to 1 and bit 10 of the Command register (Interrupt Disable bit) is set to 0 the signal will be asserted; otherwise, the signal will be ignored. 
-    uint8_t capabilitiesList :1; // Capabilities List - If set to 1 the device implements the pointer for a New Capabilities Linked list at offset 0x34; otherwise, the linked list is not available. 
-    uint8_t is66MHzCapable:1; // 66 MHz Capable - If set to 1 the device is capable of running at 66 MHz; otherwise, the device runs at 33 MHz. 
-    uint8_t _reserved2:1; 
-    uint8_t fastBackToBackCapable:1; // Fast Back-to-Back Capable - If set to 1 the device can accept fast back-to-back transactions that are not from the same agent; otherwise, transactions can only be accepted from the same agent. 
-    uint8_t masterDataParityError :1; // Master Data Parity Error - This bit is only set when the following conditions are met. The bus agent asserted PERR# on a read or observed an assertion of PERR# on a write, the agent setting the bit acted as the bus master for the operation in which the error occurred, and bit 6 of the Command register (Parity Error Response bit) is set to 1. 
-    uint8_t deVSELTiming:1; // DEVSEL Timing - Read only bits that represent the slowest time that a device will assert DEVSEL# for any bus command except Configuration Space read and writes. Where a value of 0x0 represents fast timing, a value of 0x1 represents medium timing, and a value of 0x2 represents slow timing. 
-    uint8_t signaledTargetAbort :1; // Signalled Target Abort - This bit will be set to 1 whenever a target device terminates a transaction with Target-Abort. 
-    uint8_t receivedTargetAbort :1; // Received Target Abort - This bit will be set to 1, by a master device, whenever its transaction is terminated with Target-Abort. 
-    uint8_t receivedMasterAbort :1; // Received Master Abort - This bit will be set to 1, by a master device, whenever its transaction (except for Special Cycle transactions) is terminated with Master-Abort. 
-    uint8_t signaledSystemError :1; // Signalled System Error - This bit will be set to 1 whenever the device asserts SERR#. 
     uint8_t detectedParityError :1; // This bit will be set to 1 whenever the device detects a parity error, even if parity error handling is disabled. 
+    uint8_t signaledSystemError :1; // Signalled System Error - This bit will be set to 1 whenever the device asserts SERR#. 
+    uint8_t receivedMasterAbort :1; // Received Master Abort - This bit will be set to 1, by a master device, whenever its transaction (except for Special Cycle transactions) is terminated with Master-Abort. 
+    uint8_t receivedTargetAbort :1; // Received Target Abort - This bit will be set to 1, by a master device, whenever its transaction is terminated with Target-Abort. 
+    uint8_t signaledTargetAbort :1; // Signalled Target Abort - This bit will be set to 1 whenever a target device terminates a transaction with Target-Abort. 
+    uint8_t deVSELTiming:1; // DEVSEL Timing - Read only bits that represent the slowest time that a device will assert DEVSEL# for any bus command except Configuration Space read and writes. Where a value of 0x0 represents fast timing, a value of 0x1 represents medium timing, and a value of 0x2 represents slow timing. 
+    uint8_t masterDataParityError :1; // Master Data Parity Error - This bit is only set when the following conditions are met. The bus agent asserted PERR# on a read or observed an assertion of PERR# on a write, the agent setting the bit acted as the bus master for the operation in which the error occurred, and bit 6 of the Command register (Parity Error Response bit) is set to 1. 
+    uint8_t fastBackToBackCapable:1; // Fast Back-to-Back Capable - If set to 1 the device can accept fast back-to-back transactions that are not from the same agent; otherwise, transactions can only be accepted from the same agent. 
+    uint8_t _reserved2:1; 
+    uint8_t is66MHzCapable:1; // 66 MHz Capable - If set to 1 the device is capable of running at 66 MHz; otherwise, the device runs at 33 MHz. 
+    uint8_t capabilitiesList :1; // Capabilities List - If set to 1 the device implements the pointer for a New Capabilities Linked list at offset 0x34; otherwise, the linked list is not available. 
+    uint8_t interruptStatus:1; // Interrupt Status - Represents the state of the device's INTx# signal. If set to 1 and bit 10 of the Command register (Interrupt Disable bit) is set to 0 the signal will be asserted; otherwise, the signal will be ignored. 
+    uint8_t _reserved:2;
   };
 
   enum class Class : uint8_t {
@@ -78,6 +93,7 @@ struct PCIDevice {
   IOConfig cfg;
 
   StatusRegister status;
+  CommandRegister cmd;
 
   void print() const;
   const char *vendorName() const noexcept;

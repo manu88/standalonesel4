@@ -99,7 +99,18 @@ void PCIDevice::print() const {
   kprintf(" receivedMasterAbort: 0X%X\n", status.receivedMasterAbort);
   kprintf(" signaledSystemError: 0X%X\n", status.signaledSystemError);
   kprintf(" detectedParityError: 0X%X\n", status.detectedParityError);
+  kprintf("CMD:\n");
 
+  kprintf(" ioSpace: 0X%X\n", cmd.ioSpace);
+  kprintf(" memorySpace: 0X%X\n", cmd.memorySpace);
+  kprintf(" busMaster: 0X%X\n", cmd.busMaster);
+  kprintf(" specialCycles: 0X%X\n", cmd.specialCycles);
+  kprintf(" memoryWriteAndInvalidateEnable: 0X%X\n", cmd.memoryWriteAndInvalidateEnable);
+  kprintf(" VGAPaletteSnoop: 0X%X\n", cmd.VGAPaletteSnoop);
+  kprintf(" parityErrorResponse: 0X%X\n", cmd.parityErrorResponse);
+  kprintf(" SERREnable: 0X%X\n", cmd.SERREnable);
+  kprintf(" fastBackToBackEnable: 0X%X\n", cmd.fastBackToBackEnable);
+  kprintf(" interruptDisable: 0X%X\n", cmd.interruptDisable);
 
   kprintf("\n");
   printIOConfig(*this, true);
@@ -152,8 +163,13 @@ void PCIScanner::scan() {
         continue;
       }
       uint16_t deviceID = pciConfigReadWord(bus, slot, 0, 0x2);
-//      CommandReg cmdReg;
-//      cmdReg.value = pciConfigReadWord(bus, slot, 0, 0x4);
+
+      union CommandRegisterUnion{
+        uint16_t v;
+        PCIDevice::CommandRegister cmd;
+      };
+      CommandRegisterUnion cmd;
+      cmd.v = pciConfigReadWord(bus, slot, 0, 0x4);
 
       union StatusUnion{
         uint16_t v;
@@ -199,7 +215,8 @@ void PCIScanner::scan() {
                        .irqLine = interLineAndPin.fields.line,
                        .irqPin = interLineAndPin.fields.pin,
                        .cfg = {},
-                       .status = sta.status};
+                       .status = sta.status,
+                       .cmd = cmd.cmd};
       readIOConfig(dev.cfg, bus, slot, 0);
       _devices.push_back(dev);
     }
