@@ -227,13 +227,16 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
   case Syscall::ID::Read:{
     auto paramOrErr = Syscall::ReadRequest::decode(msgInfo);
     if (paramOrErr) {
-      kprintf("Read request sector %zi size %zi\n", paramOrErr.value.sector, paramOrErr.value.size);
+      kprintf("Read request inode %zi arg %zi\n", paramOrErr.value.sector, paramOrErr.value.size);
     if(paramOrErr.value.sector == 2){
       _vfs.testRead();
     }else{
-      _vfs.readFile(paramOrErr.value.sector, [](size_t pos, size_t sizeToCopy, size_t size, const uint8_t*){
+      _vfs.readFile(paramOrErr.value.sector, [paramOrErr](size_t pos, size_t sizeToCopy, size_t size, const uint8_t* data){
           //kprintf("%zi/%zi:'%s'\n", pos, size, (char*) data);
           kprintf("0X%X/0X%X -> size=0X%X\n", pos, size, sizeToCopy);
+          if(paramOrErr.value.size){
+            kprintf("%s", (const char*)data);
+          }
           return true;
         });
     }

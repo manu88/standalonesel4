@@ -124,7 +124,12 @@ int Shell::processNewCommand(const string &cmd) {
       auto args = cmd.substr(5);
       char *outArg = nullptr;
       size_t sector = strtol(args.c_str(), &outArg, 10);
-      auto responseOrErr = Syscall::perform::read(Thread::getCurrent()->endpoint, {sector, 0});
+      if (outArg == nullptr) {
+        kprintf("Missing size arg\n");
+        return -1;
+      }
+      size_t size = strtol(outArg, nullptr, 10);
+      auto responseOrErr = Syscall::perform::read(Thread::getCurrent()->endpoint, {sector, size});
       if(!responseOrErr){
         kprintf("Read error %i\n", responseOrErr.error);
         return responseOrErr.error;

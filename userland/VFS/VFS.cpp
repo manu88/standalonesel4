@@ -50,7 +50,6 @@ bool VFS::mount(const VFS::FileSystem*fs, const char* path){
 
 bool VFS::testRead(){
   return enumInodeDir(2, [this](const char* name, uint32_t inodeID){
-    kprintf("Entry '%s' inode id = %u\n", name, inodeID);
     if(inodeID == 2){
       return; 
     }
@@ -60,6 +59,7 @@ bool VFS::testRead(){
     if(strcmp(name, "..") == 0){
       return;
     }
+    kprintf("Entry '%s' inode id = %u\n", name, inodeID);
     enumInodeDir(inodeID, [](const char* name, uint32_t inodeID){
       if(strcmp(name, ".") == 0){
         return;
