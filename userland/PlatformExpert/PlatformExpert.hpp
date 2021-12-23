@@ -35,11 +35,9 @@ public:
   SlotOrError issuePortRangeWithSize(seL4_Word port, size_t range);
   void dropPortRange(seL4_Word cap);
 
-  SlotOrError getMSIHandle(const PCIDevice& dev, seL4_Word handle, seL4_Word vector);
-  SlotOrError getIRQHandle(const PCIDevice& dev);
-  SlotOrError getIRQHandle(int irqLine);
-  IRQHandleOrError getIOAPICIRQHandle(const PCIDevice& dev);
-  SlotOrError getIOAPICIRQHandle(seL4_Word ioapic, seL4_Word vector, seL4_Word pin);
+  IRQHandleOrError getMSIHandle(const PCIDevice& dev, seL4_Word handle, seL4_Word vector);
+  IRQHandleOrError getIRQHandle(int irqLine);
+  IRQHandleOrError getIOAPICIRQHandle(seL4_Word ioapic, seL4_Word vector, seL4_Word pin);
 
   DMARangeOrError allocDMARange(size_t size);
   void releaseDMARange(DMARange&);

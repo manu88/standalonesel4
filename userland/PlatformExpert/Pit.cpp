@@ -90,14 +90,12 @@ bool PIT::configure(uint8_t mode, uint64_t ns){
         return false;
     }
 
-    auto irqCapOrErr = _expert->getIOAPICIRQHandle(0, 42, 2);
-    if(!irqCapOrErr){
+    auto irqHandleOrErr = _expert->getIOAPICIRQHandle(0, 42, 2);
+    if(!irqHandleOrErr){
         return false;
     }
-    irqCap = irqCapOrErr.value;
+    irqCap = irqHandleOrErr.value.irqCap;
+    irqNotif = irqHandleOrErr.value.notif;
     seL4_IRQHandler_Ack(irqCap);
-
-    auto err = seL4_IRQHandler_SetNotification(irqCapOrErr.value, irqNotif);
-    assert(err == seL4_NoError);
     return true;
 }

@@ -59,47 +59,40 @@ PlatformExpert::issuePortRange(seL4_Word first_port, seL4_Word last_port) {
   return slotOrErr;
 }
 
-PlatformExpert::SlotOrError PlatformExpert::getIOAPICIRQHandle(seL4_Word ioapic, seL4_Word vector, seL4_Word pin){
-  auto slotOrErr = _factory->getFreeSlot();
-  if (!slotOrErr) {
-    return slotOrErr;
-  }
-	enum { IRQ_EDGE = 0, IRQ_LEVEL = 1 };
-	enum { IRQ_HIGH = 0, IRQ_LOW = 1 };
-  seL4_Word level    = (pin < 16) ? IRQ_EDGE : IRQ_LEVEL;
-	seL4_Word polarity = (pin < 16) ? IRQ_HIGH : IRQ_LOW;
-  auto err = seL4_IRQControl_GetIOAPIC(seL4_CapIRQControl, seL4_CapInitThreadCNode, slotOrErr.value, seL4_WordBits, ioapic, pin, level, polarity, vector);
-  if (err != seL4_NoError) {
-    _factory->releaseSlot(slotOrErr.value);
-    return unexpected<seL4_SlotPos, seL4_Error>(err);
-  }
-  return slotOrErr;
-  
-  auto notifOrErr = _factory->createNotification();
-  if(!notifOrErr){
-    _factory->releaseSlot(slotOrErr.value);
-    return unexpected<seL4_SlotPos, seL4_Error>(notifOrErr.error);
-  }
-  err = seL4_IRQHandler_SetNotification(slotOrErr.value, notifOrErr.value);
-  if( err != seL4_NoError){
-    _factory->releaseSlot(slotOrErr.value);
-    _factory->releaseObject(notifOrErr.value);
-    return unexpected<seL4_SlotPos, seL4_Error>(notifOrErr.error);
-  }
-  return success<seL4_SlotPos, seL4_Error>(notifOrErr.value);
-}
-PlatformExpert::IRQHandleOrError PlatformExpert::getIOAPICIRQHandle(const PCIDevice& dev){
+PlatformExpert::IRQHandleOrError PlatformExpert::getIOAPICIRQHandle(seL4_Word ioapic, seL4_Word vector, seL4_Word pin){
   auto slotOrErr = _factory->getFreeSlot();
   if (!slotOrErr) {
     return unexpected<PlatformExpert::IRQHandle, seL4_Error>(slotOrErr.error);
   }
 	enum { IRQ_EDGE = 0, IRQ_LEVEL = 1 };
 	enum { IRQ_HIGH = 0, IRQ_LOW = 1 };
-  seL4_Word ioapic = 0;
-  seL4_Word level    = (dev.irqLine < 16) ? IRQ_EDGE : IRQ_LEVEL;
-	seL4_Word polarity = (dev.irqLine < 16) ? IRQ_HIGH : IRQ_LOW;
-  seL4_Word vector = dev.irqLine;
-  auto err = seL4_IRQControl_GetIOAPIC(seL4_CapIRQControl, seL4_CapInitThreadCNode, slotOrErr.value, seL4_WordBits, ioapic, dev.irqLine, level, polarity, vector);
+  seL4_Word level    = /*(pin < 16) ? IRQ_EDGE :*/ IRQ_LEVEL;
+	seL4_Word polarity = /*(pin < 16) ? IRQ_HIGH :*/ IRQ_LOW;
+  auto err = seL4_IRQControl_GetIOAPIC(seL4_CapIRQControl, seL4_CapInitThreadCNode, slotOrErr.value, seL4_WordBits, ioapic, pin, level, polarity, vector);
+  if (err != seL4_NoError) {
+    _factory->releaseSlot(slotOrErr.value);
+    return unexpected<PlatformExpert::IRQHandle, seL4_Error>(err);
+  }  
+  auto notifOrErr = _factory->createNotification();
+  if(!notifOrErr){
+    _factory->releaseSlot(slotOrErr.value);
+    return unexpected<PlatformExpert::IRQHandle, seL4_Error>(notifOrErr.error);
+  }
+  err = seL4_IRQHandler_SetNotification(slotOrErr.value, notifOrErr.value);
+  if( err != seL4_NoError){
+    _factory->releaseSlot(slotOrErr.value);
+    _factory->releaseObject(notifOrErr.value);
+    return unexpected<PlatformExpert::IRQHandle, seL4_Error>(err);
+  }
+  return success<PlatformExpert::IRQHandle, seL4_Error>(PlatformExpert::IRQHandle(notifOrErr.value,slotOrErr.value));
+}
+
+PlatformExpert::IRQHandleOrError PlatformExpert::getIRQHandle(int irqLine){
+  auto slotOrErr = _factory->getFreeSlot();
+  if (!slotOrErr) {
+    return unexpected<PlatformExpert::IRQHandle, seL4_Error>(slotOrErr.error);
+  }
+  auto err = seL4_IRQControl_Get(seL4_CapIRQControl, irqLine, seL4_CapInitThreadCNode, slotOrErr.value, seL4_WordBits);
   if (err != seL4_NoError) {
     _factory->releaseSlot(slotOrErr.value);
     return unexpected<PlatformExpert::IRQHandle, seL4_Error>(err);
@@ -108,48 +101,21 @@ PlatformExpert::IRQHandleOrError PlatformExpert::getIOAPICIRQHandle(const PCIDev
   if(!notifOrErr){
     _factory->releaseSlot(slotOrErr.value);
     return unexpected<PlatformExpert::IRQHandle, seL4_Error>(notifOrErr.error);
+    //return unexpected<seL4_SlotPos, seL4_Error>(notifOrErr.error);
   }
   err = seL4_IRQHandler_SetNotification(slotOrErr.value, notifOrErr.value);
   if( err != seL4_NoError){
     _factory->releaseSlot(slotOrErr.value);
     _factory->releaseObject(notifOrErr.value);
-    return unexpected<PlatformExpert::IRQHandle, seL4_Error>(notifOrErr.error);
+    return unexpected<PlatformExpert::IRQHandle, seL4_Error>(err);
   }
   return success<PlatformExpert::IRQHandle, seL4_Error>(PlatformExpert::IRQHandle(notifOrErr.value,slotOrErr.value));
 }
 
-PlatformExpert::SlotOrError PlatformExpert::getIRQHandle(int irqLine){
+PlatformExpert::IRQHandleOrError PlatformExpert::getMSIHandle(const PCIDevice& dev, seL4_Word handle, seL4_Word vector){
   auto slotOrErr = _factory->getFreeSlot();
   if (!slotOrErr) {
-    return slotOrErr;
-  }
-  auto err = seL4_IRQControl_Get(seL4_CapIRQControl, irqLine, seL4_CapInitThreadCNode, slotOrErr.value, seL4_WordBits);
-  if (err != seL4_NoError) {
-    _factory->releaseSlot(slotOrErr.value);
-    return unexpected<seL4_SlotPos, seL4_Error>(err);
-  }
-  auto notifOrErr = _factory->createNotification();
-  if(!notifOrErr){
-    _factory->releaseSlot(slotOrErr.value);
-    return unexpected<seL4_SlotPos, seL4_Error>(notifOrErr.error);
-  }
-  err = seL4_IRQHandler_SetNotification(slotOrErr.value, notifOrErr.value);
-  if( err != seL4_NoError){
-    _factory->releaseSlot(slotOrErr.value);
-    _factory->releaseObject(notifOrErr.value);
-    return unexpected<seL4_SlotPos, seL4_Error>(notifOrErr.error);
-  }
-  return success<seL4_SlotPos, seL4_Error>(notifOrErr.value);
-}
-
-PlatformExpert::SlotOrError PlatformExpert::getIRQHandle(const PCIDevice& dev){
-  return getIRQHandle(dev.irqLine);
-}
-
-PlatformExpert::SlotOrError PlatformExpert::getMSIHandle(const PCIDevice& dev, seL4_Word handle, seL4_Word vector){
-  auto slotOrErr = _factory->getFreeSlot();
-  if (!slotOrErr) {
-    return slotOrErr;
+    return unexpected<PlatformExpert::IRQHandle, seL4_Error>(slotOrErr.error);
   }
   auto err = seL4_IRQControl_GetMSI(seL4_CapIRQControl, seL4_CapInitThreadCNode, slotOrErr.value, seL4_WordBits, dev.bus, dev.slot, dev.fun, handle, vector);
   if (err != seL4_NoError) {
@@ -158,15 +124,15 @@ PlatformExpert::SlotOrError PlatformExpert::getMSIHandle(const PCIDevice& dev, s
   auto notifOrErr = _factory->createNotification();
   if(!notifOrErr){
     _factory->releaseSlot(slotOrErr.value);
-    return unexpected<seL4_SlotPos, seL4_Error>(notifOrErr.error);
+    return unexpected<PlatformExpert::IRQHandle, seL4_Error>(notifOrErr.error);
   }
   err = seL4_IRQHandler_SetNotification(slotOrErr.value, notifOrErr.value);
   if( err != seL4_NoError){
     _factory->releaseSlot(slotOrErr.value);
     _factory->releaseObject(notifOrErr.value);
-    return unexpected<seL4_SlotPos, seL4_Error>(notifOrErr.error);
+    return unexpected<PlatformExpert::IRQHandle, seL4_Error>(err);
   }
-  return success<seL4_SlotPos, seL4_Error>(notifOrErr.value);
+  return success<PlatformExpert::IRQHandle, seL4_Error>(PlatformExpert::IRQHandle(notifOrErr.value,slotOrErr.value));
 }
 
 void PlatformExpert::print() const noexcept {
