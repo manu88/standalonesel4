@@ -43,7 +43,6 @@ void RootServer::lateInit() {
   if(_vfs.getMountables().size() > 0){
     _vfs.mount(&_vfs.getMountables()[0], "/");
   }
-  _vfs.testRead();
   kprintf("Test getting COM1\n");
   auto com1SlotOrErr = _platExpert.issuePortRangeWithSize(0x3F8, 8);
   assert(com1SlotOrErr);
@@ -229,23 +228,16 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
     auto paramOrErr = Syscall::ReadRequest::decode(msgInfo);
     if (paramOrErr) {
       kprintf("Read request sector %zi size %zi\n", paramOrErr.value.sector, paramOrErr.value.size);
-      size_t size = paramOrErr.value.size;
-      if(size > 512){
-        kprintf("Read request: size to high, using 512\n");
-        size = 512;
-      }
-      char buf[512] = {0};
-      auto readRet = _platExpert._pciblkDriver.read(paramOrErr.value.sector, buf, size);
-      if((size_t) readRet == size){
-        for(size_t i=0;i<size;i++){
-          if(i%8==0){
-            kprintf("\n");
-          }
-          kprintf("0X%X ", buf[i]);
-        }
-      }
-      kprintf("\n");
-      seL4_SetMR(1, readRet);
+    if(paramOrErr.value.sector == 2){
+      _vfs.testRead();
+    }else{
+      _vfs.readFile(paramOrErr.value.sector, [](size_t pos, size_t sizeToCopy, size_t size, const uint8_t*){
+          //kprintf("%zi/%zi:'%s'\n", pos, size, (char*) data);
+          kprintf("0X%X/0X%X -> size=0X%X\n", pos, size, sizeToCopy);
+          return true;
+        });
+    }
+      seL4_SetMR(1, 0);
       seL4_Reply(msgInfo);
     }
   } break;
@@ -263,6 +255,7 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
         kprintf("Num mapped pages %zi\n", _pt.getMappedPagesCount());
         kprintf("kmalloc'ed %zi/%zi bytes\n", getTotalKMallocated(),
                 KmallocReservedPages * PAGE_SIZE);
+        kmallocPrintStats();
         _vmspace.print();
       } else if (paramOrErr.value.op ==
                  Syscall::DebugRequest::Operation::DumpScheduler) {
