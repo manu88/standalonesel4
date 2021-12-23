@@ -57,6 +57,8 @@
 
 #endif
 
+
+size_t kmalloced = 0;
 /** A structure found at the top of all system allocated 
  * memory blocks. It details the usage of the memory block.
  */
@@ -259,7 +261,7 @@ void *PREFIX(malloc)(size_t req_size)
 				// to save space.
 	
 	liballoc_lock();
-
+	kmalloced+=req_size;
 	if ( size == 0 )
 	{
 		l_warningCount += 1;
@@ -668,7 +670,7 @@ void PREFIX(free)(void *ptr)
 	FLUSH();
 	#endif
 	
-
+	kmalloced -= min->req_size;
 		maj = min->block;
 
 		l_inuse -= min->size;
