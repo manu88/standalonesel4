@@ -10,6 +10,7 @@ extern "C" {
 void setMemoryPool(void *start, size_t size, seL4_CPtr mutexNotif);
 size_t getTotalKMallocated(void);
 
+void kmallocPrintStats(void);
 
 #if 0
 void *kmalloc(size_t size);
