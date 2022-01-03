@@ -11,12 +11,17 @@ public:
   using SlotOrError = Expected<seL4_SlotPos, seL4_Error>;
 
   ObjectOrError allocObject(seL4_Word type);
+  ObjectOrError allocObject(seL4_Word type, seL4_CNode root);
   void releaseObject(seL4_CPtr obj);
 
   SlotOrError getFreeSlot();
   void releaseSlot(seL4_SlotPos pos);
+  void print();
 
 private:
   seL4_SlotPos emptySlotPos = 0;
   vector<seL4_SlotPos> releasedSlots;
+
+  size_t numAllocatedFromEmptyList = 0;
+  size_t numAllocatedFromReleased = 0;
 };
