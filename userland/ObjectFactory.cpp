@@ -16,14 +16,12 @@ ObjectFactory::createThread(seL4_Word tcbBadge, Thread::EntryPoint entryPoint,
   if (!tcbOrErr) {
     return unexpected<std::shared_ptr<Thread>, seL4_Error>(tcbOrErr.error);
   }
-  assert(tcbOrErr);
   auto thread = new Thread(tcbOrErr.value, entryPoint);
   if (!thread) {
     return unexpected<std::shared_ptr<Thread>, seL4_Error>(
         seL4_NotEnoughMemory);
   }
   thread->badge = tcbBadge;
-
   auto tcbStackOrErr = _vmSpace.allocRangeAnywhere(1, seL4_ReadWrite);
   if (!tcbStackOrErr) {
     _untypedPool.releaseObject(tcbOrErr.value);
