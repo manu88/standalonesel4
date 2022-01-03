@@ -17,6 +17,7 @@ OBJS = main.o\
 	RootServer.o\
 	VMSpace.o\
 	Thread.o\
+	Process.o\
 	ObjectFactory.o\
 	kmalloc.o\
 	Shell.o\
