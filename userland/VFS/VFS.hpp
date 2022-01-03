@@ -1,4 +1,5 @@
 #pragma once
+#include "../lib/optional.hpp"
 #include "../lib/vector.hpp"
 #include "ext2_defs.h"
 #include <functional>
@@ -69,6 +70,17 @@ public:
 
     Operations *ops = nullptr;
   };
+
+  struct File {
+    size_t pos = 0;
+    inode_t *inode = nullptr;
+
+    size_t getSize() const noexcept { return inode->size; }
+  };
+
+  Optional<File> open(uint32_t inodeID);
+  ssize_t read(File &, uint8_t *buf, size_t bufSize);
+  bool close(File &);
 
   bool init();
   bool inpectDev(BlockDevice &);

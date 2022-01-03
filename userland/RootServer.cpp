@@ -1,5 +1,6 @@
 #include "RootServer.hpp"
 #include "InitialUntypedPool.hpp"
+#include "Process.hpp"
 #include "Syscall.hpp"
 #include "klog.h"
 #include "kmalloc.hpp"
@@ -72,7 +73,49 @@ void RootServer::onTimerTick() {
   }
 }
 
-void RootServer::exec() {}
+void RootServer::exec() {
+  kprintf("Test process\n");
+  return;
+#if 0
+  kprintf("Create ASID Pool\n");
+  auto asidPoolOrErr = _untypedPool.getFreeSlot();//allocObject(seL4_X86_4K);
+  assert(asidPoolOrErr);
+  auto asidCapOrErr = _untypedPool.getFreeSlot();
+  assert(asidCapOrErr);
+  auto err = seL4_X86_ASIDControl_MakePool(seL4_CapASIDControl, asidPoolOrErr.value, seL4_CapInitThreadCNode, asidCapOrErr.value, seL4_WordBits);
+  if(err != seL4_NoError){
+    kprintf("seL4_X86_ASIDControl_MakePool Err %s\n", seL4::errorStr(err));
+    assert(0);
+  }
+#endif
+  kprintf("Create cspace\n");
+  seL4_Error err = seL4_NoError;
+  auto cspaceOrErr = _untypedPool.allocObject(seL4_CapTableObject);
+  assert(cspaceOrErr);
+  Process p;
+  p.cspace = cspaceOrErr.value;
+
+  auto pageDirOrErr =
+      _untypedPool.allocObject(seL4_X86_PageDirectoryObject, cspaceOrErr.value);
+  if (!pageDirOrErr) {
+    kprintf("seL4_X86_PageDirectoryObject Err %s\n",
+            seL4::errorStr(pageDirOrErr.error));
+  }
+  assert(pageDirOrErr);
+  p.pageDir = pageDirOrErr.value;
+  kprintf("Page Dir ok\n");
+  err = seL4_X86_PageDirectory_Map(p.pageDir, 1, 0x1000000,
+                                   seL4_X86_Default_VMAttributes);
+  if (err != seL4_NoError) {
+    kprintf("seL4_X86_PageDirectory_Map Err %s\n", seL4::errorStr(err));
+    assert(0);
+  }
+  err = seL4_X86_ASIDPool_Assign(seL4_CapInitThreadASIDPool, p.pageDir);
+  if (err != seL4_NoError) {
+    kprintf("seL4_X86_ASIDPool_Assign Err %s\n", seL4::errorStr(err));
+    assert(0);
+  }
+}
 
 void RootServer::run() {
 #ifdef ARCH_X86_64
@@ -193,6 +236,7 @@ void RootServer::handleVMFault(const seL4_MessageInfo_t &msgInfo,
     bool ret = faultyVmspace->mapPage(faultAddr);
     if (resSlot.second.type == VMSpace::MemoryType::IPC) {
       caller.setIPCBuffer(resSlot.second.vaddr, resSlot.second.pageCap);
+      kprintf("Set IPC buffer for thread %X\n", caller.badge);
     }
     if (ret) {
       seL4_Reply(msgInfo);
@@ -208,17 +252,6 @@ void RootServer::handleVMFault(const seL4_MessageInfo_t &msgInfo,
     kprintf("faulty page was NOT reserved\n");
     kprintf("TODO: terminate caller\n");
   }
-
-  /*
-      if(process_handle_vm_fault(process, faultAddr, faultStatusRegister) == 0)
-      {
-          doExit(process, MAKE_EXIT_CODE(0, SIGSEGV));
-      }
-      else // good to go
-      {
-          seL4_Reply(info);
-      }
-  */
 }
 
 void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
@@ -226,25 +259,43 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
   assert(seL4_MessageInfo_get_length(msgInfo) > 0);
   seL4_Word syscallID = seL4_GetMR(0);
   switch ((Syscall::ID)syscallID) {
+  case Syscall::ID::Open: {
+    auto msgOrErr = Syscall::OpenRequest::decode(msgInfo);
+    if (msgOrErr) {
+      auto fileOrErr = _vfs.open(msgOrErr.value.inodeId);
+      if (!fileOrErr) {
+        seL4_SetMR(1, 1);
+        seL4_Reply(msgInfo);
+        break;
+      }
+      testFile = *fileOrErr;
+      kprintf("File open ok pos=%zi inode=%p size=%zu\n", testFile.pos,
+              testFile.inode, testFile.getSize());
+    }
+    seL4_SetMR(1, 0);
+    seL4_Reply(msgInfo);
+
+  } break;
   case Syscall::ID::Read: {
     auto paramOrErr = Syscall::ReadRequest::decode(msgInfo);
     if (paramOrErr) {
-      kprintf("Read request inode %zi arg %zi\n", paramOrErr.value.sector,
+      kprintf("Read request inode %zi arg %zi\n", paramOrErr.value.inodeId,
               paramOrErr.value.size);
-      if (paramOrErr.value.sector == 2) {
+      if (paramOrErr.value.inodeId == 2) {
         _vfs.testRead();
       } else {
-        _vfs.readFile(paramOrErr.value.sector,
-                      [paramOrErr](size_t pos, size_t sizeToCopy, size_t size,
-                                   const uint8_t *data) {
-                        // kprintf("%zi/%zi:'%s'\n", pos, size, (char*) data);
-                        kprintf("0X%X/0X%X -> size=0X%X\n", pos, size,
-                                sizeToCopy);
-                        if (paramOrErr.value.size) {
-                          kprintf("%s", (const char *)data);
-                        }
-                        return true;
-                      });
+        if (paramOrErr.value.size == 0) {
+          seL4_SetMR(1, 2);
+          seL4_Reply(msgInfo);
+          return;
+        }
+        assert(caller.ipbBufferVaddr);
+        auto ret = _vfs.read(testFile, (uint8_t *)caller.ipbBufferVaddr,
+                             paramOrErr.value.size);
+        kprintf("read returned %zi, new pos is %zu\n", ret, testFile.pos);
+        if (ret > 0 && paramOrErr.value.size) {
+          kprintf("'%s'", (const char *)caller.ipbBufferVaddr);
+        }
       }
       seL4_SetMR(1, 0);
       seL4_Reply(msgInfo);
@@ -266,6 +317,7 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
                 KmallocReservedPages * PAGE_SIZE);
         kmallocPrintStats();
         _vmspace.print();
+        _untypedPool.print();
       } else if (paramOrErr.value.op ==
                  Syscall::DebugRequest::Operation::DumpScheduler) {
         seL4_DebugDumpScheduler();

@@ -48,6 +48,82 @@ bool VFS::mount(const VFS::FileSystem *fs, const char *path) {
   return false;
 }
 
+Optional<VFS::File> VFS::open(uint32_t inodeID) {
+  inode_t *inode = (inode_t *)kmalloc(sizeof(inode_t));
+  if (!inode) {
+    return Optional<VFS::File>();
+    ;
+  }
+  if (!_rootFS->read(inode, inodeID)) {
+    kfree(inode);
+    return Optional<VFS::File>();
+    ;
+  }
+  File f;
+  f.inode = inode;
+  return Optional<VFS::File>(f);
+}
+
+bool VFS::close(VFS::File &f) {
+  if (f.inode) {
+    kfree(f.inode);
+  }
+  return false;
+}
+ssize_t VFS::read(VFS::File &f, uint8_t *buf, size_t bufSize) {
+  assert(buf);
+  if (f.inode == nullptr) {
+    return -1;
+  }
+  if (f.pos >= f.inode->size) {
+    return 0;
+  }
+  size_t indexOfBlockToRead = (size_t)f.pos / _rootFS->priv.blocksize;
+  kprintf("read pos=%zu size=%zu indexOfBlockToRead=%i\n", f.pos, f.inode->size,
+          indexOfBlockToRead);
+  if (indexOfBlockToRead < 12) {
+    uint32_t blockID = f.inode->dbp[indexOfBlockToRead];
+    if (blockID == 0) {
+      return 0; // EOF
+    }
+    if (blockID > _rootFS->priv.sb.blocks) {
+      kprintf("block %d outside range (max: %d)!\n", blockID,
+              _rootFS->priv.sb.blocks);
+    }
+    uint8_t *buffer = buf;
+    size_t bufferSize = bufSize;
+    if (bufSize < 4096) {
+      buffer = (uint8_t *)kmalloc(4096);
+      assert(buffer);
+      bufferSize = 4096;
+    }
+    assert(bufferSize >= 4096);
+    kprintf("Will readBlock\n");
+    if (!_rootFS->readBlock(buffer, bufferSize, blockID)) {
+      if (buffer != buf) {
+        kfree(buffer);
+      }
+      return -1;
+    }
+    kprintf("Did readBlock\n");
+
+    size_t sizeToCopy = f.inode->size - f.pos;
+    if (sizeToCopy > bufSize) {
+      sizeToCopy = bufSize;
+    }
+    size_t chunkToCopy = f.pos % _rootFS->priv.blocksize;
+    kprintf("memcpying %zi bytes\n", sizeToCopy);
+    memcpy(buf, buffer + chunkToCopy, sizeToCopy);
+    f.pos += sizeToCopy;
+    if (buffer != buf) {
+      kfree(buffer);
+    }
+    return sizeToCopy;
+  }
+
+  return -1;
+}
+
 bool VFS::testRead() {
   return enumInodeDir(2, [this](const char *name, uint32_t inodeID) {
     if (inodeID == 2) {

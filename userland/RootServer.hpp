@@ -2,14 +2,14 @@
 #include "InitialUntypedPool.hpp"
 #include "ObjectFactory.hpp"
 #include "PageTable.hpp"
+#include "PlatformExpert/PlatformExpert.hpp"
 #include "Shell.hpp"
 #include "Thread.hpp"
-#include "VMSpace.hpp"
 #include "VFS/VFS.hpp"
+#include "VMSpace.hpp"
 #include "lib/expected.hpp"
 #include "lib/optional.hpp"
 #include "lib/vector.hpp"
-#include "PlatformExpert/PlatformExpert.hpp"
 
 struct ThreadTable {
   vector<std::shared_ptr<Thread>> threads;
@@ -24,7 +24,7 @@ struct ThreadTable {
   }
 };
 
-class RootServer: public VMSpaceDelegate {
+class RootServer : public VMSpaceDelegate {
 public:
   RootServer();
   void earlyInit(); // kmalloc/kfree/new/delete are setup here!
@@ -35,10 +35,12 @@ public:
 private:
   void processSyscall(const seL4_MessageInfo_t &msgInfo, Thread &caller);
   void handleVMFault(const seL4_MessageInfo_t &msgInfo, Thread &caller);
+
   Expected<std::shared_ptr<Thread>, seL4_Error>
   createThread(Thread::EntryPoint entryPoint);
 
-  seL4_Error mapPage(seL4_Word vaddr, seL4_CapRights_t rights,seL4_Word &cap) override;
+  seL4_Error mapPage(seL4_Word vaddr, seL4_CapRights_t rights,
+                     seL4_Word &cap) override;
   enum { KmallocReservedPages = 10 };
 
   void reservePages();
@@ -60,4 +62,6 @@ private:
 
   PlatformExpert _platExpert;
   VFS _vfs;
+
+  VFS::File testFile;
 };

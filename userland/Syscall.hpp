@@ -9,7 +9,9 @@ namespace Syscall {
 
 enum class ID : seL4_Word {
   Unknown,
+  Open,
   Read,
+  Close,
   Sleep,
   Debug,
   KMalloc,
@@ -129,17 +131,37 @@ struct MMapResponse : public BaseResponse {
 
 /* *** *** ***  */
 
+struct OpenRequest : BaseRequest {
+  OpenRequest(seL4_Word inodeId) : inodeId(inodeId) {}
+  size_t getNumMsgRegisters() const noexcept final { return 1; }
+  seL4_Word getMsgRegister(size_t) const noexcept final { return inodeId; }
+  bool hasResponse() const noexcept final { return true; }
+
+  seL4_Word inodeId = 0;
+
+  static Expected<OpenRequest, bool> decode(const seL4_MessageInfo_t &);
+};
+
+struct OpenResponse : public BaseResponse {
+  OpenResponse(ssize_t resp) : resp(resp) {}
+  static Expected<OpenResponse, bool> decode(const seL4_MessageInfo_t &);
+
+  ssize_t resp;
+};
+
+/* *** *** ***  */
+
 struct ReadRequest : BaseRequest {
-  ReadRequest(size_t sector, size_t size) : sector(sector), size(size) {}
+  ReadRequest(size_t inodeId, size_t size) : inodeId(inodeId), size(size) {}
   size_t getNumMsgRegisters() const noexcept final { return 2; }
   seL4_Word getMsgRegister(size_t i) const noexcept final {
     if (i == 0) {
-      return (seL4_Word)sector;
+      return (seL4_Word)inodeId;
     }
     return (seL4_Word)size;
   }
   bool hasResponse() const noexcept final { return true; }
-  size_t sector;
+  size_t inodeId;
   size_t size;
 
   static Expected<ReadRequest, bool> decode(const seL4_MessageInfo_t &);
@@ -188,6 +210,11 @@ Expected<ReturnType, bool> performBase(seL4_Word endpoint, Syscall::ID id,
                                        const RequestType &b = BaseRequest());
 
 namespace perform {
+
+inline Expected<OpenResponse, bool> open(seL4_Word endpoint,
+                                         const OpenRequest &r) {
+  return performBase<OpenRequest, OpenResponse>(endpoint, ID::Open, r);
+}
 
 inline Expected<ReadResponse, bool> read(seL4_Word endpoint,
                                          const ReadRequest &r) {

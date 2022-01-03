@@ -117,6 +117,19 @@ int Shell::processNewCommand(const string &cmd) {
         Thread::getCurrent()->endpoint,
         Syscall::DebugRequest(Syscall::DebugRequest::Operation::DumpScheduler));
     return 0;
+  } else if (cmd.starts_with("open")) {
+    if (cmd.size() < 6) {
+      return -1;
+    }
+    auto args = cmd.substr(5);
+    size_t inodeID = strtol(args.c_str(), nullptr, 10);
+    auto responseOrErr =
+        Syscall::perform::open(Thread::getCurrent()->endpoint, {inodeID});
+    if (!responseOrErr) {
+      kprintf("open error %i\n", responseOrErr.error);
+      return responseOrErr.error;
+    }
+    return responseOrErr.value.resp;
   } else if (cmd.starts_with("read")) {
     if (cmd.size() < 6) {
       return -1;
