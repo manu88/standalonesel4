@@ -9,6 +9,8 @@ public:
   constexpr const T &operator*() const &noexcept { return value_; }
   constexpr T &operator*() &noexcept { return value_; }
 
+  operator bool() const noexcept { return _has_value; }
+
 private:
   struct empty_byte {};
   union {
