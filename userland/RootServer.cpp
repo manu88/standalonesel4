@@ -278,26 +278,33 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
   } break;
   case Syscall::ID::Read: {
     auto paramOrErr = Syscall::ReadRequest::decode(msgInfo);
-    if (paramOrErr) {
-      kprintf("Read request inode %zi arg %zi\n", paramOrErr.value.inodeId,
-              paramOrErr.value.size);
-      if (paramOrErr.value.inodeId == 2) {
-        _vfs.testRead();
-      } else {
-        if (paramOrErr.value.size == 0) {
-          seL4_SetMR(1, 2);
-          seL4_Reply(msgInfo);
-          return;
-        }
-        assert(caller.ipbBufferVaddr);
-        auto ret = _vfs.read(testFile, (uint8_t *)caller.ipbBufferVaddr,
-                             paramOrErr.value.size);
-        kprintf("read returned %zi, new pos is %zu\n", ret, testFile.pos);
-        if (ret > 0 && paramOrErr.value.size) {
-          kprintf("'%s'", (const char *)caller.ipbBufferVaddr);
-        }
+    if (!paramOrErr) {
+      seL4_SetMR(1, -1);
+      seL4_Reply(msgInfo);
+    }
+    kprintf("Read request inode %zi arg %zi\n", paramOrErr.value.inodeId,
+            paramOrErr.value.size);
+    if (paramOrErr.value.inodeId == 2) {
+      _vfs.testRead();
+    } else {
+      if (paramOrErr.value.size == 0) {
+        seL4_SetMR(1, -2);
+        seL4_Reply(msgInfo);
+        return;
       }
-      seL4_SetMR(1, 0);
+      auto data = reinterpret_cast<uint8_t *>(kmalloc(paramOrErr.value.size));
+      if (!data) {
+        seL4_SetMR(1, -3);
+        seL4_Reply(msgInfo);
+        return;
+      }
+      auto ret = _vfs.read(testFile, data, paramOrErr.value.size);
+      kprintf("read returned %zi, new pos is %zu\n", ret, testFile.pos);
+      if (ret > 0 && paramOrErr.value.size) {
+        kprintf("'%s'", (const char *)data);
+      }
+      kfree(data);
+      seL4_SetMR(1, ret);
       seL4_Reply(msgInfo);
     }
   } break;
