@@ -31,6 +31,9 @@ OBJS = main.o\
 	VFS/VFS.o\
 	VFS/Ext2.o\
 	liballoc.o\
+	elf.o\
+	elf32.o\
+	elf64.o\
 
 
 LIBS= -L./libsel4/lib/ -lsel4
