@@ -286,6 +286,8 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
             paramOrErr.value.size);
     if (paramOrErr.value.inodeId == 2) {
       _vfs.testRead();
+      seL4_SetMR(1, 0);
+      seL4_Reply(msgInfo);
     } else {
       if (paramOrErr.value.size == 0) {
         seL4_SetMR(1, -2);
