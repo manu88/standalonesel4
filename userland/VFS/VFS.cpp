@@ -79,8 +79,6 @@ ssize_t VFS::read(VFS::File &f, uint8_t *buf, size_t bufSize) {
     return 0;
   }
   size_t indexOfBlockToRead = (size_t)f.pos / _rootFS->priv.blocksize;
-  kprintf("read pos=%zu size=%zu indexOfBlockToRead=%i\n", f.pos, f.inode->size,
-          indexOfBlockToRead);
   if (indexOfBlockToRead < 12) {
     uint32_t blockID = f.inode->dbp[indexOfBlockToRead];
     if (blockID == 0) {
@@ -98,14 +96,12 @@ ssize_t VFS::read(VFS::File &f, uint8_t *buf, size_t bufSize) {
       bufferSize = 4096;
     }
     assert(bufferSize >= 4096);
-    kprintf("Will readBlock\n");
     if (!_rootFS->readBlock(buffer, bufferSize, blockID)) {
       if (buffer != buf) {
         kfree(buffer);
       }
       return -1;
     }
-    kprintf("Did readBlock\n");
 
     size_t sizeToCopy = f.inode->size - f.pos;
     if (sizeToCopy > bufSize) {
