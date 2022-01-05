@@ -108,7 +108,6 @@ ssize_t VFS::read(VFS::File &f, uint8_t *buf, size_t bufSize) {
       sizeToCopy = bufSize;
     }
     size_t chunkToCopy = f.pos % _rootFS->priv.blocksize;
-    kprintf("memcpying %zi bytes\n", sizeToCopy);
     memcpy(buf, buffer + chunkToCopy, sizeToCopy);
     f.pos += sizeToCopy;
     if (buffer != buf) {
