@@ -22,7 +22,7 @@ InitialUntypedPool::allocObject(seL4_Word type) {
        untyped++) {
     seL4_UntypedDesc *desc = &info->untypedList[untyped - info->untyped.start];
     seL4_Word sizeBits = 0;
-    if(type == seL4_CapTableObject){
+    if (type == seL4_CapTableObject) {
       sizeBits = CNODE_SLOT_BITS(seL4_PageBits);
     }
     if (!desc->isDevice) {
@@ -39,9 +39,10 @@ InitialUntypedPool::allocObject(seL4_Word type) {
   return success<seL4_CPtr, seL4_Error>(cslot);
 }
 
-InitialUntypedPool::ObjectOrError InitialUntypedPool::allocObject(seL4_Word type, seL4_CNode root){
+InitialUntypedPool::ObjectOrError
+InitialUntypedPool::allocObject(seL4_Word type, seL4_CNode root) {
   auto info = seL4::GetBootInfo();
-  seL4_CPtr cslot = 1;// slotOrErr.value;
+  seL4_CPtr cslot = 1; // slotOrErr.value;
 
   /* keep trying to retype until we succeed */
   seL4_Error error = seL4_NotEnoughMemory;
@@ -49,12 +50,18 @@ InitialUntypedPool::ObjectOrError InitialUntypedPool::allocObject(seL4_Word type
        untyped++) {
     seL4_UntypedDesc *desc = &info->untypedList[untyped - info->untyped.start];
     seL4_Word sizeBits = 0;
-    if(type == seL4_CapTableObject){
+    if (type == seL4_CapTableObject) {
       sizeBits = CNODE_SLOT_BITS(seL4_PageBits);
     }
     if (!desc->isDevice) {
-      seL4_Error error = seL4_Untyped_Retype(
-          untyped, type, sizeBits, root, 0, 0, cslot, 1);
+      seL4_Word nodeIndex = 0;
+      seL4_Word nodeDepth = 0;
+      seL4_Word nodeOffset = cslot;
+      seL4_Word numObjects = 1;
+
+      seL4_Error error =
+          seL4_Untyped_Retype(untyped, type, sizeBits, root, nodeIndex,
+                              nodeDepth, nodeOffset, numObjects);
       if (error == seL4_NoError) {
         return success<seL4_CPtr, seL4_Error>(cslot);
       }
@@ -93,8 +100,11 @@ void InitialUntypedPool::releaseSlot(seL4_SlotPos slot) {
   releasedSlots.push_back(slot);
 }
 
-void InitialUntypedPool::print(){
-  kprintf("empty slot start: 0X%X current pos: 0X%X empty slot end:0X%X\n", seL4::GetBootInfo()->empty.start, emptySlotPos, seL4::GetBootInfo()->empty.end);
+void InitialUntypedPool::print() {
+  kprintf("empty slot start: 0X%X current pos: 0X%X empty slot end:0X%X\n",
+          seL4::GetBootInfo()->empty.start, emptySlotPos,
+          seL4::GetBootInfo()->empty.end);
   kprintf("stashed slots: %zi\n", releasedSlots.size());
-  kprintf("Total allocated from empty list=%zi, reused=%zi\n", numAllocatedFromEmptyList, numAllocatedFromReleased);
+  kprintf("Total allocated from empty list=%zi, reused=%zi\n",
+          numAllocatedFromEmptyList, numAllocatedFromReleased);
 }
