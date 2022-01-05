@@ -98,9 +98,14 @@ struct VMSpace {
   bool pageIsReserved(seL4_Word addr) const noexcept;
   void print() const noexcept;
   PhysicalAddressOrError mapPage(seL4_Word addr);
+  PhysicalAddressOrError mapPages(seL4_Word addr, size_t numPages);
 
   ReservationSlot getReservationForAddress(seL4_Word addr) const noexcept;
   size_t reservationCount() const noexcept { return _reservations.size(); }
+
+  const vector<Reservation>& getReservations() const noexcept{
+    return _reservations;
+  }
 
   VMSpaceDelegate *delegate = nullptr;
 

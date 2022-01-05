@@ -51,7 +51,7 @@ bool VMSpace::pageIsReserved(seL4_Word addr) const noexcept {
   return false;
 }
 
-VMSpace::PhysicalAddressOrError VMSpace::mapPage(seL4_Word addr) {
+VMSpace::PhysicalAddressOrError VMSpace::mapPages(seL4_Word addr, size_t numPagesToMap){
   // FIXME: overly complicated! need some serious refactoring.
   auto resSlot = getReservationForAddress(addr);
   if (resSlot.first == -1) {
@@ -61,7 +61,7 @@ VMSpace::PhysicalAddressOrError VMSpace::mapPage(seL4_Word addr) {
     return unexpected<seL4_Word, seL4_Error>(
         seL4_InvalidArgument); // already mapped
   }
-  if (resSlot.second.numPages == 1) {
+  if (resSlot.second.numPages == numPagesToMap) {
     // no split needed
     seL4_Word cap = 0;
     auto err =
@@ -80,7 +80,12 @@ VMSpace::PhysicalAddressOrError VMSpace::mapPage(seL4_Word addr) {
       mapFirstSeg = false;
       containingPageNum -= 1;
     }
-    auto splitRes1 = resSlot.second.split(containingPageNum);
+    size_t mapAfterPage = containingPageNum;
+    if(mapFirstSeg){
+      mapAfterPage = containingPageNum + numPagesToMap - 1;
+    }
+    kprintf("Split at %zi\n", mapAfterPage);
+    auto splitRes1 = resSlot.second.split(mapAfterPage);
     if (!splitRes1.isValid()) {
       kprintf("splitRes1 invalid\n");
       print();
@@ -102,7 +107,7 @@ VMSpace::PhysicalAddressOrError VMSpace::mapPage(seL4_Word addr) {
       return success<seL4_Word, seL4_Error>(
           VMSpace::Reservation::getPhysicalAddr(cap).value);
     }
-    if (splitRes1.numPages == 1) {
+    if (splitRes1.numPages == numPagesToMap) {
       seL4_Word cap = 0;
       auto err = delegate->mapPage(splitRes1.vaddr, splitRes1.rights, cap);
       if (err == seL4_NoError) {
@@ -116,14 +121,14 @@ VMSpace::PhysicalAddressOrError VMSpace::mapPage(seL4_Word addr) {
       return success<seL4_Word, seL4_Error>(
           VMSpace::Reservation::getPhysicalAddr(cap).value);
     }
-    auto splitRes2 = splitRes1.split(0);
+    auto splitRes2 = splitRes1.split(numPagesToMap-1);
     if (splitRes2.isValid()) {
       seL4_Word cap = 0;
       auto err = delegate->mapPage(splitRes2.vaddr, splitRes2.rights, cap);
       if (err == seL4_NoError) {
         _reservations[resSlot.first] = resSlot.second;
         splitRes2.pageCap = cap;
-        _reservations.push_back(splitRes2);
+        _reservations.push_back(splitRes1);
         _reservations.push_back(splitRes2);
       }
       if (err != seL4_NoError) {
@@ -135,6 +140,10 @@ VMSpace::PhysicalAddressOrError VMSpace::mapPage(seL4_Word addr) {
   }
   assert(0);
   return unexpected<seL4_Word, seL4_Error>(seL4_InvalidArgument);
+}
+
+VMSpace::PhysicalAddressOrError VMSpace::mapPage(seL4_Word addr) {
+  return mapPages(addr, 1);
 }
 
 VMSpace::ReservationSlot
