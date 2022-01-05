@@ -468,37 +468,3 @@ void RootServer::reservePages() {
     }
   }
 }
-
-void RootServer::testPt() {
-  seL4_Word vaddr = VMSpace::RootServerLayout::ReservedVaddr +
-                    (KmallocReservedPages * PAGE_SIZE);
-
-  size_t sizeToTest = 1024;
-  for (size_t i = 0; i < sizeToTest; i++) {
-    auto capOrError = _pt.mapPage(vaddr, seL4_ReadWrite);
-    if (capOrError.error == seL4_FailedLookup) {
-      kprintf("Missing intermediate paging structure at level %lu\n",
-              seL4_MappingFailedLookupLevel());
-    } else if (capOrError.error != seL4_NoError) {
-      kprintf("Test mapping error = %i at %i\n", capOrError.error, i);
-    }
-    auto test = reinterpret_cast<size_t *>(vaddr);
-    *test = i;
-    assert(*test == i);
-    vaddr += 4096;
-    if (i % 100 == 0) {
-      kprintf("Page %zi/%zi ok\n", i, sizeToTest);
-    }
-  }
-
-  kprintf("After test, vaddr is at %X\n", vaddr);
-  vaddr = VMSpace::RootServerLayout::ReservedVaddr +
-          (KmallocReservedPages * PAGE_SIZE);
-  for (size_t i = 0; i < sizeToTest; i++) {
-    auto test = reinterpret_cast<size_t *>(vaddr);
-    //        *test = i;
-    assert(*test == i);
-    vaddr += 4096;
-  }
-  kprintf("After test OK \n");
-}

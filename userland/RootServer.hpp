@@ -44,7 +44,6 @@ private:
   enum { KmallocReservedPages = 10 };
 
   void reservePages();
-  void testPt();
 
   void onTimerTick();
 
