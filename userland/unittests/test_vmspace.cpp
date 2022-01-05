@@ -46,8 +46,7 @@ static void testReservations() {
   assert(r3.split(0).isValid() == false);
 }
 
-int testVMSpace(void) {
-  testReservations();
+static int testVMSpace_Map1PageInMiddle(void) {
   const seL4_Word addrStart = 0x1000;
   const size_t numPages = 12;
   VMSpace a(addrStart);
@@ -71,10 +70,126 @@ int testVMSpace(void) {
 
   auto countBeforeMapping = a.reservationCount();
   printf("Test Map page countBeforeMapping=%zi\n", a.reservationCount());
-  auto ret = a.mapPage(addrStart + PAGE_SIZE + 1);
+  auto ret = a.mapPages(addrStart + PAGE_SIZE + 1, 1);
   assert(ret);
   a.print();
   printf("after, countBeforeMapping=%zi\n", a.reservationCount());
+  assert(a.getReservations()[0].numPages == 1);
+  assert(a.getReservations()[1].numPages == 1);
+  assert(a.getReservations()[2].numPages == 10);
   assert(a.reservationCount() == countBeforeMapping + 2);
+  return 0;
+}
+
+static int testVMSpace_Map2PagesInMiddle(void) {
+  const seL4_Word addrStart = 0x1000;
+  const size_t numPages = 12;
+  VMSpace a(addrStart);
+  TestVMSpaceDelegate delegate;
+  a.delegate = &delegate;
+  assert(a.pageIsReserved(0) == false);
+  auto res = a.allocRangeAnywhere(numPages);
+  assert(a.pageIsReserved(addrStart - 1) == false);
+  assert(res);
+  a.print();
+  for (size_t i = 0; i < numPages; i++) {
+    size_t pageStart = addrStart + (i * PAGE_SIZE);
+    for (size_t j = 0; j < PAGE_SIZE; j++) {
+      assert(a.pageIsReserved(pageStart + j));
+    }
+  }
+
+  auto reservationSlot = a.getReservationForAddress(addrStart + PAGE_SIZE);
+  assert(reservationSlot.first != -1);
+  assert(reservationSlot.second.isValid());
+
+  auto countBeforeMapping = a.reservationCount();
+  printf("Test Map page countBeforeMapping=%zi\n", a.reservationCount());
+  auto ret = a.mapPages(addrStart + PAGE_SIZE + 1, 2);
+  assert(ret);
+  a.print();
+  printf("after, countBeforeMapping=%zi\n", a.reservationCount());
+  assert(a.getReservations()[0].numPages == 1);
+  assert(a.getReservations()[1].numPages == 2);
+  assert(a.getReservations()[2].numPages == 9);
+  assert(a.reservationCount() == countBeforeMapping + 2);
+  return 0;
+}
+
+static int testVMSpace_Map2PagesAtStart(void){
+  const seL4_Word addrStart = 0x1000;
+  const size_t numPages = 12;
+  VMSpace a(addrStart);
+  TestVMSpaceDelegate delegate;
+  a.delegate = &delegate;
+  assert(a.pageIsReserved(0) == false);
+  auto res = a.allocRangeAnywhere(numPages);
+  assert(a.pageIsReserved(addrStart - 1) == false);
+  assert(res);
+  a.print();
+  for (size_t i = 0; i < numPages; i++) {
+    size_t pageStart = addrStart + (i * PAGE_SIZE);
+    for (size_t j = 0; j < PAGE_SIZE; j++) {
+      assert(a.pageIsReserved(pageStart + j));
+    }
+  }
+
+  auto reservationSlot = a.getReservationForAddress(addrStart + PAGE_SIZE);
+  assert(reservationSlot.first != -1);
+  assert(reservationSlot.second.isValid());
+
+  auto countBeforeMapping = a.reservationCount();
+  printf("Test Map page countBeforeMapping=%zi\n", a.reservationCount());
+  auto ret = a.mapPages(addrStart , 2);
+  assert(ret);
+  a.print();
+  printf("after, countBeforeMapping=%zi\n", a.reservationCount());
+  assert(a.getReservations()[0].numPages == 2);
+  assert(a.getReservations()[1].numPages == 10);
+  assert(a.reservationCount() == countBeforeMapping + 1);
+  return 0;
+}
+
+static int testVMSpace_Map1PageAtStart(void) {
+  const seL4_Word addrStart = 0x1000;
+  const size_t numPages = 12;
+  VMSpace a(addrStart);
+  TestVMSpaceDelegate delegate;
+  a.delegate = &delegate;
+  assert(a.pageIsReserved(0) == false);
+  auto res = a.allocRangeAnywhere(numPages);
+  assert(a.pageIsReserved(addrStart - 1) == false);
+  assert(res);
+  a.print();
+  for (size_t i = 0; i < numPages; i++) {
+    size_t pageStart = addrStart + (i * PAGE_SIZE);
+    for (size_t j = 0; j < PAGE_SIZE; j++) {
+      assert(a.pageIsReserved(pageStart + j));
+    }
+  }
+
+  auto reservationSlot = a.getReservationForAddress(addrStart + PAGE_SIZE);
+  assert(reservationSlot.first != -1);
+  assert(reservationSlot.second.isValid());
+
+  auto countBeforeMapping = a.reservationCount();
+  printf("Test Map page countBeforeMapping=%zi\n", a.reservationCount());
+  auto ret = a.mapPages(addrStart , 1);
+  assert(ret);
+  a.print();
+  printf("after, countBeforeMapping=%zi\n", a.reservationCount());
+  assert(a.getReservations()[0].numPages == 1);
+  assert(a.getReservations()[1].numPages == 11);
+  assert(a.reservationCount() == countBeforeMapping + 1);
+  return 0;
+}
+
+
+int testVMSpace(){
+  testReservations();
+  testVMSpace_Map1PageAtStart();
+  testVMSpace_Map1PageInMiddle();
+  testVMSpace_Map2PagesAtStart();
+  testVMSpace_Map2PagesInMiddle();
   return 0;
 }

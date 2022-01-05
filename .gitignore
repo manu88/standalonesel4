@@ -10,3 +10,4 @@ userland/libsel4/
 userland/unittests/unittests
 userland/unittests/VMSpace.cpp
 userland/unittests/kmalloc.cpp
+userland/unittests/liballoc.c

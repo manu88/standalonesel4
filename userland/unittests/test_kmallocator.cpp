@@ -1,7 +1,9 @@
 #include "kmalloc.hpp"
+#include "liballoc.h"
 #include "tests.hpp"
 #include <assert.h>
 #include <cstdlib>
+#include <cstring>
 //#include "vector.hpp"
 
 void testKmallocator() {
@@ -23,16 +25,12 @@ void testKmallocator() {
   assert(getTotalKMallocated() == 0);
 
   printf("testKmallocator krealloc:\n");
-  int *ptr2 = (int *)krealloc(nullptr, 512);
+  char *ptr2 = (char *)krealloc(nullptr, 512);
   assert(ptr2);
-  for (int i = 0; i < 2048; i++) {
-    ptr2[i] = i;
-  }
+  strcpy(ptr2, "Hello world");
   printf("Test krealloc\n");
-  int *ptr22 = (int *)krealloc(ptr2, 1024);
+  char *ptr22 = (char *)krealloc(ptr2, 1024);
   printf("Test krealloc OK\n");
   assert(ptr22);
-  for (int i = 0; i < 2048; i++) {
-    assert(ptr22[i] == i);
-  }
+  assert(strcmp(ptr22, "Hello world") == 0);
 }

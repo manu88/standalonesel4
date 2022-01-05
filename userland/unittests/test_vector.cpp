@@ -49,7 +49,7 @@ static void testVectorRemove() {
   for (int i = 0; i < 10; i++) {
     auto a = std::shared_ptr<Element>(new Element(i));
     vec.push_back(a);
-    printf("Add %i at %i\n", i, i);
+    printf("Added %i at %i\n", i, i);
   }
   assert(vec.size() == 10);
   vec.erase(vec.begin());
