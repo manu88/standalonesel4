@@ -5,13 +5,16 @@
 #include "sel4.hpp"
 #include <cstddef>
 
+#define CNODE_SLOT_BITS(x) (x - seL4_SlotBits)
+
 class InitialUntypedPool {
 public:
   using ObjectOrError = Expected<seL4_CPtr, seL4_Error>;
   using SlotOrError = Expected<seL4_SlotPos, seL4_Error>;
 
   ObjectOrError allocObject(seL4_Word type);
-  ObjectOrError allocObject(seL4_Word type, seL4_CNode root);
+  ObjectOrError allocCNode();
+  ObjectOrError allocObject(seL4_Word type, seL4_CNode root, seL4_CPtr cslot);
   void releaseObject(seL4_CPtr obj);
 
   SlotOrError getFreeSlot();

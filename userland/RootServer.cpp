@@ -1,18 +1,19 @@
 #include "RootServer.hpp"
 #include "InitialUntypedPool.hpp"
-#include "Process.hpp"
 #include "Syscall.hpp"
 #include "klog.h"
 #include "kmalloc.hpp"
 #include "runtime.h"
 #include <sel4/arch/mapping.h> // seL4_MappingFailedLookupLevel
+#include <math.h>
+
 
 RootServer::RootServer()
     : _pt(_untypedPool), _vmspace(VMSpace::RootServerLayout::ReservedVaddr +
                                   (KmallocReservedPages * PAGE_SIZE)),
       _factory(_untypedPool, _pt, _vmspace) {
   kprintf("Initialize Page Table\n");
-  _pt.init(VMSpace::RootServerLayout::AddressTables);
+  _pt.init(VMSpace::RootServerLayout::AddressTables, seL4_CapInitThreadVSpace);
 }
 
 void RootServer::earlyInit() {
@@ -61,7 +62,6 @@ RootServer::createThread(Thread::EntryPoint entryPoint) {
     _threads.add(ret.value);
     kprintf("Created new thread with badge %X\n", ret.value->badge);
   }
-
   return ret;
 }
 
@@ -75,46 +75,89 @@ void RootServer::onTimerTick() {
 
 void RootServer::exec() {
   kprintf("Test process\n");
-  return;
+  _testProc = new Process(_untypedPool);
+  assert(_testProc);
+  auto cspaceOrErr = _untypedPool.allocCNode();
+  assert(cspaceOrErr);
+  _testProc->cspace = cspaceOrErr.value;
+  auto vspaceOrErr = _untypedPool.allocObject(seL4_X64_PML4Object);//, _testProc->cspace, 1);
+  assert(vspaceOrErr);
+  _testProc->vspace = vspaceOrErr.value;
+  seL4_Error error;
+  seL4_Word depth = CNODE_SLOT_BITS(seL4::GetBootInfo()->initThreadCNodeSizeBits) + CNODE_SLOT_BITS(Process::CNodeSizeBits);
+  seL4_Word guard = seL4_CNode_CapData_new(0, seL4_WordBits - depth).words[0];
+  auto guardedCnodeOrErr = _untypedPool.getFreeSlot();
+  assert(guardedCnodeOrErr);
+  error = seL4_CNode_Mint(seL4_CapInitThreadCNode, guardedCnodeOrErr.value, seL4_WordBits, seL4_CapInitThreadCNode, _testProc->cspace, seL4_WordBits, seL4_AllRights, guard);
+  if(error != seL4_NoError){
+    kprintf("seL4_CNode_Mint error %s\n", seL4::errorStr(error));
+  }  
+  
+  error = seL4_X86_ASIDPool_Assign(seL4_CapInitThreadASIDPool, vspaceOrErr.value);
+  if(error != seL4_NoError){
+    kprintf("seL4_X86_ASIDPool_Assign error %s\n", seL4::errorStr(error));
+  }
 #if 0
-  kprintf("Create ASID Pool\n");
-  auto asidPoolOrErr = _untypedPool.getFreeSlot();//allocObject(seL4_X86_4K);
-  assert(asidPoolOrErr);
-  auto asidCapOrErr = _untypedPool.getFreeSlot();
-  assert(asidCapOrErr);
-  auto err = seL4_X86_ASIDControl_MakePool(seL4_CapASIDControl, asidPoolOrErr.value, seL4_CapInitThreadCNode, asidCapOrErr.value, seL4_WordBits);
-  if(err != seL4_NoError){
-    kprintf("seL4_X86_ASIDControl_MakePool Err %s\n", seL4::errorStr(err));
-    assert(0);
+  seL4_Word vaddr = 0x1000000;
+  _testProc->_pageTable.init(vaddr, vspaceOrErr.value);
+  kprintf("Page table for process ok\n");
+  auto processPageOrErr = _testProc->_pageTable.mapPage(vaddr, seL4_AllRights);
+  assert(processPageOrErr);
+  kprintf("Proc page table ok");
+  kprintf("Test copying page cap\n");
+  auto slotOrErr = _untypedPool.getFreeSlot();
+  assert(slotOrErr);
+  kprintf("Test copying page cap OK\n");
+//  char* ptr = reinterpret_cast<char*>(vaddr);
+#endif
+  _factory.configProcess(*_testProc, _apiEndpoint);
+
+  kprintf("Test read ELF file\n");
+
+  auto fileOrErr = _vfs.open(12);
+  assert(fileOrErr);
+  size_t numPages = ceil(fileOrErr->getSize() / 4096.f);
+  kprintf("file size = %zi %zi pages\n", fileOrErr->getSize(), numPages);
+
+  auto textReservation = _vmspace.allocRangeAnywhere(numPages);
+  assert(textReservation);
+  kprintf("Will copy ELF text at addr 0X%X\n", textReservation.value.vaddr);
+  auto physPagesOrErr = _vmspace.mapPages(textReservation.value.vaddr, numPages);
+  assert(physPagesOrErr);
+  _vmspace.print();
+  auto buf = reinterpret_cast<uint8_t*>(textReservation.value.vaddr);
+  kprintf("Buf is at 0X%0X\n", buf);
+  assert(buf);
+
+  size_t totalSize = 0;
+  int i = 0;
+  while (1){
+    auto ret = _vfs.read(*fileOrErr, buf + totalSize, 4096);
+    if(ret == 0){
+      break;
+    }
+    kprintf("Iter %i / %i  did read %zi at 0X%X :",i, numPages, ret, buf + totalSize);
+    for (int a=0; a<16; a++){
+      kprintf("0X%X ", buf[totalSize+a]);
+    }
+    kprintf("\n");
+    totalSize += ret;
+    i++;
+    for (uint64_t t = 0; t < UINT16_MAX * 100; t++) {
+    }
+  }
+  kprintf("Did read %zi bytes\n", totalSize);
+  kprintf("END Test read ELF file\n");
+#if 0  
+  uint16_t *b = reinterpret_cast<uint16_t *>(buf);
+  for(size_t i=0;i<totalSize/2;i++){
+    if(i%8==0){
+      kprintf("\n%8X  ", i*2);
+    }
+    kprintf("%4X ", b[i]);
   }
 #endif
-  kprintf("Create cspace\n");
-  seL4_Error err = seL4_NoError;
-  auto cspaceOrErr = _untypedPool.allocObject(seL4_CapTableObject);
-  assert(cspaceOrErr);
-  Process p;
-  p.cspace = cspaceOrErr.value;
-
-  auto pageDirOrErr =
-      _untypedPool.allocObject(seL4_X86_PageDirectoryObject, cspaceOrErr.value);
-  if (!pageDirOrErr) {
-    kprintf("seL4_X86_PageDirectoryObject Err %s\n",
-            seL4::errorStr(pageDirOrErr.error));
-  }
-  assert(pageDirOrErr);
-  p.pageDir = pageDirOrErr.value;
-  kprintf("Page Dir ok\n");
-  err = seL4_X86_PageDirectory_Map(p.pageDir, 1, 0x1000000,
-                                   seL4_X86_Default_VMAttributes);
-  if (err != seL4_NoError) {
-    kprintf("seL4_X86_PageDirectory_Map Err %s\n", seL4::errorStr(err));
-    assert(0);
-  }
-  err = seL4_X86_ASIDPool_Assign(seL4_CapInitThreadASIDPool, p.pageDir);
-  if (err != seL4_NoError) {
-    kprintf("seL4_X86_ASIDPool_Assign Err %s\n", seL4::errorStr(err));
-    assert(0);
-  }
+  _loader.load(buf, totalSize);
 }
 
 void RootServer::run() {
@@ -190,13 +233,19 @@ void RootServer::run() {
   }
 }
 
-seL4_Error RootServer::mapPage(seL4_Word vaddr, seL4_CapRights_t rights,
+seL4_Error RootServer::mapPages(seL4_Word vaddr, seL4_CapRights_t rights, size_t numPages,
                                seL4_Word &cap) {
-  auto pageCapOrErr = _pt.mapPage(vaddr, rights);
-  if (!pageCapOrErr) {
-    return pageCapOrErr.error;
+  bool first = true;
+  for(size_t i=0;i<numPages;i++){
+    auto pageCapOrErr = _pt.mapPage(vaddr + (i*4096), rights);
+    if (!pageCapOrErr) {
+      return pageCapOrErr.error;
+    }
+    if(first){
+      cap = pageCapOrErr.value;
+      first = false;
+    }
   }
-  cap = pageCapOrErr.value;
   return seL4_NoError;
 }
 
@@ -303,7 +352,14 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
       auto ret = _vfs.read(testFile, data, paramOrErr.value.size);
       kprintf("read returned %zi, new pos is %zu\n", ret, testFile.pos);
       if (ret > 0 && paramOrErr.value.size) {
-        kprintf("'%s'", (const char *)data);
+        uint16_t* b = reinterpret_cast<uint16_t*>(data);
+        for(size_t i=0;i<(size_t)ret/2;i++){
+          if(i%8==0){
+            kprintf("\n%8X  ", i*2);
+          }
+          kprintf("%4X ", b[i]);
+        }
+        //kprintf("'%s'", (const char *)data);
       }
       kfree(data);
       seL4_SetMR(1, ret);
@@ -327,6 +383,8 @@ void RootServer::processSyscall(const seL4_MessageInfo_t &msgInfo,
         kmallocPrintStats();
         _vmspace.print();
         _untypedPool.print();
+        kprintf("VM SPACE PROCESS\n");
+        _testProc->_vmspace.print();
       } else if (paramOrErr.value.op ==
                  Syscall::DebugRequest::Operation::DumpScheduler) {
         seL4_DebugDumpScheduler();

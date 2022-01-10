@@ -6,6 +6,7 @@
 class PageTable;
 class InitialUntypedPool;
 class VMSpace;
+class Process;
 
 class ObjectFactory {
 public:
@@ -17,6 +18,8 @@ public:
   Expected<std::shared_ptr<Thread>, seL4_Error>
   createThread(seL4_Word tcbBadge, Thread::EntryPoint entryPoint,
                seL4_CPtr apiEndpoint);
+  
+  seL4_Error configProcess(Process &p, seL4_CPtr apiEndpoint);
   ObjectOrError createEndpoint();
   ObjectOrError createNotification();
   void releaseObject(seL4_CPtr);

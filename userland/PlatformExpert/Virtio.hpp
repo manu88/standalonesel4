@@ -27,7 +27,7 @@ typedef struct {
   uint32_t type;
   uint32_t reserved;
   uint64_t sector;
-  uint8_t status;
+  uint8_t status; // 0: OK; 1: Error; 2: Unsupported
 } __attribute__((packed)) virtio_blk_req;
 
 struct VirtioDevice {

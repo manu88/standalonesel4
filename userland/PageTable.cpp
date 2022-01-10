@@ -63,7 +63,7 @@ seL4_Error PageTable::unmapPage(seL4_CPtr pageCap) {
   return err;
 }
 
-void PageTable::init(seL4_Word vaddr) {
+void PageTable::init(seL4_Word vaddr, seL4_X64_PML4 pml4) {
   kprintf("PageTable: init\n");
   auto pdptOrErr = untypedPool.allocObject(seL4_X86_PDPTObject);
   pdpt = pdptOrErr.value;
@@ -72,19 +72,15 @@ void PageTable::init(seL4_Word vaddr) {
   auto ptOrErr = untypedPool.allocObject(seL4_X86_PageTableObject);
   pt = ptOrErr.value;
 
-  kprintf("pdpt is at %x\n", pdpt);
-  kprintf("pd is at %x\n", pd);
-  kprintf("pt is at %x\n", pt);
-
   /* map a PDPT at TEST_VADDR */
-  seL4_Error error = seL4_X86_PDPT_Map(pdpt, seL4_CapInitThreadVSpace, vaddr,
+  seL4_Error error = seL4_X86_PDPT_Map(pdpt, pml4, vaddr,
                                        seL4_X86_Default_VMAttributes);
 
-  error = seL4_X86_PageDirectory_Map(pd, seL4_CapInitThreadVSpace, vaddr,
+  error = seL4_X86_PageDirectory_Map(pd, pml4, vaddr,
                                      seL4_X86_Default_VMAttributes);
   assert(error == seL4_NoError);
 
-  error = seL4_X86_PageTable_Map(pt, seL4_CapInitThreadVSpace, vaddr,
+  error = seL4_X86_PageTable_Map(pt, pml4, vaddr,
                                  seL4_X86_Default_VMAttributes);
   assert(error == seL4_NoError);
 }

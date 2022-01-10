@@ -24,7 +24,7 @@ bool VFS::testPartition(BlockDevice &dev, const PartitionTableEntry *ent) {
 }
 
 bool VFS::inpectDev(BlockDevice &dev) {
-  char buf[512] = {0};
+  uint8_t buf[512] = {0};
   auto readRet = dev.read(0, buf, 512);
   if (readRet == 512) {
     const MBR *mbr = (const MBR *)buf;
@@ -52,15 +52,37 @@ Optional<VFS::File> VFS::open(uint32_t inodeID) {
   inode_t *inode = (inode_t *)kmalloc(sizeof(inode_t));
   if (!inode) {
     return Optional<VFS::File>();
-    ;
   }
   if (!_rootFS->read(inode, inodeID)) {
     kfree(inode);
     return Optional<VFS::File>();
-    ;
   }
   File f;
   f.inode = inode;
+  kprintf("VFS::Open inode\n");
+  kprintf("type: 0X%X\n", inode->type);
+  kprintf("uid: 0X%X\n", inode->uid);
+  kprintf("size: 0X%X\n", inode->size);
+  kprintf("last_access: 0X%X\n", inode->last_access);
+  kprintf("create_time: 0X%X\n", inode->create_time);
+  kprintf("last_modif: 0X%X\n", inode->last_modif);
+  kprintf("delete_time: 0X%X\n", inode->delete_time);
+  kprintf("gid: 0X%X\n", inode->gid);
+  kprintf("hardlinks: 0X%X\n", inode->hardlinks);
+  kprintf("disk_sectors: 0X%X\n", inode->disk_sectors);
+  kprintf("flags: 0X%X\n", inode->flags);
+  kprintf("ossv1: 0X%X\n", inode->ossv1);
+  for(int i=0;i<12;i++){
+    kprintf("dbp[%i]: 0X%X\n",i, inode->dbp[i]);
+  }
+  kprintf("singly_block: 0X%X\n", inode->singly_block);
+  kprintf("doubly_block: 0X%X\n", inode->doubly_block);
+  kprintf("triply_block: 0X%X\n", inode->triply_block);
+  kprintf("gen_no: 0X%X\n", inode->gen_no);
+  kprintf("reserved1: 0X%X\n", inode->reserved1);
+  kprintf("reserved2: 0X%X\n", inode->reserved2);
+  kprintf("fragment_block: 0X%X\n", inode->fragment_block);
+
   return Optional<VFS::File>(f);
 }
 
@@ -102,7 +124,6 @@ ssize_t VFS::read(VFS::File &f, uint8_t *buf, size_t bufSize) {
       }
       return -1;
     }
-
     size_t sizeToCopy = f.inode->size - f.pos;
     if (sizeToCopy > bufSize) {
       sizeToCopy = bufSize;
@@ -114,8 +135,9 @@ ssize_t VFS::read(VFS::File &f, uint8_t *buf, size_t bufSize) {
       kfree(buffer);
     }
     return sizeToCopy;
+  }else{
+    assert(0);
   }
-
   return -1;
 }
 
@@ -184,119 +206,4 @@ bool VFS::enumInodeDir(
   }
   kfree(ino);
   return true;
-}
-
-bool VFS::readFile(
-    uint32_t inodeID,
-    std::function<bool(size_t, size_t, size_t, const uint8_t *)> onData) {
-  kprintf("Test read file at inode %zu\n", inodeID);
-
-  inode_t *inode = (inode_t *)kmalloc(sizeof(inode_t));
-  if (!inode) {
-    return false;
-  }
-  if (!_rootFS->read(inode, inodeID)) {
-    kfree(inode);
-    return false;
-  }
-  if (!inode->isFile()) {
-    kfree(inode);
-    return false;
-  }
-  uint8_t *tempBuf = (uint8_t *)kmalloc(4096);
-  if (!tempBuf) {
-    kprintf("unable to kmalloc tempBuf\n");
-    kfree(inode);
-    return true;
-  }
-  kprintf("inode is a file, size=%zi\n", inode->size);
-  size_t readPos = 0;
-  bool done = false;
-  bool ret = false;
-  const size_t numBytes = 4096;
-  uint32_t *block = nullptr;
-  while (!done) {
-    size_t indexOfBlockToRead = (size_t)readPos / _rootFS->priv.blocksize;
-    if (indexOfBlockToRead < 12) {
-      uint32_t b = inode->dbp[indexOfBlockToRead];
-      if (b == 0) {
-        kprintf("EOF For read\n");
-        ret = true;
-        break;
-      }
-      if (b > _rootFS->priv.sb.blocks) {
-        kprintf("block %d outside range (max: %d)!\n", b,
-                _rootFS->priv.sb.blocks);
-      }
-      size_t sizeToCopy = inode->size - readPos;
-      if (sizeToCopy > numBytes) {
-        sizeToCopy = numBytes;
-      }
-      if (!_rootFS->readBlock(tempBuf, numBytes, b)) {
-        ret = false;
-        break;
-      }
-      if (!onData(readPos, sizeToCopy, inode->size, tempBuf)) {
-        ret = true;
-        break;
-      }
-      readPos += sizeToCopy;
-      if (readPos >= inode->size) {
-        ret = true;
-        break;
-      }
-    } else {
-      // indexOfBlockToRead> >= 12
-      if (inode->doubly_block) {
-        kprintf("Doubly block, to implement :)\n");
-        assert(0);
-      }
-      if (inode->triply_block) {
-        kprintf("Triply block, to implement :)\n");
-        assert(0);
-      }
-      if (inode->singly_block) {
-        auto blockIndex = indexOfBlockToRead - 12;
-        if (!block) {
-          block = (uint32_t *)kmalloc(4096);
-        }
-        if (!block) {
-          ret = false;
-          break;
-        }
-        if (!_rootFS->readBlock((uint8_t *)block, 4096, inode->singly_block)) {
-          kprintf("Read block error\n");
-          ret = false;
-          break;
-        }
-        if (block[blockIndex] == 0) {
-          kprintf("block[%i] is 0 ?\n", blockIndex);
-          continue;
-        } else {
-          auto blockId = block[blockIndex];
-          _rootFS->readBlock((uint8_t *)block, 4096, blockId);
-          size_t sizeToCopy = inode->size - readPos;
-          if (sizeToCopy > numBytes) {
-            sizeToCopy = numBytes;
-          }
-          if (!onData(readPos, sizeToCopy, inode->size, (uint8_t *)block)) {
-            ret = true;
-            break;
-          }
-          readPos += sizeToCopy;
-          if (readPos >= inode->size) {
-            ret = true;
-            break;
-          }
-        }
-      }
-    }
-  } // end while(!done)
-
-  kfree(tempBuf);
-  kfree(inode);
-  if (block) {
-    kfree(block);
-  }
-  return ret;
 }

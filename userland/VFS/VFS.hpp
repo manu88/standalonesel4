@@ -95,9 +95,7 @@ public:
   bool enumInodeDir(
       uint32_t inodeID,
       std::function<void(const char *, uint32_t inodeID)> entryCallback);
-  bool
-  readFile(uint32_t inodeID,
-           std::function<bool(size_t, size_t, size_t, const uint8_t *)> onData);
+
 
 private:
   bool testPartition(BlockDevice &dev, const PartitionTableEntry *ent);

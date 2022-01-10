@@ -15,11 +15,11 @@ public:
   size_t queueSize = 0;
   uint8_t queueID = 0;
 
-  ssize_t read(size_t sector, char *buf, size_t bufSize) final;
+  ssize_t read(size_t sector, uint8_t *buf, size_t bufSize) final;
 
 private:
-  ssize_t blkReadSector(size_t sector, char *buf, size_t bufSize);
-  void *blkCmd(int op, size_t sector, char *buf, size_t bufSize);
+  ssize_t blkReadSector(size_t sector, uint8_t *buf, size_t bufSize);
+  void *blkCmd(int op, size_t sector, uint8_t *buf, size_t bufSize);
 
   bool initializeDescRing(PlatformExpert &);
   VirtioDevice _dev;

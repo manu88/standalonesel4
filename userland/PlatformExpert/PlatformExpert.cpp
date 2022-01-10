@@ -174,7 +174,7 @@ PlatformExpert::DMARangeOrError PlatformExpert::allocDMARange(size_t size) {
   size_t numPages = (size / PAGE_SIZE) + 1;
   auto callingThread = Thread::getCurrent();
   assert(Thread::calledFromMain()); // XXX Right now we use main thread: be sure
-                                    // to use Syscalls to
+                                    // to use Syscalls to issue this command when called from other threads
   assert(callingThread->vmspace != nullptr);
   auto resOrErr = callingThread->vmspace->allocRangeAnywhere(
       numPages, seL4_ReadWrite, VMSpace::MemoryType::DMA);

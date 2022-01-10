@@ -10,7 +10,7 @@ public:
 
   PageTable(InitialUntypedPool &untypedPool) : untypedPool(untypedPool) {}
 
-  void init(seL4_Word vaddr);
+  void init(seL4_Word vaddr, seL4_X64_PML4 pml4);
 
   PageCapOrError mapPage(seL4_Word vaddr, seL4_CapRights_t rights);
   seL4_Error unmapPage(seL4_CPtr pageCap);

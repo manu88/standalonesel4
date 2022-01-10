@@ -22,6 +22,7 @@ OBJS = main.o\
 	kmalloc.o\
 	Shell.o\
 	Syscall.o\
+	ProgramLoader.o\
 	PlatformExpert/PlatformExpert.o\
 	PlatformExpert/PCIScanner.o\
 	PlatformExpert/pciDevices.o\

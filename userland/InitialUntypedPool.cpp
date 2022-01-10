@@ -3,7 +3,35 @@
 #include "runtime.h"
 #include "sel4.hpp"
 
-#define CNODE_SLOT_BITS(x) (x - seL4_SlotBits)
+
+InitialUntypedPool::ObjectOrError
+InitialUntypedPool::allocCNode(){
+  auto info = seL4::GetBootInfo();
+  auto slotOrErr = getFreeSlot();
+  if (!slotOrErr) {
+    return unexpected<seL4_CPtr, seL4_Error>(slotOrErr.error);
+  }
+  seL4_CPtr cslot = slotOrErr.value;
+
+  /* keep trying to retype until we succeed */
+  seL4_Error error = seL4_NotEnoughMemory;
+  for (seL4_CPtr untyped = info->untyped.start; untyped < info->untyped.end;
+       untyped++) {
+    seL4_UntypedDesc *desc = &info->untypedList[untyped - info->untyped.start];
+    seL4_Word sizeBits = CNODE_SLOT_BITS(seL4_PageBits);
+    if (!desc->isDevice) {
+      seL4_Error error = seL4_Untyped_Retype(
+          untyped, seL4_CapTableObject, sizeBits, seL4_CapInitThreadCNode, 0, 0, cslot, 1);
+      if (error == seL4_NoError) {
+        return success<seL4_CPtr, seL4_Error>(cslot);
+      }
+    }
+  }
+  if (error != seL4_NoError) {
+    return unexpected<seL4_CPtr, seL4_Error>(error);
+  }
+  return success<seL4_CPtr, seL4_Error>(cslot);
+}
 
 /* a very simple allocation function that iterates through the untypeds in boot
    info until a retype succeeds */
@@ -40,9 +68,8 @@ InitialUntypedPool::allocObject(seL4_Word type) {
 }
 
 InitialUntypedPool::ObjectOrError
-InitialUntypedPool::allocObject(seL4_Word type, seL4_CNode root) {
+InitialUntypedPool::allocObject(seL4_Word type, seL4_CNode root, seL4_CPtr cslot) {
   auto info = seL4::GetBootInfo();
-  seL4_CPtr cslot = 1; // slotOrErr.value;
 
   /* keep trying to retype until we succeed */
   seL4_Error error = seL4_NotEnoughMemory;

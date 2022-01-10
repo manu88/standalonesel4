@@ -10,6 +10,8 @@
 #include "lib/expected.hpp"
 #include "lib/optional.hpp"
 #include "lib/vector.hpp"
+#include "Process.hpp"
+#include "ProgramLoader.hpp"
 
 struct ThreadTable {
   vector<std::shared_ptr<Thread>> threads;
@@ -39,7 +41,7 @@ private:
   Expected<std::shared_ptr<Thread>, seL4_Error>
   createThread(Thread::EntryPoint entryPoint);
 
-  seL4_Error mapPage(seL4_Word vaddr, seL4_CapRights_t rights,
+  seL4_Error mapPages(seL4_Word vaddr, seL4_CapRights_t rights, size_t numPages,
                      seL4_Word &cap) override;
   enum { KmallocReservedPages = 10 };
 
@@ -63,4 +65,7 @@ private:
   VFS _vfs;
 
   VFS::File testFile;
+  Process *_testProc = nullptr;
+
+  ProgramLoader _loader;
 };

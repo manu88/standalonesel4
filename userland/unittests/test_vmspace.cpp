@@ -4,9 +4,12 @@
 #include <cstdio>
 
 struct TestVMSpaceDelegate : public VMSpaceDelegate {
-  seL4_Error mapPage(seL4_Word, seL4_CapRights_t, seL4_Word &) override {
+  seL4_Error mapPage(seL4_Word, seL4_CapRights_t, size_t numPages, seL4_Word &) override {
+    accumNumPages += numPages;
     return seL4_NoError;
   }
+
+  size_t accumNumPages = 0;
 };
 
 static void testReservations() {
@@ -70,8 +73,10 @@ static int testVMSpace_Map1PageInMiddle(void) {
 
   auto countBeforeMapping = a.reservationCount();
   printf("Test Map page countBeforeMapping=%zi\n", a.reservationCount());
+  auto countBefore = delegate.accumNumPages;
   auto ret = a.mapPages(addrStart + PAGE_SIZE + 1, 1);
   assert(ret);
+  assert(delegate.accumNumPages == countBefore + 1);
   a.print();
   printf("after, countBeforeMapping=%zi\n", a.reservationCount());
   assert(a.getReservations()[0].numPages == 1);
@@ -105,8 +110,10 @@ static int testVMSpace_Map2PagesInMiddle(void) {
 
   auto countBeforeMapping = a.reservationCount();
   printf("Test Map page countBeforeMapping=%zi\n", a.reservationCount());
+  auto countBefore = delegate.accumNumPages;
   auto ret = a.mapPages(addrStart + PAGE_SIZE + 1, 2);
   assert(ret);
+  assert(delegate.accumNumPages == countBefore + 2);
   a.print();
   printf("after, countBeforeMapping=%zi\n", a.reservationCount());
   assert(a.getReservations()[0].numPages == 1);
@@ -140,8 +147,10 @@ static int testVMSpace_Map2PagesAtStart(void){
 
   auto countBeforeMapping = a.reservationCount();
   printf("Test Map page countBeforeMapping=%zi\n", a.reservationCount());
+  auto countBefore = delegate.accumNumPages;
   auto ret = a.mapPages(addrStart , 2);
   assert(ret);
+  assert(delegate.accumNumPages == countBefore + 2);
   a.print();
   printf("after, countBeforeMapping=%zi\n", a.reservationCount());
   assert(a.getReservations()[0].numPages == 2);
@@ -174,8 +183,10 @@ static int testVMSpace_Map1PageAtStart(void) {
 
   auto countBeforeMapping = a.reservationCount();
   printf("Test Map page countBeforeMapping=%zi\n", a.reservationCount());
+  auto countBefore = delegate.accumNumPages;
   auto ret = a.mapPages(addrStart , 1);
   assert(ret);
+  assert(delegate.accumNumPages == countBefore + 1);
   a.print();
   printf("after, countBeforeMapping=%zi\n", a.reservationCount());
   assert(a.getReservations()[0].numPages == 1);

@@ -4,10 +4,57 @@
 #include "VMSpace.hpp"
 #include "klog.h"
 #include "runtime.h"
+#include "Process.hpp"
+
 
 ObjectFactory::ObjectFactory(InitialUntypedPool &untypedPool, PageTable &pt,
                              VMSpace &vm)
     : _untypedPool(untypedPool), _pt(pt), _vmSpace(vm) {}
+
+
+seL4_Error ObjectFactory::configProcess(Process &process, seL4_CPtr /*apiEndpoint*/){
+  kprintf("Start process configuration\n");
+
+  auto tcbOrErr = _untypedPool.allocObject(seL4_TCBObject);
+  if (!tcbOrErr) {
+    return tcbOrErr.error;
+  }
+  process.tcb = tcbOrErr.value;
+  seL4_DebugNameThread(process.tcb, "process");
+  auto error = seL4_NoError;
+
+  auto tcbTlsOrErr = process._vmspace.allocRangeAnywhere(1, seL4_ReadWrite);
+  assert(tcbTlsOrErr);
+  auto tcbIPCOrErr = _vmSpace.allocIPCBuffer(seL4_ReadWrite);
+  assert(tcbIPCOrErr);
+
+  error = seL4_TCB_SetTLSBase(process.tcb, tcbTlsOrErr.value.vaddr);
+  if(error != seL4_NoError){
+    kprintf("seL4_TCB_SetTLSBase error %s\n", seL4::errorStr(error));
+  }
+  seL4_Word prio = seL4_MaxPrio;
+  
+  error = seL4_TCB_SetPriority(process.tcb, seL4_CapInitThreadTCB, prio);
+    if(error != seL4_NoError){
+    kprintf("seL4_TCB_SetPriority error %s\n", seL4::errorStr(error));
+  }
+#if 0
+  kprintf("Start Test mint\n");
+  error = seL4_CNode_Mint(process.cspace, Process::CSpaceSlot(Process::CSpaceLayout::ENDPOINT_SLOT), seL4_WordBits,
+                        seL4_CapInitThreadCNode, apiEndpoint, seL4_WordBits,
+                        seL4_AllRights, (seL4_Word) &process);
+  if(error != seL4_NoError){
+    kprintf("seL4_CNode_Mint endpoint error %s\n", seL4::errorStr(error));
+  }
+  kprintf("End Test mint\n");
+#endif
+  error = seL4_TCB_SetSpace(process.tcb, 0, process.cspace, 0, process.vspace, 0);
+  if(error != seL4_NoError){
+    kprintf("seL4_TCB_SetSpace endpoint error %s\n", seL4::errorStr(error));
+  }
+  kprintf("Done\n");
+  return seL4_NoError;
+}
 
 Expected<std::shared_ptr<Thread>, seL4_Error>
 ObjectFactory::createThread(seL4_Word tcbBadge, Thread::EntryPoint entryPoint,

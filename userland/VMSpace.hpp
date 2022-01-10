@@ -12,7 +12,7 @@
 #include <sys/types.h> // size_t
 
 struct VMSpaceDelegate {
-  virtual seL4_Error mapPage(seL4_Word, seL4_CapRights_t, seL4_Word &) {
+  virtual seL4_Error mapPages(seL4_Word, seL4_CapRights_t, size_t, seL4_Word &) {
     return seL4_IllegalOperation;
   }
 };
